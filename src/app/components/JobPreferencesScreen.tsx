@@ -1239,62 +1239,58 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName }: Props) {
             )}
 
           </AnimatePresence>
+
+          {/* ── Bottom navigation (in-flow, non-sticky) ───────────────────── */}
+          <div style={{
+            marginTop: 20,
+            paddingTop: 12,
+            paddingBottom: 20,
+            borderTop: `1px solid ${C.border}`,
+            display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+          }}>
+            {/* Previous */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleBack}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "13px 20px", borderRadius: 14,
+                border: `1.5px solid ${C.border}`, background: "white",
+                color: C.textMuted, fontSize: "14px", fontWeight: 500,
+                cursor: "pointer", fontFamily: "Inter, sans-serif",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Previous
+            </motion.button>
+
+            {/* Continue */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={handleNext}
+              disabled={!canContinue}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "13px 28px", borderRadius: 14, border: "none",
+                background: canContinue ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "rgba(28,25,23,0.2)",
+                color: "white", fontSize: "14px", fontWeight: 600,
+                letterSpacing: "-0.01em", cursor: canContinue ? "pointer" : "not-allowed",
+                transition: "background 0.2s, box-shadow 0.2s",
+                fontFamily: "Inter, sans-serif",
+                boxShadow: canContinue ? "0 4px 16px rgba(255,107,53,0.35)" : "none",
+              }}
+            >
+              Continue
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5 2l5 5-5 5" stroke="white" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </motion.button>
+          </div>
         </div>
-      </div>
-
-      {/* ── Bottom navigation ─────────────────────────────────────────────── */}
-      <div style={{
-        flexShrink: 0,
-        position: "sticky",
-        bottom: 0,
-        zIndex: 20,
-        padding: "12px 20px 20px",
-        background: "rgba(253,251,248,0.96)",
-        backdropFilter: "blur(12px)",
-        borderTop: `1px solid ${C.border}`,
-        display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-      }}>
-        {/* Previous */}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={handleBack}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "13px 20px", borderRadius: 14,
-            border: `1.5px solid ${C.border}`, background: "white",
-            color: C.textMuted, fontSize: "14px", fontWeight: 500,
-            cursor: "pointer", fontFamily: "Inter, sans-serif",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6"
-              strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Previous
-        </motion.button>
-
-        {/* Continue */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleNext}
-          disabled={!canContinue}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "13px 28px", borderRadius: 14, border: "none",
-            background: canContinue ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "rgba(28,25,23,0.2)",
-            color: "white", fontSize: "14px", fontWeight: 600,
-            letterSpacing: "-0.01em", cursor: canContinue ? "pointer" : "not-allowed",
-            transition: "background 0.2s, box-shadow 0.2s",
-            fontFamily: "Inter, sans-serif",
-            boxShadow: canContinue ? "0 4px 16px rgba(255,107,53,0.35)" : "none",
-          }}
-        >
-          Continue
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M5 2l5 5-5 5" stroke="white" strokeWidth="1.6"
-              strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </motion.button>
       </div>
     </div>
   );
