@@ -432,7 +432,8 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName }: Props) {
   ════════════════════════════════════════════════════════════════════════ */
   return (
     <div style={{
-      minHeight: "100dvh" as CSSProperties["minHeight"],
+      height: "100dvh" as CSSProperties["height"],
+      minHeight: "100vh" as CSSProperties["minHeight"],
       background: C.bg, fontFamily: "Inter, sans-serif",
       display: "flex", flexDirection: "column",
     }}>
@@ -460,7 +461,16 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName }: Props) {
       </div>
 
       {/* ── Scrollable content ────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          overscrollBehaviorY: "contain",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-y",
+        }}
+      >
         <div style={{ padding: "20px 20px 32px" }}>
           <AnimatePresence mode="wait">
 
