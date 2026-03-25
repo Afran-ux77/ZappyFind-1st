@@ -1042,14 +1042,21 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName }: Props) {
                               onClick={() => setSwitchTimeline(sel ? null : opt.id)}
                               style={{
                                 padding: opt.id === "1month" ? "12px 14px" : "12px 10px",
-                                borderRadius: opt.id === "immediately" || opt.id === "1month" ? 99 : 14,
+                                borderRadius:
+                                  opt.id === "immediately" ||
+                                  opt.id === "1month" ||
+                                  opt.id === "exploring"
+                                    ? 99
+                                    : 14,
                                 border: `1.5px solid ${sel ? C.brandBorder : C.border}`,
                                 background: sel ? C.brandBg : "white",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent:
-                                  opt.id === "immediately" || opt.id === "1month"
+                                  opt.id === "immediately" ||
+                                  opt.id === "1month" ||
+                                  opt.id === "exploring"
                                     ? "center"
                                     : undefined,
                                 gap: 8,
