@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { FullProfile, WorkExp, Edu, JobPreferences } from "./WelcomeScreen";
+import { FloatingLabelInput } from "./ui/FloatingLabelInput";
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -24,6 +25,34 @@ const scrollbarStyle = `
   ::-webkit-scrollbar-thumb { background: rgba(28,25,23,0.12); border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(28,25,23,0.22); }
 `;
+
+const COURSE_OPTIONS = [
+  "B.Tech",
+  "B.E.",
+  "B.Sc",
+  "BCA",
+  "BBA",
+  "MBA",
+  "M.Tech",
+  "MCA",
+  "Diploma",
+  "B.Com",
+  "BA",
+  "Other",
+];
+
+const SPECIALIZATION_BY_COURSE: Record<string, string[]> = {
+  "B.Tech": [
+    "Computer Science Engineering",
+    "Mechanical Engineering",
+    "Civil Engineering",
+    "Electrical Engineering",
+    "Electronics and Communication Engineering",
+    "Information Technology",
+    "Chemical Engineering",
+    "Aerospace Engineering",
+  ],
+};
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
 function Section({
@@ -76,81 +105,95 @@ function EditField({
   placeholder?: string; multiline?: boolean; required?: boolean;
   rightAdornment?: React.ReactNode;
 }) {
-  const [focused, setFocused] = useState(false);
-  const baseStyle: React.CSSProperties = {
-    width: "100%",
-    padding: rightAdornment ? "11px 44px 11px 13px" : "11px 13px",
-    fontSize: "14px", fontWeight: 400,
-    color: C.textPrimary,
-    background: "transparent",
-    border: "none", outline: "none",
-    fontFamily: "Inter, sans-serif",
-    resize: "none",
-    lineHeight: 1.55,
-  };
+  const labelWithRequired = `${label}${required ? " *" : ""}`;
 
   return (
-    <div>
-      <label style={{
-        display: "block",
-        fontSize: "10px", fontWeight: 700,
-        color: focused ? C.brand : C.textSecondary,
-        letterSpacing: "0.07em", textTransform: "uppercase",
-        marginBottom: "5px",
-        transition: "color 0.2s",
-      }}>
-        {label}{required && <span style={{ color: C.brand }}> *</span>}
-      </label>
-      <div style={{
-        borderRadius: "11px",
-        background: focused ? "white" : "rgba(28,25,23,0.02)",
-        border: focused
-          ? "1px solid rgba(234,88,12,0.32)"
-          : `1px solid ${C.border}`,
-        boxShadow: focused
-          ? "0 0 0 3px rgba(234,88,12,0.07)"
-          : "none",
-        transition: "all 0.2s",
-        overflow: "hidden",
-        position: "relative",
-      }}>
-        {multiline ? (
-          <textarea
-            value={value}
-            placeholder={placeholder}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            rows={3}
-            style={{ ...baseStyle, display: "block" }}
-          />
-        ) : (
-          <input
-            type="text"
-            value={value}
-            placeholder={placeholder}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            style={baseStyle}
-          />
-        )}
-        {rightAdornment && (
-          <div
-            style={{
-              position: "absolute",
-              right: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "none",
-            }}
-          >
-            {rightAdornment}
-          </div>
-        )}
+    <FloatingLabelInput
+      multiline={multiline}
+      rows={multiline ? 3 : undefined}
+      label={labelWithRequired}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) =>
+        onChange(
+          multiline
+            ? (e.target as HTMLTextAreaElement).value
+            : (e.target as HTMLInputElement).value,
+        )
+      }
+      rightAdornment={rightAdornment}
+      rightAdornmentWidth={rightAdornment ? 32 : undefined}
+      style={{
+        lineHeight: 1.55,
+        width: "100%",
+        resize: multiline ? "vertical" : undefined,
+      }}
+    />
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  required = false,
+  disabled = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  const selectId = useId();
+  const isFloating = focused || Boolean(value);
+  return (
+    <div className="zf-float">
+      <div
+        className="zf-float__field"
+        data-zf-disabled={disabled ? "true" : undefined}
+        data-zf-has-right="true"
+      >
+        <select
+          id={selectId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          disabled={disabled}
+          className="zf-float__control"
+          style={{
+            color: value ? C.textPrimary : C.textSecondary,
+            paddingTop: 20,
+            paddingBottom: 6,
+            appearance: "none",
+            WebkitAppearance: "none",
+            MozAppearance: "none",
+          }}
+        >
+          <option value="">{""}</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+        <label
+          htmlFor={selectId}
+          className="zf-float__label"
+          style={{ transform: isFloating ? "translateY(-18px) scale(0.78)" : "translateY(-50%) scale(1)" }}
+        >
+          {label}
+          {required && <span> *</span>}
+        </label>
+        <div className="zf-float__right" style={{ pointerEvents: "none", color: C.textSecondary }}>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
       </div>
     </div>
   );
@@ -228,6 +271,7 @@ function EduEntry({
   showRemove: boolean;
 }) {
   const set = (key: keyof Edu) => (v: string) => onChange({ ...edu, [key]: v });
+  const specializationOptions = SPECIALIZATION_BY_COURSE[edu.degree] ?? [];
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -260,16 +304,29 @@ function EduEntry({
         {/* Institution (full width) */}
         <EditField label="Institution" value={edu.institution} onChange={set("institution")}
           placeholder="e.g. IIT Delhi" required />
-        {/* Degree | Year */}
-        <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
-          <EditField label="Degree" value={edu.degree} onChange={set("degree")}
-            placeholder="e.g. B.Tech CS" />
-          <EditField label="Year" value={edu.year} onChange={set("year")}
-            placeholder="2016 – 2020" />
+        {/* Course | Specialization */}
+        <div className="flex flex-col gap-3">
+          <SelectField
+            label="Course"
+            value={edu.degree}
+            onChange={set("degree")}
+            options={COURSE_OPTIONS}
+            placeholder="Select course"
+          />
+          <SelectField
+            label="Specialization"
+            value={edu.specialization ?? ""}
+            onChange={(v) => set("specialization" as keyof Edu)(v)}
+            options={specializationOptions}
+            placeholder={edu.degree ? "Select specialization" : "Select course first"}
+            disabled={!edu.degree || specializationOptions.length === 0}
+          />
         </div>
-        {/* Grade (full width) */}
-        <EditField label="Grade / GPA" value={edu.grade} onChange={set("grade")}
-          placeholder="8.4 CGPA" />
+        {/* Graduation Year */}
+        <div className="grid gap-3" style={{ gridTemplateColumns: "1fr", width: "100%" }}>
+          <EditField label="Graduation Year" value={edu.year} onChange={set("year")}
+            placeholder="e.g. 2024" />
+        </div>
       </div>
     </motion.div>
   );
@@ -351,6 +408,12 @@ const PREF_SUB_ROLES: Record<string, string[]> = {
 };
 
 const PREF_WORK_SETUPS = ["Onsite", "Hybrid", "Remote"];
+const PREF_SWITCH_TIMELINE_OPTIONS = [
+  { id: "immediately", label: "Immediately", emoji: "🚀" },
+  { id: "1month", label: "Within 1 month", emoji: "⏳" },
+  { id: "3months", label: "Within 3 months", emoji: "📅" },
+  { id: "exploring", label: "Just exploring", emoji: "👀" },
+];
 
 const PREF_PRIORITIES = [
   "Meaningful work", "Experienced leaders", "Top investors", "Wear many hats",
@@ -407,6 +470,7 @@ export function ProfileReviewScreen({
   const [prefWorkSetups, setPrefWorkSetups] = useState<string[]>(profile.preferences?.workSetups ?? []);
   const [prefLocations, setPrefLocations] = useState<string[]>(profile.preferences?.locations ?? []);
   const [prefPriorities, setPrefPriorities] = useState<string[]>(profile.preferences?.priorities ?? []);
+  const [prefSwitchTimeline, setPrefSwitchTimeline] = useState(profile.preferences?.switchTimeline ?? "");
   const [prefSalaryMin, setPrefSalaryMin] = useState(profile.preferences?.salaryMin ?? 5);
   const [prefSalaryMax, setPrefSalaryMax] = useState(profile.preferences?.salaryMax ?? 30);
   const [rolesExpanded, setRolesExpanded] = useState(false);
@@ -429,6 +493,7 @@ export function ProfileReviewScreen({
     setPrefWorkSetups(profile.preferences?.workSetups ?? []);
     setPrefLocations(profile.preferences?.locations ?? []);
     setPrefPriorities(profile.preferences?.priorities ?? []);
+    setPrefSwitchTimeline(profile.preferences?.switchTimeline ?? "");
     setPrefSalaryMin(profile.preferences?.salaryMin ?? 5);
     setPrefSalaryMax(profile.preferences?.salaryMax ?? 30);
     setOtpStage("idle");
@@ -454,7 +519,7 @@ export function ProfileReviewScreen({
   const addEdu = () =>
     setEducation((prev) => [
       ...prev,
-      { id: `edu${Date.now()}`, institution: "", degree: "", year: "", grade: "" },
+      { id: `edu${Date.now()}`, institution: "", degree: "", specialization: "", year: "", grade: "" },
     ]);
 
   const addSkill = (raw: string) => {
@@ -511,6 +576,7 @@ export function ProfileReviewScreen({
       workSetups: prefWorkSetups.length ? [...prefWorkSetups] : undefined,
       locations: prefLocations.length ? [...prefLocations] : undefined,
       priorities: prefPriorities.length ? [...prefPriorities] : undefined,
+      switchTimeline: prefSwitchTimeline || undefined,
       salaryMin: prefSalaryMin,
       salaryMax: prefSalaryMax,
       salaryCurrency: profile.preferences?.salaryCurrency,
@@ -555,7 +621,7 @@ export function ProfileReviewScreen({
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center justify-between mb-4">
+          className="flex items-center gap-2 mb-1">
           <button onClick={onBack} aria-label="Go back" style={{
             width: "44px", height: "44px",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -570,20 +636,10 @@ export function ProfileReviewScreen({
                 strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-
-          {/* Parsed badge */}
-          
-        </motion.div>
-
-        {/* Title */}
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}>
           <h1 style={{
             fontSize: "clamp(20px, 5.5vw, 24px)", fontWeight: 800,
             color: C.textPrimary, letterSpacing: "-0.04em",
-            lineHeight: 1.2, marginBottom: "2px",
+            lineHeight: 1.2, margin: 0,
           }}>{isEdit ? "Edit Profile" : "Tell us about yourself"}</h1>
         </motion.div>
       </div>
@@ -1128,6 +1184,47 @@ export function ProfileReviewScreen({
                 )}
               </div>
             )}
+
+            {/* Switch Timeline */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 600, color: C.textMuted,
+                letterSpacing: "-0.01em", marginBottom: 8,
+              }}>
+                When do you want to switch?
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {PREF_SWITCH_TIMELINE_OPTIONS.map((opt) => {
+                  const sel = prefSwitchTimeline === opt.id;
+                  return (
+                    <motion.button
+                      key={opt.id}
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => setPrefSwitchTimeline(opt.id)}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 100,
+                        border: `1.5px solid ${sel ? "rgba(234,88,12,0.35)" : C.border}`,
+                        background: sel ? "rgba(234,88,12,0.07)" : "white",
+                        color: sel ? C.brand : C.textPrimary,
+                        fontSize: 13,
+                        fontWeight: sel ? 600 : 500,
+                        cursor: "pointer",
+                        fontFamily: "Inter, sans-serif",
+                        letterSpacing: "-0.01em",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <span aria-hidden>{opt.emoji}</span>
+                      {opt.label}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Work Setup */}
             <div style={{ marginBottom: 16 }}>

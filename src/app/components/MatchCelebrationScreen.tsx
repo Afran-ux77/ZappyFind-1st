@@ -370,7 +370,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
                 marginBottom: 8,
               }}
             >
-              jobs unlocked for you
+              curated roles for you
             </motion.p>
 
             <motion.p
@@ -382,11 +382,12 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
                 color: "#A8A29E",
                 letterSpacing: "-0.01em",
                 lineHeight: 1.5,
-                maxWidth: 250,
+                width: "100%",
+                maxWidth: 295,
                 margin: "0 auto",
               }}
             >
-              Your profile is ready — these opportunities are waiting for you
+              Share a few more details to get presented directly to relevant recruiters.
             </motion.p>
           </motion.div>
         </div>
@@ -487,7 +488,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
               gap: 8,
             }}
           >
-            Explore your matches
+            Continue
             <ChevronRight size={18} strokeWidth={2.2} />
           </motion.button>
         </motion.div>

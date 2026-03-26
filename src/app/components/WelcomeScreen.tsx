@@ -26,6 +26,7 @@ export interface WorkExp {
 }
 export interface Edu {
   id: string; institution: string; degree: string;
+  specialization?: string;
   year: string; grade: string;
 }
 export interface JobPreferences {
