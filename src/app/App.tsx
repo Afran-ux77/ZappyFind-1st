@@ -454,6 +454,14 @@ const FLOATING_PARTICLES = Array.from({ length: 14 }, (_, i) => ({
 function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const lowEndAndroid = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroid = ua.includes("android");
+    const memory = "deviceMemory" in navigator ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8 : 8;
+    const cores = navigator.hardwareConcurrency ?? 8;
+    return isAndroid && (memory <= 4 || cores <= 6);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(
@@ -487,16 +495,18 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
         padding: "32px 24px",
         position: "relative",
         overflow: "hidden",
+        isolation: "isolate",
+        contain: "layout paint style",
       }}
     >
       {/* Animated background gradient orbs */}
       <motion.div
         animate={{
-          x: [0, 30, -20, 0],
-          y: [0, -30, 20, 0],
-          scale: [1, 1.2, 0.9, 1],
+          x: lowEndAndroid ? [0, 22, -14, 0] : [0, 30, -20, 0],
+          y: lowEndAndroid ? [0, -22, 14, 0] : [0, -30, 20, 0],
+          scale: lowEndAndroid ? [1, 1.14, 0.94, 1] : [1, 1.2, 0.9, 1],
         }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: lowEndAndroid ? 9.5 : 8, repeat: Infinity, ease: "easeInOut" }}
         style={{
           position: "absolute",
           top: "15%",
@@ -506,17 +516,20 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
           borderRadius: "50%",
           background:
             "radial-gradient(circle, rgba(255,143,86,0.12) 0%, transparent 70%)",
-          filter: "blur(40px)",
+          filter: `blur(${lowEndAndroid ? 32 : 40}px)`,
           pointerEvents: "none",
+          willChange: "transform, opacity",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
         }}
       />
       <motion.div
         animate={{
-          x: [0, -25, 15, 0],
-          y: [0, 20, -25, 0],
-          scale: [1, 0.85, 1.15, 1],
+          x: lowEndAndroid ? [0, -18, 11, 0] : [0, -25, 15, 0],
+          y: lowEndAndroid ? [0, 14, -18, 0] : [0, 20, -25, 0],
+          scale: lowEndAndroid ? [1, 0.9, 1.1, 1] : [1, 0.85, 1.15, 1],
         }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: lowEndAndroid ? 11.5 : 10, repeat: Infinity, ease: "easeInOut" }}
         style={{
           position: "absolute",
           bottom: "20%",
@@ -526,13 +539,16 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
           borderRadius: "50%",
           background:
             "radial-gradient(circle, rgba(234,88,12,0.08) 0%, transparent 70%)",
-          filter: "blur(50px)",
+          filter: `blur(${lowEndAndroid ? 38 : 50}px)`,
           pointerEvents: "none",
+          willChange: "transform, opacity",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
         }}
       />
       <motion.div
-        animate={{ x: [0, 15, -10, 0], y: [0, -15, 10, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ x: lowEndAndroid ? [0, 11, -7, 0] : [0, 15, -10, 0], y: lowEndAndroid ? [0, -11, 7, 0] : [0, -15, 10, 0] }}
+        transition={{ duration: lowEndAndroid ? 13.5 : 12, repeat: Infinity, ease: "easeInOut" }}
         style={{
           position: "absolute",
           top: "45%",
@@ -542,8 +558,11 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
           borderRadius: "50%",
           background:
             "radial-gradient(circle, rgba(234,88,12,0.06) 0%, transparent 70%)",
-          filter: "blur(35px)",
+          filter: `blur(${lowEndAndroid ? 28 : 35}px)`,
           pointerEvents: "none",
+          willChange: "transform, opacity",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
         }}
       />
 
@@ -681,10 +700,10 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
         <AnimatePresence mode="wait">
           <motion.p
             key={stepIndex}
-            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            initial={{ opacity: 0, y: 14, filter: `blur(${lowEndAndroid ? 2 : 4}px)` }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, y: -14, filter: `blur(${lowEndAndroid ? 2 : 4}px)` }}
+            transition={{ duration: lowEndAndroid ? 0.56 : 0.5, ease: [0.16, 1, 0.3, 1] }}
             style={{
               fontSize: "14px",
               color: "#78716C",

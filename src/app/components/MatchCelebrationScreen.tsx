@@ -38,6 +38,14 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
   const [phase, setPhase] = useState<"counting" | "reveal">("counting");
   const [count, setCount] = useState(0);
   const targetCount = 74;
+  const lowEndAndroid = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroid = ua.includes("android");
+    const memory = "deviceMemory" in navigator ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8 : 8;
+    const cores = navigator.hardwareConcurrency ?? 8;
+    return isAndroid && (memory <= 4 || cores <= 6);
+  }, []);
 
   const particles = useMemo(
     () =>
@@ -46,12 +54,12 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
         x: Math.random() * 100,
         y: Math.random() * 100,
         size: 3 + Math.random() * 5,
-        dur: 6 + Math.random() * 8,
+        dur: (lowEndAndroid ? 7.5 : 6) + Math.random() * (lowEndAndroid ? 8.5 : 8),
         delay: Math.random() * 4,
         hue: [24, 30, 15, 35, 20, 40, 10][i % 7],
         opacity: 0.12 + Math.random() * 0.14,
       })),
-    [],
+    [lowEndAndroid],
   );
 
   useEffect(() => {
@@ -83,6 +91,8 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
         position: "relative",
         overflow: "hidden",
         background: "#FAF9F7",
+        isolation: "isolate",
+        contain: "layout paint style",
       }}
     >
       {/* ── Atmosphere ────────────────────────────────────────────── */}
@@ -114,7 +124,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
       {/* Slow-breathing center glow */}
       <motion.div
         animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: lowEndAndroid ? 7.2 : 6, repeat: Infinity, ease: "easeInOut" }}
         style={{
           position: "absolute",
           top: "15%",
@@ -125,8 +135,10 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
           borderRadius: "50%",
           background:
             "radial-gradient(circle, rgba(255,143,86,0.16) 0%, rgba(234,88,12,0.06) 40%, transparent 65%)",
-          filter: "blur(50px)",
+          filter: `blur(${lowEndAndroid ? 38 : 50}px)`,
           pointerEvents: "none",
+          willChange: "transform, opacity",
+          backfaceVisibility: "hidden",
         }}
       />
 
@@ -156,13 +168,13 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
           inset: 0,
           width: "100%",
           height: "100%",
-          opacity: 0.04,
+          opacity: lowEndAndroid ? 0.03 : 0.04,
           pointerEvents: "none",
           mixBlendMode: "multiply",
         }}
       >
         <filter id="celebgrain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" />
+          <feTurbulence type="fractalNoise" baseFrequency={lowEndAndroid ? "0.75" : "0.8"} numOctaves={lowEndAndroid ? 3 : 4} stitchTiles="stitch" />
         </filter>
         <rect width="100%" height="100%" filter="url(#celebgrain)" />
       </svg>
@@ -179,7 +191,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
           transition={{
             duration: p.dur,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: "linear",
             delay: p.delay,
           }}
           style={{
