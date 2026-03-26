@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { FullProfile, WorkExp, Edu } from "./WelcomeScreen";
 import { FloatingLabelInput } from "./ui/FloatingLabelInput";
@@ -53,6 +53,16 @@ const SPECIALIZATION_BY_COURSE: Record<string, string[]> = {
     "Aerospace Engineering",
   ],
 };
+const MASTER_SKILL_OPTIONS = [
+  "JavaScript", "TypeScript", "Python", "Java", "C", "C++", "C#", "Go", "Rust", "Kotlin",
+  "Swift", "PHP", "Ruby", "HTML", "CSS", "React", "Next.js", "Angular", "Vue.js",
+  "Node.js", "Express.js", "NestJS", "Django", "Flask", "Spring Boot", "ASP.NET",
+  "Tailwind CSS", "Bootstrap", "Redux", "GraphQL", "REST API", "PostgreSQL", "MySQL",
+  "MongoDB", "Redis", "Firebase", "Supabase", "AWS", "Azure", "GCP", "Docker",
+  "Kubernetes", "CI/CD", "Git", "Linux", "Nginx", "Machine Learning", "Deep Learning",
+  "Data Structures", "Algorithms", "Power BI", "Tableau", "Figma", "UI/UX", "Testing",
+  "Jest", "Cypress", "Playwright", "Selenium", "React Native", "Flutter",
+];
 
 interface Props {
   email: string;
@@ -144,83 +154,281 @@ function SelectField({
   errorText?: string;
 }) {
   const [focused, setFocused] = useState(false);
+  const selectId = useId();
+  const hasError = Boolean(error);
+  const isFloating = focused || Boolean(value);
   return (
-    <div>
-      <label style={{
-        display: "block", fontSize: 10, fontWeight: 700,
-        color: error ? "#B91C1C" : focused ? C.brand : C.textSecondary,
-        letterSpacing: "0.07em", textTransform: "uppercase" as const,
-        marginBottom: 5, transition: "color 0.2s",
-        fontFamily: "Inter, sans-serif",
-      }}>
-        {label}{required && <span style={{ color: C.brand }}> *</span>}
-      </label>
-      <div style={{
-        borderRadius: 12,
-        background: C.inputBg,
-        border: error
-          ? "1px solid rgba(185,28,28,0.45)"
-          : focused
-          ? "1px solid rgba(194,65,12,0.32)"
-          : `1px solid ${C.border}`,
-        boxShadow: error
-          ? "0 0 0 3px rgba(185,28,28,0.08)"
-          : focused ? "0 0 0 3px rgba(194,65,12,0.07)" : "none",
-        transition: "all 0.2s",
-        position: "relative" as const,
-        overflow: "hidden",
-      }}>
+    <div className="zf-float">
+      <div
+        className="zf-float__field"
+        data-zf-error={hasError ? "true" : undefined}
+        data-zf-has-right="true"
+      >
         <select
+          id={selectId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          aria-invalid={hasError || undefined}
+          className="zf-float__control"
           style={{
-            width: "100%",
-            padding: "11px 32px 11px 13px",
-            fontSize: 14,
             color: value ? C.textPrimary : C.textSecondary,
-            background: "transparent",
-            border: "none",
-            outline: "none",
-            borderRadius: 12,
-            fontFamily: "Inter, sans-serif",
-            lineHeight: 1.55,
+            paddingTop: 20,
+            paddingBottom: 6,
             appearance: "none",
             WebkitAppearance: "none",
             MozAppearance: "none",
           }}
         >
-          <option value="">{placeholder ?? "Select an option"}</option>
+          <option value="">{""}</option>
           {options.map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
-        <div style={{
-          position: "absolute",
-          right: 10,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-          color: C.textSecondary,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
+        <label
+          htmlFor={selectId}
+          className="zf-float__label"
+          style={{
+            transform: isFloating ? "translateY(-18px) scale(0.78)" : "translateY(-50%) scale(1)",
+            color: hasError ? "#B91C1C" : C.textSecondary,
+          }}
+        >
+          {label}
+          {required && <span> *</span>}
+        </label>
+        <div className="zf-float__right" style={{ pointerEvents: "none", color: C.textSecondary }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>
-      {error && (
-        <div style={{
-          marginTop: 6,
-          fontSize: 11,
-          color: "#B91C1C",
-          lineHeight: 1.35,
-          letterSpacing: "-0.01em",
-        }}>
+      {hasError && (
+        <div className="zf-float__help zf-float__help--error">
           {errorText ?? "This field is required."}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SkillsField({
+  skills,
+  skillInput,
+  setSkillInput,
+  onAddSkill,
+  onRemoveSkill,
+  error,
+  errorText,
+}: {
+  skills: string[];
+  skillInput: string;
+  setSkillInput: (value: string) => void;
+  onAddSkill: (value: string) => void;
+  onRemoveSkill: (value: string) => void;
+  error?: boolean;
+  errorText?: string;
+}) {
+  const trimmedInput = skillInput.trim();
+  const [focused, setFocused] = useState(false);
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const inputId = useId();
+  const normalizedQuery = trimmedInput.toLowerCase();
+
+  const filteredSkills = MASTER_SKILL_OPTIONS
+    .filter((skill) => !skills.some((selected) => selected.toLowerCase() === skill.toLowerCase()))
+    .filter((skill) => skill.toLowerCase().includes(normalizedQuery))
+    .slice(0, 8);
+
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+        setFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocumentClick);
+    return () => document.removeEventListener("mousedown", onDocumentClick);
+  }, []);
+
+  const handleAddFromInput = () => {
+    if (!trimmedInput) return;
+    onAddSkill(trimmedInput);
+    setOpen(false);
+  };
+
+  const handleSelectSkill = (skill: string) => {
+    onAddSkill(skill);
+    setOpen(false);
+  };
+
+  const shouldShowMenu = open && (filteredSkills.length > 0 || trimmedInput.length > 0);
+
+  return (
+    <div ref={rootRef}>
+      <div className="zf-float" style={{ position: "relative" }}>
+        <div
+          className="zf-float__field"
+          data-zf-has-right="true"
+          data-zf-error={error ? "true" : undefined}
+        >
+          <input
+            id={inputId}
+            type="text"
+            value={skillInput}
+            onChange={(e) => {
+              setSkillInput(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => {
+              setFocused(true);
+              setOpen(true);
+            }}
+            onBlur={() => setFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                handleAddFromInput();
+              }
+              if (e.key === "Escape") {
+                setOpen(false);
+              }
+            }}
+            placeholder=" "
+            className="zf-float__control"
+            style={{ lineHeight: 1.55 }}
+          />
+          <label
+            htmlFor={inputId}
+            className="zf-float__label"
+            style={{
+              transform: focused || Boolean(trimmedInput) ? "translateY(-18px) scale(0.78)" : "translateY(-50%) scale(1)",
+              color: C.textSecondary,
+            }}
+          >
+            Skills *
+          </label>
+          <button
+            type="button"
+            onClick={() => setOpen((prev) => !prev)}
+            className="zf-float__right"
+            style={{ border: "none", background: "transparent", color: C.textSecondary, cursor: "pointer", padding: 0 }}
+            aria-label="Toggle skills dropdown"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+        {shouldShowMenu && (
+          <div style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+            background: "white",
+            boxShadow: "0 8px 22px rgba(28,25,23,0.09)",
+            maxHeight: 220,
+            overflowY: "auto",
+            zIndex: 25,
+            padding: 6,
+          }}>
+            {trimmedInput && (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleAddFromInput}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  borderRadius: 9,
+                  padding: "9px 10px",
+                  color: C.textPrimary,
+                  fontSize: 13,
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                Add "{trimmedInput}"
+              </button>
+            )}
+            {filteredSkills.map((skill) => (
+              <button
+                key={skill}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleSelectSkill(skill)}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  borderRadius: 9,
+                  padding: "9px 10px",
+                  color: C.textPrimary,
+                  fontSize: 13,
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                {skill}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className="zf-float__help zf-float__help--error">
+          {errorText ?? "At least one skill is required."}
+        </div>
+      )}
+
+      {skills.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+          {skills.map((skill) => (
+            <span
+              key={skill}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 10px",
+                borderRadius: 999,
+                background: "rgba(194,65,12,0.08)",
+                border: "1px solid rgba(194,65,12,0.2)",
+                color: C.brand,
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {skill}
+              <button
+                type="button"
+                onClick={() => onRemoveSkill(skill)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: C.brand,
+                  cursor: "pointer",
+                  padding: 0,
+                  lineHeight: 1,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  fontFamily: "Inter, sans-serif",
+                }}
+                aria-label={`Remove ${skill}`}
+              >
+                x
+              </button>
+            </span>
+          ))}
         </div>
       )}
     </div>
@@ -510,6 +718,8 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [showProjects, setShowProjects] = useState(false);
   const [achievements, setAchievements] = useState<Array<{ title: string; desc: string }>>([]);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState("");
   const [hasOtherOffers, setHasOtherOffers] = useState<"" | "yes" | "no">("");
   const [offerCompany, setOfferCompany] = useState("");
@@ -545,11 +755,25 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const missingJobTitle = jobTitle.trim().length === 0;
   const missingHighestQualification = highestQualification.trim().length === 0;
   const missingExpYears = profileType === "experienced" && expYears.trim().length === 0;
+  const missingSkills = skills.length === 0;
+
+  const addSkill = (raw: string) => {
+    const value = raw.trim().replace(/\s+/g, " ");
+    if (!value) return;
+    if (skills.some((s) => s.toLowerCase() === value.toLowerCase())) return;
+    setSkills((prev) => [...prev, value]);
+    setSkillInput("");
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setSkills((prev) => prev.filter((s) => s !== skillToRemove));
+  };
 
   const requiredMissingFields: string[] = [];
   if (missingFullName) requiredMissingFields.push("Full Name");
   if (missingLocation) requiredMissingFields.push("Location");
   if (missingEmail) requiredMissingFields.push("Email");
+  if (missingSkills) requiredMissingFields.push("Skills");
   if (missingPhone) {
     requiredMissingFields.push("Phone");
   } else if (missingPhoneVerification) {
@@ -728,7 +952,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
       phone: phone.trim(),
       location: location.trim(),
       headline,
-      skills: [],
+      skills,
       experiences,
       education,
     };
@@ -1165,7 +1389,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       placeholder="e.g. IIT Delhi" required
                       error={showRequiredErrors && missingInstitution}
                       errorText="Institution is required." />
-                    <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                    <div className="flex flex-col gap-3">
                       <SelectField
                         label="Course"
                         value={course}
@@ -1192,7 +1416,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         errorText="Specialization is required for B.Tech."
                       />
                     </div>
-                    <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                    <div className="flex flex-col gap-3" style={{ width: "100%" }}>
                       <Input label="Graduation Year" value={gradYear}
                         onChange={(v) => setGradYear(v.replace(/\D/g, "").slice(0, 4))}
                         placeholder="2024" inputMode="numeric" required
@@ -1439,14 +1663,25 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
               background: "white", padding: 16,
               boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
             }}>
-              <Input
-                label="Portfolio links"
-                value={portfolioLinks}
-                onChange={setPortfolioLinks}
-                placeholder="Perosnal website, GitHub, Behanceetc"
-                multiline
-                multilineHeight={44}
-              />
+              <div className="flex flex-col gap-5">
+                <SkillsField
+                  skills={skills}
+                  skillInput={skillInput}
+                  setSkillInput={setSkillInput}
+                  onAddSkill={addSkill}
+                  onRemoveSkill={removeSkill}
+                  error={showRequiredErrors && missingSkills}
+                  errorText="At least one skill is required."
+                />
+                <Input
+                  label="Portfolio links"
+                  value={portfolioLinks}
+                  onChange={setPortfolioLinks}
+                  placeholder="Perosnal website, GitHub, Behanceetc"
+                  multiline
+                  multilineHeight={44}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -1472,6 +1707,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
               boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
             }}>
               <div className="flex flex-col gap-5">
+                <SkillsField
+                  skills={skills}
+                  skillInput={skillInput}
+                  setSkillInput={setSkillInput}
+                  onAddSkill={addSkill}
+                  onRemoveSkill={removeSkill}
+                  error={showRequiredErrors && missingSkills}
+                  errorText="At least one skill is required."
+                />
                 <Input
                   label="Portfolio links"
                   value={portfolioLinks}

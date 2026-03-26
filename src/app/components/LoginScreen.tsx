@@ -417,9 +417,9 @@ export function LoginScreen({
           }}
         >
           By continuing, you agree to our{" "}
-          <span style={{ color: C.textMuted, fontWeight: 500 }}>Terms</span>{" "}
+          <span style={{ color: C.textMuted, fontWeight: 500, textDecoration: "underline" }}>Terms</span>{" "}
           &amp;{" "}
-          <span style={{ color: C.textMuted, fontWeight: 500 }}>Privacy Policy</span>
+          <span style={{ color: C.textMuted, fontWeight: 500, textDecoration: "underline" }}>Privacy Policy</span>
         </motion.p>
 
         {/* ── Mode hint (fast switch) ─────────────────────────────── */}
