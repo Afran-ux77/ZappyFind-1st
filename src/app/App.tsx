@@ -446,7 +446,7 @@ const FLOATING_PARTICLES = Array.from({ length: 14 }, (_, i) => ({
   initialX: 8 + ((i * 7 + 13) % 84),
   initialY: 55 + ((i * 11 + 5) % 40),
   size: 3 + ((i * 3) % 5),
-  duration: 4 + ((i * 7) % 5),
+  duration: 7 + ((i * 7) % 6),
   delay: (i * 0.4) % 3,
   opacity: 0.15 + ((i * 5) % 25) / 100,
 }));
@@ -552,15 +552,15 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
         <motion.div
           key={p.id}
           animate={{
-            y: [0, -(120 + (p.id % 4) * 20)],
-            x: [0, ((p.id % 2 === 0 ? 1 : -1) * ((p.id * 7) % 30))],
+            y: [0, -(140 + (p.id % 4) * 24)],
+            x: [0, ((p.id % 2 === 0 ? 1 : -1) * ((p.id * 7) % 22))],
             opacity: [0, p.opacity, p.opacity, 0],
           }}
           transition={{
             duration: p.duration,
             repeat: Infinity,
             delay: p.delay,
-            ease: "easeOut",
+            ease: "linear",
           }}
           style={{
             position: "absolute",
@@ -571,6 +571,9 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
             borderRadius: "50%",
             background: "linear-gradient(135deg, #FF8F56, #EA580C)",
             pointerEvents: "none",
+            willChange: "transform, opacity",
+            transform: "translate3d(0, 0, 0)",
+            backfaceVisibility: "hidden",
           }}
         />
       ))}

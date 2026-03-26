@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, Lock } from "lucide-react";
 
@@ -191,6 +191,9 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
             borderRadius: "50%",
             background: `hsla(${p.hue}, 70%, 58%, ${p.opacity})`,
             pointerEvents: "none",
+            willChange: "transform, opacity",
+            transform: "translate3d(0, 0, 0)",
+            backfaceVisibility: "hidden",
           }}
         />
       ))}
@@ -494,27 +497,11 @@ function ScrollRow({
   jobs: typeof MOCK_JOBS;
   rowIndex: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const el = ref.current;
-    let pos = direction === "right" ? 0 : el.scrollWidth / 2;
-    let raf: number;
-    const tick = () => {
-      if (direction === "right") {
-        pos += speed;
-        if (pos >= el.scrollWidth / 2) pos = 0;
-      } else {
-        pos -= speed;
-        if (pos <= 0) pos = el.scrollWidth / 2;
-      }
-      el.scrollLeft = pos;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [direction, speed]);
+  const rowWidth = jobs.length * 210 + (jobs.length - 1) * 10;
+  const pixelsPerSecond = Math.max(12, speed * 60);
+  const durationSeconds = rowWidth / pixelsPerSecond;
+  const fromX = direction === "right" ? 0 : -rowWidth;
+  const toX = direction === "right" ? -rowWidth : 0;
 
   return (
     <motion.div
@@ -524,7 +511,6 @@ function ScrollRow({
       style={{ padding: "6px 0" }}
     >
       <div
-        ref={ref}
         style={{
           overflowX: "hidden",
           overflowY: "visible",
@@ -538,11 +524,26 @@ function ScrollRow({
             "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
         }}
       >
-        <div style={{ display: "inline-flex", gap: 10 }}>
+        <motion.div
+          animate={{ x: [fromX, toX] }}
+          transition={{
+            duration: durationSeconds,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          style={{
+            display: "inline-flex",
+            gap: 10,
+            width: "max-content",
+            willChange: "transform",
+            transform: "translate3d(0, 0, 0)",
+            backfaceVisibility: "hidden",
+          }}
+        >
           {[...jobs, ...jobs].map((job, i) => (
             <JobCard key={`r${rowIndex}-${i}`} job={job} index={(rowIndex * 6 + i) % COMPANY_PALETTES.length} />
           ))}
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
