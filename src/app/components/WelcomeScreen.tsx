@@ -473,7 +473,13 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
 
   return (
     <div className="relative flex flex-col min-h-screen overflow-hidden"
-      style={{ background: C.bg, fontFamily: "Inter, sans-serif" }}>
+      style={{
+        background: C.bg,
+        fontFamily: "Inter, sans-serif",
+        minHeight: "100svh",
+        height: "100svh",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}>
 
       {/* Ambient orbs */}
       <div className="absolute top-0 right-0 pointer-events-none" style={{
@@ -490,7 +496,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
       <input ref={fileRef} type="file" accept=".pdf,.doc,.docx"
         style={{ display: "none" }} onChange={handleFileChange} />
 
-      <div className="flex flex-col flex-1 px-5 pt-10 pb-24">
+      <div className="flex flex-col flex-1 px-5 pt-10" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
         <AnimatePresence mode="wait">
 
           {/* ── CHOICE ─────────────────────────────────────────────────────── */}
@@ -1024,7 +1030,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
         position: "sticky",
         bottom: 0,
         zIndex: 20,
-        padding: "12px 20px 20px",
+        padding: "12px 20px calc(20px + env(safe-area-inset-bottom))",
         background: "rgba(253,251,248,0.96)",
         backdropFilter: "blur(12px)",
         borderTop: `1px solid ${C.border}`,

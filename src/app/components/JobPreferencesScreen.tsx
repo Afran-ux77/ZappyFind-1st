@@ -714,10 +714,11 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
   ════════════════════════════════════════════════════════════════════════ */
   return (
     <div style={{
-      height: "100dvh" as CSSProperties["height"],
-      minHeight: "100vh" as CSSProperties["minHeight"],
+      height: "100svh" as CSSProperties["height"],
+      minHeight: "100dvh" as CSSProperties["minHeight"],
       background: C.bg, fontFamily: "Inter, sans-serif",
       display: "flex", flexDirection: "column",
+      paddingBottom: "env(safe-area-inset-bottom)",
     }}>
 
       {/* ── Progress bar ──────────────────────────────────────────────────── */}
@@ -1827,7 +1828,7 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
           <div style={{
             marginTop: "auto",
             paddingTop: 12,
-            paddingBottom: 20,
+            paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
             borderTop: `1px solid ${C.border}`,
             display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
           }}>
