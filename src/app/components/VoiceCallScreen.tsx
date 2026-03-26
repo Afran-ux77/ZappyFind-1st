@@ -41,11 +41,11 @@ const STATE_CONFIG: Record<ZappyCallState, {
   },
   thinking: {
     label: "Thinking…",
-    color: "#92400E",
+    color: "#EA580C",
     bg: "rgba(146,64,14,0.09)",
     border: "rgba(146,64,14,0.25)",
-    orb: "#C2410C",
-    orbOuter: "rgba(194,65,12,0.14)",
+    orb: "#EA580C",
+    orbOuter: "rgba(234,88,12,0.14)",
   },
   speaking: {
     label: "Speaking",
@@ -233,7 +233,7 @@ function VoiceWaveform({ isActive }: { isActive: boolean }) {
           style={{
             width: 3.5, borderRadius: 10,
             background: isActive
-              ? `rgba(194,65,12,${0.55 + (h / 24) * 0.45})`
+              ? `rgba(234,88,12,${0.55 + (h / 24) * 0.45})`
               : "rgba(28,25,23,0.2)",
           }}
         />

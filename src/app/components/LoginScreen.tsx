@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { Ticker } from "./Ticker";
+import { FloatingLabelInput } from "./ui/FloatingLabelInput";
 
 const C = {
   bg: "#FDFBF8",
@@ -36,8 +37,6 @@ export function LoginScreen({
   setFullName,
   onContinue,
 }: LoginScreenProps) {
-  const [isFocused, setIsFocused] = useState(false);
-  const [isFullNameFocused, setIsFullNameFocused] = useState(false);
   const [contact, setContact] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -166,33 +165,45 @@ export function LoginScreen({
           <h1
             style={{
               fontFamily: "'DM Serif Display', 'Times New Roman', serif",
-              fontSize: "clamp(28px, 8.5vw, 40px)",
+              fontSize: "clamp(29px, 8.3vw, 40px)",
               fontWeight: 400,
               color: "#111827",
-              lineHeight: 1.1,
-              letterSpacing: "-0.04em",
+              lineHeight: 1.06,
+              letterSpacing: "-0.035em",
               marginBottom: "16px",
               textAlign: "center",
+              maxWidth: "340px",
+              marginInline: "auto",
             }}
           >
             {mode === "signup" ? (
               <>
                 <span style={{ display: "block" }}>Stop applying.</span>
-                <span style={{ display: "block", color: "#EA580C" }}>
-                  Start getting
-                </span>
-                <span style={{ display: "block", color: "#EA580C" }}>
-                  discovered.
+                <span
+                  style={{
+                    display: "block",
+                    backgroundImage: "linear-gradient(90deg, #F97316 0%, #EA580C 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Start getting discovered.
                 </span>
               </>
             ) : (
               <>
                 <span style={{ display: "block" }}>Welcome back.</span>
-                <span style={{ display: "block", color: "#EA580C" }}>
-                  Sign in to
-                </span>
-                <span style={{ display: "block", color: "#EA580C" }}>
-                  continue.
+                <span
+                  style={{
+                    display: "block",
+                    backgroundImage: "linear-gradient(90deg, #F97316 0%, #EA580C 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Sign in to continue.
                 </span>
               </>
             )}
@@ -220,213 +231,130 @@ export function LoginScreen({
           {/* Full name — sign up only */}
           {showFullName && (
             <>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: C.textSecondary,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  textAlign: "left",
-                  marginBottom: "10px",
+              <FloatingLabelInput
+                label="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && canContinue && handleContinue()}
+                autoComplete="name"
+                fieldStyle={{
+                  ["--zf-bg" as any]: C.inputBg,
+                  ["--zf-fg" as any]: C.textPrimary,
+                  ["--zf-muted" as any]: C.textMuted,
+                  ["--zf-border" as any]: C.border,
+                  ["--zf-border-focus" as any]: "rgba(194,65,12,0.35)",
+                  ["--zf-ring-focus" as any]: "rgba(194,65,12,0.14)",
                 }}
-              >
-                Full name
-              </label>
-
-              <div
-                className="relative"
-                style={{
-                  borderRadius: "16px",
-                  background: C.inputBg,
-                  minHeight: "56px",
-                  boxShadow: isFullNameFocused
-                    ? `0 0 0 2px rgba(194,65,12,0.14), 0 2px 8px rgba(0,0,0,0.04)`
-                    : "0 1px 2px rgba(0,0,0,0.04)",
-                  border: isFullNameFocused
-                    ? "1.5px solid rgba(194,65,12,0.35)"
-                    : `1.5px solid ${C.border}`,
-                  transition:
-                    "box-shadow 0.22s ease, border-color 0.22s ease",
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  onFocus={() => setIsFullNameFocused(true)}
-                  onBlur={() => setIsFullNameFocused(false)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && canContinue && handleContinue()
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "17px 16px",
-                    fontSize: "15px",
-                    fontWeight: 400,
-                    color: C.textPrimary,
-                    background: "transparent",
-                    border: "none",
-                    outline: "none",
-                    borderRadius: "16px",
-                    fontFamily: "Inter, sans-serif",
-                    textAlign: "left",
-                  }}
-                />
-              </div>
+              />
 
               <div style={{ height: 12 }} />
             </>
           )}
 
-          {/* Email or Phone — single smart input */}
-          <label
-            style={{
-              display: "block",
-              fontSize: "12px",
-              fontWeight: 600,
-              color: C.textSecondary,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              textAlign: "left",
-              marginBottom: "10px",
-            }}
-          >
-            Email or Phone
-          </label>
-
-          <div
-            className="relative flex items-stretch"
-            style={{
-              borderRadius: "16px",
-              background: C.inputBg,
-              minHeight: "56px",
-              boxShadow: isFocused
-                ? `0 0 0 2px rgba(194,65,12,0.14), 0 2px 8px rgba(0,0,0,0.04)`
-                : "0 1px 2px rgba(0,0,0,0.04)",
-              border: isFocused
-                ? "1.5px solid rgba(194,65,12,0.35)"
-                : `1.5px solid ${C.border}`,
-              transition:
-                "box-shadow 0.22s ease, border-color 0.22s ease",
-              overflow: "hidden",
-            }}
-          >
-            {/* Country code picker — only when phone detected */}
-            {isPhone && (
-              <div ref={pickerRef} style={{ position: "relative", flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => setShowCountryPicker((v) => !v)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "0 10px 0 14px",
-                    height: "100%",
-                    border: "none",
-                    borderRight: `1px solid ${C.border}`,
-                    background: "transparent",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: C.textPrimary,
-                    fontFamily: "Inter, sans-serif",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <span style={{ fontSize: "16px" }}>
-                    {COUNTRY_CODES.find((c) => c.code === countryCode)?.flag ?? "🌐"}
-                  </span>
-                  <span>{countryCode}</span>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.45 }}>
-                    <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-
-                {showCountryPicker && (
-                  <div
+          {/* Email or phone — single smart input */}
+          <FloatingLabelInput
+            ref={inputRef}
+            label="Email or phone"
+            type={isPhone ? "tel" : "text"}
+            inputMode={isPhone ? "numeric" : "email"}
+            autoComplete={isPhone ? "tel" : "email"}
+            value={contact}
+            onChange={(e) => handleContactChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && canContinue && handleContinue()}
+            leftAdornment={
+              isPhone ? (
+                <div ref={pickerRef} style={{ position: "relative", flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCountryPicker((v) => !v)}
                     style={{
-                      position: "absolute",
-                      top: "calc(100% + 6px)",
-                      left: 0,
-                      zIndex: 50,
-                      background: "white",
-                      borderRadius: 12,
-                      border: `1px solid ${C.border}`,
-                      boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)",
-                      padding: "4px 0",
-                      minWidth: 180,
-                      maxHeight: 220,
-                      overflowY: "auto",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "0 10px 0 14px",
+                      height: "100%",
+                      border: "none",
+                      borderRight: `1px solid ${C.border}`,
+                      background: "transparent",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: C.textPrimary,
+                      fontFamily: "Inter, sans-serif",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {COUNTRY_CODES.map((c) => (
-                      <button
-                        key={c.code}
-                        type="button"
-                        onClick={() => {
-                          setCountryCode(c.code);
-                          setShowCountryPicker(false);
-                          inputRef.current?.focus();
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          width: "100%",
-                          padding: "10px 14px",
-                          border: "none",
-                          background: c.code === countryCode ? "rgba(194,65,12,0.06)" : "transparent",
-                          cursor: "pointer",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "13px",
-                          fontWeight: c.code === countryCode ? 600 : 400,
-                          color: C.textPrimary,
-                          textAlign: "left",
-                        }}
-                      >
-                        <span style={{ fontSize: "16px" }}>{c.flag}</span>
-                        <span style={{ flex: 1 }}>{c.label}</span>
-                        <span style={{ color: C.textSecondary, fontSize: "12px" }}>{c.code}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                    <span style={{ fontSize: "16px" }}>
+                      {COUNTRY_CODES.find((c) => c.code === countryCode)?.flag ?? "🌐"}
+                    </span>
+                    <span>{countryCode}</span>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.45 }}>
+                      <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
 
-            <input
-              ref={inputRef}
-              type={isPhone ? "tel" : "text"}
-              inputMode={isPhone ? "numeric" : "email"}
-              placeholder="Enter email or phone number"
-              value={contact}
-              onChange={(e) => handleContactChange(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && canContinue && handleContinue()
-              }
-              style={{
-                flex: 1,
-                width: "100%",
-                padding: "17px 16px",
-                fontSize: "15px",
-                fontWeight: 400,
-                color: C.textPrimary,
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                borderRadius: "16px",
-                fontFamily: "Inter, sans-serif",
-                textAlign: "left",
-              }}
-            />
-
-          </div>
+                  {showCountryPicker && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        zIndex: 50,
+                        background: "white",
+                        borderRadius: 12,
+                        border: `1px solid ${C.border}`,
+                        boxShadow: "0 8px 30px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)",
+                        padding: "4px 0",
+                        minWidth: 180,
+                        maxHeight: 220,
+                        overflowY: "auto",
+                      }}
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => {
+                            setCountryCode(c.code);
+                            setShowCountryPicker(false);
+                            inputRef.current?.focus();
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            width: "100%",
+                            padding: "10px 14px",
+                            border: "none",
+                            background: c.code === countryCode ? "rgba(194,65,12,0.06)" : "transparent",
+                            cursor: "pointer",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: "13px",
+                            fontWeight: c.code === countryCode ? 600 : 400,
+                            color: C.textPrimary,
+                            textAlign: "left",
+                          }}
+                        >
+                          <span style={{ fontSize: "16px" }}>{c.flag}</span>
+                          <span style={{ flex: 1 }}>{c.label}</span>
+                          <span style={{ color: C.textSecondary, fontSize: "12px" }}>{c.code}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : undefined
+            }
+            leftAdornmentWidth={92}
+            fieldStyle={{
+              ["--zf-bg" as any]: C.inputBg,
+              ["--zf-fg" as any]: C.textPrimary,
+              ["--zf-muted" as any]: C.textMuted,
+              ["--zf-border" as any]: C.border,
+              ["--zf-border-focus" as any]: "rgba(194,65,12,0.35)",
+              ["--zf-ring-focus" as any]: "rgba(194,65,12,0.14)",
+            }}
+          />
 
         </motion.div>
 
@@ -443,6 +371,7 @@ export function LoginScreen({
             whileTap={canContinue ? { scale: 0.975 } : {}}
             style={{
               width: "100%",
+              height: "52px",
               padding: "18px",
               borderRadius: "16px",
               border: "none",
@@ -519,7 +448,7 @@ export function LoginScreen({
               }}
             >
               Already have an account?{" "}
-              <span style={{ color: "rgba(234, 88, 12, 1)", fontWeight: 700 }}>
+              <span style={{ color: "rgba(234, 88, 12, 1)", fontWeight: 600 }}>
                 Sign in
               </span>
             </button>
@@ -568,8 +497,8 @@ export function LoginScreen({
             }}
           >
             Hiring?{" "}
-            <span style={{ color: C.brand, fontWeight: 600 }}>
-              Continue as Recruiter →
+            <span style={{ color: "#EA580C", fontWeight: 600 }}>
+              Continue as Employer →
             </span>
           </button>
         </motion.div>

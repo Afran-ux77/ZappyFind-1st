@@ -266,14 +266,14 @@ export function JobSeekerProfileScreen({
                   height: 52,
                   borderRadius: 14,
                   border: "none",
-                  background: "linear-gradient(135deg, #FF8F56 0%, #FF6B35 100%)",
+                  background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
                   color: "#FFFFFF",
                   fontSize: 15,
                   fontWeight: 600,
                   letterSpacing: "-0.02em",
                   cursor: "pointer",
                   fontFamily: T_PAGE.sans,
-                  boxShadow: "0 10px 28px rgba(255,107,53,0.35)",
+                  boxShadow: "0 10px 28px rgba(234,88,12,0.35)",
                 }}
               >
                 Edit profile

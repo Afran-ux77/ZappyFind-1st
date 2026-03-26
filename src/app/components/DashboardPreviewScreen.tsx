@@ -43,10 +43,10 @@ const T = {
   textSec: "rgba(107, 101, 96, 1)",
   textTer: "#A39E99",
 
-  accent: "#FF6B35",
+  accent: "#EA580C",
   accentDark: "#E85A22",
-  accentSoft: "rgba(255,107,53,0.08)",
-  accentGradient: "linear-gradient(135deg, #FF8F56 0%, #FF6B35 100%)",
+  accentSoft: "rgba(234,88,12,0.08)",
+  accentGradient: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
 
   border: "rgba(28,25,23,0.06)",
   borderStrong: "rgba(28,25,23,0.1)",
@@ -149,7 +149,7 @@ const AI_INSIGHTS = [
     description: "Solid grasp of product design principles and tools",
     percentile: 78,
     peerGroup: "Product Designers",
-    color: "#FF6B35",
+    color: "#EA580C",
     evidence: "Deep Figma expertise and design systems thinking stood out",
   },
   {
@@ -273,7 +273,7 @@ const GROWTH_INSIGHTS = [
   {
     tag: "Stand out",
     text: "Only 8% of designers at your level have a video intro — 3× more recruiter attention",
-    color: "#FF6B35",
+    color: "#EA580C",
   },
 ];
 
@@ -341,7 +341,7 @@ const LOW_IMPROVEMENT_AREAS = [
     target: 65,
     advice:
       "Add 1–2 detailed case studies showing your end-to-end design process",
-    color: "#FF6B35",
+    color: "#EA580C",
   },
   {
     area: "Technical Breadth",
@@ -625,7 +625,7 @@ export function DashboardHeader({
             borderRadius: 999,
             background:
               "linear-gradient(135deg, rgba(255,140,90,0.15) 0%, rgba(255,106,43,0.28) 100%)",
-            border: "1.5px solid rgba(255,107,53,0.18)",
+            border: "1.5px solid rgba(234,88,12,0.18)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -635,7 +635,7 @@ export function DashboardHeader({
             letterSpacing: "-0.02em",
             cursor: onAvatarClick ? "pointer" : "default",
             outline: isLowPerformer
-              ? "2px solid rgba(255,107,53,0.5)"
+              ? "2px solid rgba(234,88,12,0.5)"
               : "none",
             outlineOffset: 2,
             transition: "outline 0.2s ease",
@@ -785,8 +785,8 @@ export function SettingsBottomSheet({
                     type="button"
                     onClick={() => setActiveTab(tab.key)}
                     style={{
-                      border: active ? "1px solid rgba(255,107,53,0.36)" : "1px solid rgba(28,25,23,0.08)",
-                      background: active ? "linear-gradient(135deg, rgba(255,140,90,0.15) 0%, rgba(255,107,53,0.12) 100%)" : "#FFFFFF",
+                      border: active ? "1px solid rgba(234,88,12,0.36)" : "1px solid rgba(28,25,23,0.08)",
+                      background: active ? "linear-gradient(135deg, rgba(255,140,90,0.15) 0%, rgba(234,88,12,0.12) 100%)" : "#FFFFFF",
                       color: active ? T.accent : T.textTer,
                       borderRadius: 999,
                       width: active ? "auto" : 38,
@@ -801,7 +801,7 @@ export function SettingsBottomSheet({
                       fontWeight: 600,
                       cursor: "pointer",
                       whiteSpace: "nowrap",
-                      boxShadow: active ? "0 4px 12px rgba(255,107,53,0.18)" : "none",
+                      boxShadow: active ? "0 4px 12px rgba(234,88,12,0.18)" : "none",
                       justifyContent: "center",
                     }}
                     aria-label={tab.label}
@@ -830,7 +830,7 @@ export function SettingsBottomSheet({
                           height: 86,
                           borderRadius: "50%",
                           background: "linear-gradient(135deg, #FFE1CF 0%, #FFD2B5 100%)",
-                          border: "1px solid rgba(255,107,53,0.22)",
+                          border: "1px solid rgba(234,88,12,0.22)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -1079,7 +1079,7 @@ function MatchHeroCard({
         background: T.heroGradient,
         border: "1px solid rgba(255,200,160,0.3)",
         boxShadow:
-          "0 4px 12px rgba(255,107,53,0.06), 0 12px 32px rgba(255,107,53,0.08)",
+          "0 4px 12px rgba(234,88,12,0.06), 0 12px 32px rgba(234,88,12,0.08)",
         position: "relative",
         overflow: "hidden",
         marginBottom: 6,
@@ -1095,7 +1095,7 @@ function MatchHeroCard({
           height: 120,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(255,107,53,0.12) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(234,88,12,0.12) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -1178,8 +1178,8 @@ function MatchHeroCard({
                 width: 30,
                 height: 30,
                 borderRadius: 12,
-                background: "rgba(255,107,53,0.12)",
-                border: "1px solid rgba(255,107,53,0.16)",
+                background: "rgba(234,88,12,0.12)",
+                border: "1px solid rgba(234,88,12,0.16)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1224,7 +1224,7 @@ function MatchHeroCard({
                 fontSize: 13,
                 fontWeight: 650,
                 letterSpacing: "-0.01em",
-                boxShadow: "0 6px 18px rgba(255,107,53,0.25)",
+                boxShadow: "0 6px 18px rgba(234,88,12,0.25)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1648,9 +1648,9 @@ function JobMatchCard({
           padding: "12px 14px",
           borderRadius: 14,
           background:
-            "linear-gradient(160deg, rgba(255,107,53,0.09) 0%, rgba(255,255,255,0.92) 42%, rgba(255,248,242,0.85) 100%)",
-          border: `1px solid rgba(255,107,53,0.14)`,
-          boxShadow: "0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 8px rgba(255,107,53,0.06)",
+            "linear-gradient(160deg, rgba(234,88,12,0.09) 0%, rgba(255,255,255,0.92) 42%, rgba(255,248,242,0.85) 100%)",
+          border: `1px solid rgba(234,88,12,0.14)`,
+          boxShadow: "0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 8px rgba(234,88,12,0.06)",
         }}
       >
         <div
@@ -1663,7 +1663,7 @@ function JobMatchCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(255,107,53,0.28)",
+            boxShadow: "0 2px 10px rgba(234,88,12,0.28)",
           }}
           aria-hidden
         >
@@ -1784,7 +1784,7 @@ function ReviewAllButton({
         cursor: "pointer",
         fontFamily: T.sans,
         boxShadow:
-          "0 4px 20px rgba(255,107,53,0.3), 0 1px 4px rgba(255,107,53,0.15)",
+          "0 4px 20px rgba(234,88,12,0.3), 0 1px 4px rgba(234,88,12,0.15)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -1974,7 +1974,7 @@ function AssessmentCard() {
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            boxShadow: "0 2px 10px rgba(255,107,53,0.2)",
+            boxShadow: "0 2px 10px rgba(234,88,12,0.2)",
           }}
         >
           <Sparkles size={16} color="white" strokeWidth={2} />
@@ -2137,7 +2137,7 @@ function VideoIntroCard({ onStart }: { onStart: () => void }) {
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              boxShadow: "0 4px 16px rgba(255,107,53,0.3)",
+              boxShadow: "0 4px 16px rgba(234,88,12,0.3)",
             }}
           >
             <Play size={17} color="white" fill="white" strokeWidth={0} />
@@ -2227,7 +2227,7 @@ function VideoIntroCard({ onStart }: { onStart: () => void }) {
             cursor: "pointer",
             fontFamily: T.sans,
             boxShadow:
-              "0 4px 20px rgba(255,107,53,0.3), 0 1px 4px rgba(255,107,53,0.15)",
+              "0 4px 20px rgba(234,88,12,0.3), 0 1px 4px rgba(234,88,12,0.15)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2287,7 +2287,7 @@ function ZappyUnderstandingCard({
         style={{
           padding: "16px 20px 14px",
           background:
-            "linear-gradient(135deg, rgba(255,107,53,0.06) 0%, rgba(99,102,241,0.04) 100%)",
+            "linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(99,102,241,0.04) 100%)",
           borderBottom: `1px solid ${T.border}`,
           display: "flex",
           alignItems: "center",
@@ -2305,7 +2305,7 @@ function ZappyUnderstandingCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(255,107,53,0.25)",
+            boxShadow: "0 2px 10px rgba(234,88,12,0.25)",
             flexShrink: 0,
           }}
         >
@@ -2510,7 +2510,7 @@ function CompetitiveEdgeCard({
             width: 120,
             height: 120,
             borderRadius: "50%",
-            background: "rgba(255,107,53,0.08)",
+            background: "rgba(234,88,12,0.08)",
           }}
         />
         <div
@@ -2521,7 +2521,7 @@ function CompetitiveEdgeCard({
             width: 100,
             height: 100,
             borderRadius: "50%",
-            background: "rgba(255,107,53,0.05)",
+            background: "rgba(234,88,12,0.05)",
           }}
         />
 
@@ -2542,14 +2542,14 @@ function CompetitiveEdgeCard({
                 width: 32,
                 height: 32,
                 borderRadius: 10,
-                background: "rgba(255,107,53,0.15)",
+                background: "rgba(234,88,12,0.15)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <Trophy size={17} color="#FF6B35" strokeWidth={2} />
+              <Trophy size={17} color="#EA580C" strokeWidth={2} />
             </motion.div>
             <div>
               <div
@@ -2582,7 +2582,7 @@ function CompetitiveEdgeCard({
                 fontFamily: T.serif,
                 fontSize: 52,
                 fontWeight: 400,
-                color: "#FF6B35",
+                color: "#EA580C",
                 lineHeight: 1,
                 letterSpacing: "-0.03em",
               }}
@@ -2622,11 +2622,11 @@ function CompetitiveEdgeCard({
               gap: 6,
               padding: "8px 12px",
               borderRadius: 10,
-              background: "rgba(255,107,53,0.1)",
+              background: "rgba(234,88,12,0.1)",
               width: "fit-content",
             }}
           >
-            <Flame size={13} color="#FF6B35" strokeWidth={2} />
+            <Flame size={13} color="#EA580C" strokeWidth={2} />
             <span
               style={{
                 fontSize: 12,
@@ -2992,8 +2992,8 @@ function CompetitiveEdgeCard({
               marginTop: 18,
               padding: 18,
               borderRadius: 16,
-              background: "linear-gradient(135deg, rgba(255,107,53,0.06) 0%, rgba(255,143,86,0.04) 100%)",
-              border: "1px solid rgba(255,107,53,0.12)",
+              background: "linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(255,143,86,0.04) 100%)",
+              border: "1px solid rgba(234,88,12,0.12)",
             }}
           >
             <div
@@ -3060,7 +3060,7 @@ function CompetitiveEdgeCard({
                 fontSize: 14,
                 fontWeight: 700,
                 letterSpacing: "-0.01em",
-                boxShadow: "0 8px 24px rgba(255,107,53,0.3)",
+                boxShadow: "0 8px 24px rgba(234,88,12,0.3)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -3163,10 +3163,10 @@ function BelowAverageDashboard({
   const profileStrength = 35;
 
   const PLAN_ICONS: Record<string, React.ReactNode> = {
-    video: <Video size={16} color="#FF6B35" strokeWidth={2} />,
-    layers: <Layers size={16} color="#FF6B35" strokeWidth={2} />,
-    file: <FileText size={16} color="#FF6B35" strokeWidth={2} />,
-    mic: <Mic size={16} color="#FF6B35" strokeWidth={2} />,
+    video: <Video size={16} color="#EA580C" strokeWidth={2} />,
+    layers: <Layers size={16} color="#EA580C" strokeWidth={2} />,
+    file: <FileText size={16} color="#EA580C" strokeWidth={2} />,
+    mic: <Mic size={16} color="#EA580C" strokeWidth={2} />,
   };
 
   const STRENGTH_ICONS: React.ReactNode[] = [
@@ -3191,7 +3191,7 @@ function BelowAverageDashboard({
             "radial-gradient(ellipse at 15% 5%, #FEFAF6 0%, #FFF5ED 50%, #FFEDD5 100%)",
           border: "1px solid rgba(255,200,160,0.25)",
           boxShadow:
-            "0 4px 12px rgba(255,107,53,0.04), 0 12px 32px rgba(255,107,53,0.06)",
+            "0 4px 12px rgba(234,88,12,0.04), 0 12px 32px rgba(234,88,12,0.06)",
           position: "relative",
           overflow: "hidden",
           marginBottom: 6,
@@ -3206,7 +3206,7 @@ function BelowAverageDashboard({
             height: 120,
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(255,107,53,0.08) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(234,88,12,0.08) 0%, transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -3795,7 +3795,7 @@ function BelowAverageDashboard({
           style={{
             padding: "14px 20px 16px",
             borderTop: `1px solid ${T.border}`,
-            background: "rgba(255,107,53,0.02)",
+            background: "rgba(234,88,12,0.02)",
           }}
         >
           <div
@@ -4111,7 +4111,7 @@ export function DashboardPreviewScreen({
             height: 260,
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(255,107,53,0.05) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(234,88,12,0.05) 0%, transparent 70%)",
           }}
         />
         <div

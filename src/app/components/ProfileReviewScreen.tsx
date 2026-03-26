@@ -6,7 +6,7 @@ import type { FullProfile, WorkExp, Edu, JobPreferences } from "./WelcomeScreen"
 const C = {
   bg: "#FDFBF8",
   primary: "#1C1917",
-  brand: "#C2410C",
+  brand: "#EA580C",
   textPrimary: "#1C1917",
   textMuted: "#78716C",
   textSecondary: "#A8A29E",
@@ -14,7 +14,7 @@ const C = {
   sectionBorder: "rgba(28,25,23,0.07)",   // very light outer stroke
   inputBg: "#FFFFFF",
   cardBg: "#FFFFFF",
-  orbA: "rgba(194,65,12,0.06)",
+  orbA: "rgba(234,88,12,0.06)",
 };
 
 // ── Scrollbar reset ───────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ function Section({
         <div className="flex items-center justify-center rounded-lg"
           style={{
             width: "26px", height: "26px",
-            background: "rgba(194,65,12,0.09)",
+            background: "rgba(234,88,12,0.09)",
             flexShrink: 0,
           }}>
           {icon}
@@ -105,10 +105,10 @@ function EditField({
         borderRadius: "11px",
         background: focused ? "white" : "rgba(28,25,23,0.02)",
         border: focused
-          ? "1px solid rgba(194,65,12,0.32)"
+          ? "1px solid rgba(234,88,12,0.32)"
           : `1px solid ${C.border}`,
         boxShadow: focused
-          ? "0 0 0 3px rgba(194,65,12,0.07)"
+          ? "0 0 0 3px rgba(234,88,12,0.07)"
           : "none",
         transition: "all 0.2s",
         overflow: "hidden",
@@ -296,8 +296,8 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
         transition: "border-color 0.2s, background 0.2s",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(194,65,12,0.3)";
-        (e.currentTarget as HTMLElement).style.background = "rgba(194,65,12,0.03)";
+        (e.currentTarget as HTMLElement).style.borderColor = "rgba(234,88,12,0.3)";
+        (e.currentTarget as HTMLElement).style.background = "rgba(234,88,12,0.03)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = "rgba(28,25,23,0.15)";
@@ -556,19 +556,19 @@ export function ProfileReviewScreen({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="flex items-center justify-between mb-4">
-          <button onClick={onBack} style={{
-            display: "flex", alignItems: "center", gap: "6px",
-            background: "white", border: `1px solid rgba(28,25,23,0.08)`,
-            borderRadius: "12px", padding: "7px 13px 7px 9px",
-            cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+          <button onClick={onBack} aria-label="Go back" style={{
+            width: "44px", height: "44px",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            background: "transparent", border: "none",
+            borderRadius: "10px",
+            cursor: "pointer", color: C.textMuted,
             fontFamily: "Inter, sans-serif",
           }}>
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
               <path d="M9 11.5L5 7.5l4-4"
-                stroke={C.textPrimary} strokeWidth="1.6"
+                stroke="currentColor" strokeWidth="1.6"
                 strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.01em" }}>Back</span>
           </button>
 
           {/* Parsed badge */}
@@ -691,7 +691,7 @@ export function ProfileReviewScreen({
                         border: "none",
                         backgroundColor: "transparent",
                         backgroundImage: otpStage === "idle"
-                          ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)"
+                          ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)"
                           : "none",
                         color: otpStage === "idle" ? "white" : C.brand,
                         fontSize: "13px",
@@ -701,7 +701,7 @@ export function ProfileReviewScreen({
                         flexShrink: 0,
                         letterSpacing: "-0.01em",
                         whiteSpace: "nowrap",
-                        boxShadow: otpStage === "idle" ? "0 6px 16px rgba(255,107,53,0.28)" : "none",
+                        boxShadow: otpStage === "idle" ? "0 6px 16px rgba(234,88,12,0.28)" : "none",
                       }}
                     >
                       {otpStage === "sending" ? "Sending…" : otpStage === "idle" ? "Send code" : "Resend code"}
@@ -745,7 +745,7 @@ export function ProfileReviewScreen({
                               padding: "12px 12px",
                               borderRadius: "10px",
                               border: "none",
-                              background: otp.trim().length >= 4 ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "rgba(28,25,23,0.12)",
+                              background: otp.trim().length >= 4 ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.12)",
                               color: otp.trim().length >= 4 ? "white" : "rgba(28,25,23,0.45)",
                               fontSize: "13px",
                               fontWeight: 800,
@@ -856,8 +856,8 @@ export function ProfileReviewScreen({
                     display: "inline-flex", alignItems: "center", gap: "6px",
                     padding: "6px 12px",
                     borderRadius: "100px",
-                    background: "rgba(194,65,12,0.09)",
-                    border: "1px solid rgba(194,65,12,0.2)",
+                    background: "rgba(234,88,12,0.09)",
+                    border: "1px solid rgba(234,88,12,0.2)",
                     color: C.brand,
                     fontSize: "13px", fontWeight: 500,
                     letterSpacing: "-0.01em",
@@ -865,7 +865,7 @@ export function ProfileReviewScreen({
                   {skill}
                   <button onClick={() => removeSkill(skill)}
                     style={{
-                      background: "rgba(194,65,12,0.12)",
+                      background: "rgba(234,88,12,0.12)",
                       border: "none", borderRadius: "50%",
                       width: "16px", height: "16px",
                       display: "flex", alignItems: "center", justifyContent: "center",
@@ -902,8 +902,8 @@ export function ProfileReviewScreen({
                   removeSkill(skills[skills.length - 1]);
               }}
               onFocus={(e) => {
-                e.target.parentElement!.style.border = "1px solid rgba(194,65,12,0.32)";
-                e.target.parentElement!.style.boxShadow = "0 0 0 3px rgba(194,65,12,0.08)";
+                e.target.parentElement!.style.border = "1px solid rgba(234,88,12,0.32)";
+                e.target.parentElement!.style.boxShadow = "0 0 0 3px rgba(234,88,12,0.08)";
               }}
               onBlur={(e) => {
                 if (skillInput) addSkill(skillInput);
@@ -926,7 +926,7 @@ export function ProfileReviewScreen({
                   onClick={() => addSkill(skillInput)}
                   style={{
                     width: "30px", height: "30px", borderRadius: "9px",
-                    background: "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)", border: "none", cursor: "pointer",
+                    background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)", border: "none", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
                   }}>
@@ -1015,8 +1015,8 @@ export function ProfileReviewScreen({
                               display: "inline-flex", alignItems: "center", gap: 6,
                               padding: "7px 12px",
                               borderRadius: 100,
-                              background: "rgba(194,65,12,0.07)",
-                              border: "1.5px solid rgba(194,65,12,0.35)",
+                              background: "rgba(234,88,12,0.07)",
+                              border: "1.5px solid rgba(234,88,12,0.35)",
                               color: C.brand,
                               fontSize: 13, fontWeight: 600,
                               letterSpacing: "-0.01em",
@@ -1027,7 +1027,7 @@ export function ProfileReviewScreen({
                               type="button"
                               onClick={() => setPrefRoles((prev) => prev.filter((r) => r !== role))}
                               style={{
-                                background: "rgba(194,65,12,0.12)",
+                                background: "rgba(234,88,12,0.12)",
                                 border: "none", borderRadius: "50%",
                                 width: 16, height: 16,
                                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -1092,8 +1092,8 @@ export function ProfileReviewScreen({
                             style={{
                               padding: "7px 13px",
                               borderRadius: 100,
-                              border: `1.5px solid ${sel ? "rgba(194,65,12,0.35)" : C.border}`,
-                              background: sel ? "rgba(194,65,12,0.07)" : "white",
+                              border: `1.5px solid ${sel ? "rgba(234,88,12,0.35)" : C.border}`,
+                              background: sel ? "rgba(234,88,12,0.07)" : "white",
                               color: sel ? C.brand : C.textPrimary,
                               fontSize: 13,
                               fontWeight: sel ? 600 : 400,
@@ -1156,8 +1156,8 @@ export function ProfileReviewScreen({
                         flex: 1,
                         padding: "10px 0",
                         borderRadius: 12,
-                        border: `1.5px solid ${sel ? "rgba(194,65,12,0.35)" : C.border}`,
-                        background: sel ? "rgba(194,65,12,0.07)" : "white",
+                        border: `1.5px solid ${sel ? "rgba(234,88,12,0.35)" : C.border}`,
+                        background: sel ? "rgba(234,88,12,0.07)" : "white",
                         color: sel ? C.brand : C.textPrimary,
                         fontSize: 13,
                         fontWeight: sel ? 600 : 500,
@@ -1191,8 +1191,8 @@ export function ProfileReviewScreen({
                         display: "inline-flex", alignItems: "center", gap: 6,
                         padding: "6px 12px",
                         borderRadius: 100,
-                        background: "rgba(194,65,12,0.09)",
-                        border: "1px solid rgba(194,65,12,0.2)",
+                        background: "rgba(234,88,12,0.09)",
+                        border: "1px solid rgba(234,88,12,0.2)",
                         color: C.brand,
                         fontSize: 13, fontWeight: 500,
                         letterSpacing: "-0.01em",
@@ -1203,7 +1203,7 @@ export function ProfileReviewScreen({
                         type="button"
                         onClick={() => setPrefLocations((prev) => prev.filter((l) => l !== loc))}
                         style={{
-                          background: "rgba(194,65,12,0.12)",
+                          background: "rgba(234,88,12,0.12)",
                           border: "none", borderRadius: "50%",
                           width: 16, height: 16,
                           display: "flex", alignItems: "center", justifyContent: "center",
@@ -1332,8 +1332,8 @@ export function ProfileReviewScreen({
                             display: "inline-flex", alignItems: "center", gap: 6,
                             padding: "7px 12px",
                             borderRadius: 100,
-                            background: "rgba(194,65,12,0.07)",
-                            border: "1.5px solid rgba(194,65,12,0.35)",
+                            background: "rgba(234,88,12,0.07)",
+                            border: "1.5px solid rgba(234,88,12,0.35)",
                             color: C.brand,
                             fontSize: 13, fontWeight: 600,
                             letterSpacing: "-0.01em",
@@ -1344,7 +1344,7 @@ export function ProfileReviewScreen({
                             type="button"
                             onClick={() => setPrefPriorities((prev) => prev.filter((x) => x !== p))}
                             style={{
-                              background: "rgba(194,65,12,0.12)",
+                              background: "rgba(234,88,12,0.12)",
                               border: "none", borderRadius: "50%",
                               width: 16, height: 16,
                               display: "flex", alignItems: "center", justifyContent: "center",
@@ -1411,8 +1411,8 @@ export function ProfileReviewScreen({
                           style={{
                             padding: "7px 13px",
                             borderRadius: 100,
-                            border: `1.5px solid ${sel ? "rgba(194,65,12,0.35)" : C.border}`,
-                            background: sel ? "rgba(194,65,12,0.07)" : "white",
+                            border: `1.5px solid ${sel ? "rgba(234,88,12,0.35)" : C.border}`,
+                            background: sel ? "rgba(234,88,12,0.07)" : "white",
                             color: sel ? C.brand : atMax ? C.textSecondary : C.textPrimary,
                             fontSize: 13,
                             fontWeight: sel ? 600 : 400,
@@ -1477,13 +1477,13 @@ export function ProfileReviewScreen({
             style={{
               width: "100%", padding: "18px",
               borderRadius: "16px", border: "none",
-              background: canProceed ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "#EAE6E1",
+              background: canProceed ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "#EAE6E1",
               color: canProceed ? "white" : "#B8AFA6",
               fontSize: "15px", fontWeight: 600,
               letterSpacing: "-0.01em",
               cursor: canProceed && !submitting ? "pointer" : "not-allowed",
               boxShadow: canProceed
-                ? "0 4px 20px rgba(255,107,53,0.35), 0 1px 4px rgba(255,107,53,0.2)"
+                ? "0 4px 20px rgba(234,88,12,0.35), 0 1px 4px rgba(234,88,12,0.2)"
                 : "none",
               fontFamily: "Inter, sans-serif",
               transition: "background 0.25s, color 0.25s, box-shadow 0.25s",

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { FullProfile, WorkExp, Edu } from "./WelcomeScreen";
+import { FloatingLabelInput } from "./ui/FloatingLabelInput";
 
 const C = {
   bg: "#FDFBF8",
@@ -17,7 +18,8 @@ const C = {
 
 type ProfileType = "fresher" | "experienced";
 
-const EXP_CHIPS = ["< 1 year", "1–3 years", "3–5 years", "5–10 years", "10+ years"];
+const EXP_YEARS_OPTIONS = Array.from({ length: 31 }, (_, i) => i);
+const EXP_MONTHS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 const COURSE_OPTIONS = [
   "B.Tech",
   "B.E.",
@@ -76,103 +78,51 @@ function Input({
   error?: boolean;
   errorText?: string;
 }) {
-  const [focused, setFocused] = useState(false);
+  const computedLabel = `${label}${required ? " *" : ""}`;
+  const computedError = error ? (errorText ?? "This field is required.") : undefined;
+
+  const controlStyle: React.CSSProperties = multiline
+    ? {
+        lineHeight: 1.55,
+        resize: "vertical",
+        ...(multilineHeight !== undefined ? { minHeight: multilineHeight } : {}),
+      }
+    : {
+        lineHeight: 1.55,
+        ...(readOnly ? { cursor: "default" } : {}),
+      };
+
+  if (multiline) {
+    return (
+      <FloatingLabelInput
+        multiline
+        rows={multilineRows}
+        label={computedLabel}
+        value={value}
+        onChange={onChange ? (e) => onChange((e.target as HTMLTextAreaElement).value) : undefined}
+        readOnly={readOnly}
+        errorText={computedError}
+        rightAdornment={rightAdornment}
+        rightAdornmentWidth={rightAdornment ? 32 : undefined}
+        fieldStyle={{ minHeight: multilineHeight }}
+        style={controlStyle}
+      />
+    );
+  }
+
   return (
-    <div>
-      <label style={{
-        display: "block", fontSize: 10, fontWeight: 700,
-        color: error ? "#B91C1C" : focused ? C.brand : C.textSecondary,
-        letterSpacing: "0.07em", textTransform: "uppercase" as const,
-        marginBottom: 5, transition: "color 0.2s",
-        fontFamily: "Inter, sans-serif",
-      }}>
-        {label}{required && <span style={{ color: C.brand }}> *</span>}
-      </label>
-      <div style={{
-        borderRadius: 11,
-        background: readOnly ? "rgba(28,25,23,0.02)" : C.inputBg,
-        border: error
-          ? "1px solid rgba(185,28,28,0.45)"
-          : focused
-          ? "1px solid rgba(194,65,12,0.32)"
-          : `1px solid ${C.border}`,
-        boxShadow: error
-          ? "0 0 0 3px rgba(185,28,28,0.08)"
-          : focused ? "0 0 0 3px rgba(194,65,12,0.07)" : "none",
-        transition: "all 0.2s",
-        position: "relative" as const,
-        overflow: "hidden",
-        ...(multilineHeight !== undefined && multiline ? { height: multilineHeight } : {}),
-      }}>
-        {multiline ? (
-          <textarea
-            value={value}
-            placeholder={placeholder}
-            readOnly={readOnly}
-            onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-            onFocus={() => !readOnly && setFocused(true)}
-            onBlur={() => setFocused(false)}
-            rows={multilineRows}
-            style={{
-              width: "100%",
-              padding: "11px 13px",
-              fontSize: 14, fontWeight: readOnly ? 500 : 400,
-              color: readOnly ? C.textMuted : C.textPrimary,
-              background: "transparent",
-              border: "none", outline: "none",
-              borderRadius: 11,
-              fontFamily: "Inter, sans-serif",
-              resize: "vertical",
-              lineHeight: 1.55,
-            }}
-          />
-        ) : (
-        <input
-          type={type}
-          inputMode={inputMode}
-          value={value}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-          onFocus={() => !readOnly && setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={{
-            width: "100%",
-            padding: rightAdornment ? "11px 44px 11px 13px" : "11px 13px",
-            fontSize: 14, fontWeight: readOnly ? 500 : 400,
-            color: readOnly ? C.textMuted : C.textPrimary,
-            background: "transparent",
-            border: "none", outline: "none",
-            borderRadius: 11,
-            fontFamily: "Inter, sans-serif",
-            cursor: readOnly ? "default" : undefined,
-            lineHeight: 1.55,
-          }}
-        />
-        )}
-        {rightAdornment && (
-          <div style={{
-            position: "absolute", right: 10, top: "50%",
-            transform: "translateY(-50%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            pointerEvents: "none",
-          }}>
-            {rightAdornment}
-          </div>
-        )}
-      </div>
-      {error && (
-        <div style={{
-          marginTop: 6,
-          fontSize: 11,
-          color: "#B91C1C",
-          lineHeight: 1.35,
-          letterSpacing: "-0.01em",
-        }}>
-          {errorText ?? "This field is required."}
-        </div>
-      )}
-    </div>
+    <FloatingLabelInput
+      label={computedLabel}
+      value={value}
+      onChange={onChange ? (e) => onChange((e.target as HTMLInputElement).value) : undefined}
+      readOnly={readOnly}
+      type={type}
+      inputMode={inputMode}
+      errorText={computedError}
+      rightAdornment={rightAdornment}
+      rightAdornmentWidth={rightAdornment ? 32 : undefined}
+      style={controlStyle}
+    />
   );
 }
 
@@ -208,7 +158,7 @@ function SelectField({
         {label}{required && <span style={{ color: C.brand }}> *</span>}
       </label>
       <div style={{
-        borderRadius: 11,
+        borderRadius: 12,
         background: C.inputBg,
         border: error
           ? "1px solid rgba(185,28,28,0.45)"
@@ -235,7 +185,7 @@ function SelectField({
             background: "transparent",
             border: "none",
             outline: "none",
-            borderRadius: 11,
+            borderRadius: 12,
             fontFamily: "Inter, sans-serif",
             lineHeight: 1.55,
             appearance: "none",
@@ -279,81 +229,134 @@ function SelectField({
   );
 }
 
-// ── Segmented toggle ──────────────────────────────────────────────────────────
-function ProfileToggle({ value, onChange }: { value: ProfileType; onChange: (v: ProfileType) => void }) {
+// ── Experience duration picker (years + months stepper) ──────────────────────
+function ExperienceDurationPicker({
+  years, months, onYearsChange, onMonthsChange,
+}: {
+  years: number; months: number;
+  onYearsChange: (v: number) => void;
+  onMonthsChange: (v: number) => void;
+}) {
+  const stepBtnStyle = (disabled: boolean): React.CSSProperties => ({
+    width: 40, height: 40, borderRadius: 12, border: "none",
+    background: disabled ? "rgba(28,25,23,0.04)" : "rgba(28,25,23,0.06)",
+    color: disabled ? C.textSecondary : C.textMuted,
+    cursor: disabled ? "not-allowed" : "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontFamily: "Inter, sans-serif", fontSize: 20, fontWeight: 500,
+    transition: "background 0.15s, color 0.15s",
+    WebkitTapHighlightColor: "rgba(194,65,12,0.12)",
+    touchAction: "manipulation" as const,
+    flexShrink: 0,
+  });
+
   return (
-    <div style={{
-      display: "flex", position: "relative",
-      background: "rgba(28,25,23,0.05)",
-      borderRadius: 99, padding: 4,
-    }}>
-      <motion.div
-        layout
-        style={{
-          position: "absolute",
-          top: 4, bottom: 4,
-          left: value === "fresher" ? 4 : "50%",
-          width: "calc(50% - 4px)",
-          borderRadius: 99,
-          background: "white",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03)",
-        }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      />
-      {(["fresher", "experienced"] as const).map((t) => (
-        <button
-          key={t}
-          onClick={() => onChange(t)}
-          style={{
-            flex: 1, padding: "9px 12px",
-            border: "none", background: "transparent",
-            cursor: "pointer", position: "relative", zIndex: 1,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            fontSize: 12, fontWeight: value === t ? 650 : 500,
-            color: value === t ? C.textPrimary : C.textSecondary,
-            fontFamily: "Inter, sans-serif",
-            borderRadius: 99,
-            transition: "color 0.2s",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          <span style={{ fontSize: 13 }}>{t === "fresher" ? "🎓" : "💼"}</span>
-          {t === "fresher" ? "I'm a fresher" : "Experienced"}
-        </button>
-      ))}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      {/* Years */}
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+        borderRadius: 14, background: "rgba(28,25,23,0.025)", padding: "12px 8px",
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, color: C.textSecondary,
+          letterSpacing: "0.06em", textTransform: "uppercase" as const,
+          marginBottom: 2,
+        }}>Years</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <motion.button
+            type="button" whileTap={{ scale: 0.9 }}
+            disabled={years <= 0}
+            onClick={() => onYearsChange(Math.max(0, years - 1))}
+            style={stepBtnStyle(years <= 0)}
+          >−</motion.button>
+          <select
+            value={years}
+            onChange={(e) => onYearsChange(+e.target.value)}
+            aria-label="Years of experience"
+            style={{
+              width: 48, textAlign: "center",
+              fontSize: 28, fontWeight: 800, color: C.textPrimary,
+              letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums",
+              fontFamily: "Inter, sans-serif", lineHeight: 1,
+              background: "transparent", border: "none",
+              appearance: "none", WebkitAppearance: "none",
+              cursor: "pointer", padding: 0,
+            }}
+          >
+            {EXP_YEARS_OPTIONS.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+          <motion.button
+            type="button" whileTap={{ scale: 0.9 }}
+            disabled={years >= 30}
+            onClick={() => onYearsChange(Math.min(30, years + 1))}
+            style={{
+              ...stepBtnStyle(years >= 30),
+              background: years >= 30 ? "rgba(28,25,23,0.04)" : "rgba(28,25,23,0.06)",
+              color: years >= 30 ? C.textSecondary : C.textMuted,
+            }}
+          >+</motion.button>
+        </div>
+      </div>
+
+      {/* Months */}
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+        borderRadius: 14, background: "rgba(28,25,23,0.025)", padding: "12px 8px",
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, color: C.textSecondary,
+          letterSpacing: "0.06em", textTransform: "uppercase" as const,
+          marginBottom: 2,
+        }}>Months</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <motion.button
+            type="button" whileTap={{ scale: 0.9 }}
+            disabled={months <= 0}
+            onClick={() => onMonthsChange(Math.max(0, months - 1))}
+            style={stepBtnStyle(months <= 0)}
+          >−</motion.button>
+          <select
+            value={months}
+            onChange={(e) => onMonthsChange(+e.target.value)}
+            aria-label="Months of experience"
+            style={{
+              width: 48, textAlign: "center",
+              fontSize: 28, fontWeight: 800, color: C.textPrimary,
+              letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums",
+              fontFamily: "Inter, sans-serif", lineHeight: 1,
+              background: "transparent", border: "none",
+              appearance: "none", WebkitAppearance: "none",
+              cursor: "pointer", padding: 0,
+            }}
+          >
+            {EXP_MONTHS_OPTIONS.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+          <motion.button
+            type="button" whileTap={{ scale: 0.9 }}
+            disabled={months >= 11}
+            onClick={() => onMonthsChange(Math.min(11, months + 1))}
+            style={{
+              ...stepBtnStyle(months >= 11),
+              background: months >= 11 ? "rgba(28,25,23,0.04)" : "rgba(28,25,23,0.06)",
+              color: months >= 11 ? C.textSecondary : C.textMuted,
+            }}
+          >+</motion.button>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ── Experience chip selector ──────────────────────────────────────────────────
-function ExpChips({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-      {EXP_CHIPS.map((chip) => {
-        const active = value === chip;
-        return (
-          <motion.button
-            key={chip}
-            onClick={() => onChange(active ? "" : chip)}
-            whileTap={{ scale: 0.93 }}
-            style={{
-              padding: "8px 14px", borderRadius: 100,
-              border: active ? "1.5px solid rgba(194,65,12,0.26)" : `1.5px solid ${C.border}`,
-              background: active ? "rgba(194,65,12,0.08)" : "white",
-              color: active ? C.brand : C.textMuted,
-              fontSize: 12.5, fontWeight: active ? 550 : 500,
-              cursor: "pointer", fontFamily: "Inter, sans-serif",
-              letterSpacing: "-0.01em",
-              boxShadow: active ? "0 1px 4px rgba(194,65,12,0.12)" : "0 1px 3px rgba(0,0,0,0.04)",
-              whiteSpace: "nowrap" as const,
-            }}
-          >
-            {chip}
-          </motion.button>
-        );
-      })}
-    </div>
-  );
+function formatExperienceDuration(years: number, months: number): string {
+  if (years === 0 && months === 0) return "";
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} yr${years !== 1 ? "s" : ""}`);
+  if (months > 0) parts.push(`${months} mo${months !== 1 ? "s" : ""}`);
+  return parts.join(" ");
 }
 
 // ── Duration end (Present / Year) ─────────────────────────────────────────────
@@ -361,55 +364,42 @@ function DurationEnd({ isCurrent, setIsCurrent, endYear, setEndYear }: {
   isCurrent: boolean; setIsCurrent: (v: boolean) => void;
   endYear: string; setEndYear: (v: string) => void;
 }) {
-  const [focused, setFocused] = useState(false);
   return (
     <div>
-      <label style={{
-        display: "block", fontSize: 10, fontWeight: 700,
-        color: C.textSecondary, letterSpacing: "0.07em",
-        textTransform: "uppercase" as const,
-        marginBottom: 5, fontFamily: "Inter, sans-serif",
-      }}>To</label>
       {isCurrent ? (
-        <motion.button
-          onClick={() => setIsCurrent(false)}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            width: "100%", padding: "10px 13px",
-            borderRadius: 11, border: "1px solid rgba(194,65,12,0.25)",
-            background: "rgba(194,65,12,0.04)",
-            cursor: "pointer", display: "flex",
-            alignItems: "center", justifyContent: "space-between",
-            fontFamily: "Inter, sans-serif",
-          }}
-        >
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.brand }}>Present</span>
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-            <path d="M2 7l3.5 3.5L12 4" stroke={C.brand} strokeWidth="1.8"
-              strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </motion.button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <FloatingLabelInput
+            label="To"
+            value="Present"
+            readOnly
+          />
+          <button
+            type="button"
+            onClick={() => setIsCurrent(false)}
+            style={{
+              alignSelf: "flex-start",
+              padding: "2px 0",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif",
+              fontSize: 11,
+              fontWeight: 600,
+              color: C.textSecondary,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Set end year
+          </button>
+        </div>
       ) : (
         <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
-          <div style={{
-            flex: 1, borderRadius: 11, background: C.inputBg,
-            border: focused ? "1px solid rgba(194,65,12,0.32)" : `1px solid ${C.border}`,
-            boxShadow: focused ? "0 0 0 3px rgba(194,65,12,0.07)" : "none",
-            transition: "all 0.2s",
-          }}>
-            <input
-              type="text" inputMode="numeric"
+          <div style={{ flex: 1 }}>
+            <FloatingLabelInput
+              label="To"
               value={endYear}
               onChange={(e) => setEndYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              placeholder="2024"
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              style={{
-                width: "100%", padding: "10px 13px", fontSize: 14,
-                color: C.textPrimary, background: "transparent",
-                border: "none", outline: "none", borderRadius: 11,
-                fontFamily: "Inter, sans-serif",
-              }}
+              inputMode="numeric"
             />
           </div>
           <motion.button
@@ -517,7 +507,7 @@ function OptionalSection({
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function OnboardingProfileScreen({ email, signupFullName, onComplete, onBack }: Props) {
-  const [profileType, setProfileType] = useState<ProfileType>("fresher");
+  const [profileType, setProfileType] = useState<ProfileType | null>(null);
   const isPhoneLogin = /^\+?\d/.test(email.trim());
 
   // Basics
@@ -567,7 +557,8 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [moreEdu, setMoreEdu] = useState<Array<{ institution: string; degree: string; year: string }>>([]);
 
   // Experience (experienced)
-  const [expLevel, setExpLevel] = useState("");
+  const [expYears, setExpYears] = useState(0);
+  const [expMonths, setExpMonths] = useState(0);
   const [company, setCompany] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [startYear, setStartYear] = useState("");
@@ -628,7 +619,9 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   } else if (missingPhoneVerification) {
     requiredMissingFields.push("Phone verification");
   }
-  if (profileType === "fresher") {
+  if (profileType === null) {
+    requiredMissingFields.push("Profile type (fresher or experienced)");
+  } else if (profileType === "fresher") {
     if (missingInstitution) requiredMissingFields.push("Institution");
     if (missingCourse) requiredMissingFields.push("Course");
     if (missingSpecialization) requiredMissingFields.push("Specialization");
@@ -701,6 +694,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           });
         }
       });
+      if (portfolioLinks.trim()) {
+        experiences.push({
+          id: "portfolio-0",
+          company: "Portfolio",
+          role: "Links",
+          duration: "",
+          description: portfolioLinks.trim(),
+        });
+      }
     }
 
     if (profileType === "fresher") {
@@ -767,14 +769,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
     }
 
     let headline = "";
-    if (profileType === "fresher" && course.trim() && institution.trim()) {
+    if ((profileType === "fresher") && course.trim() && institution.trim()) {
       const fresherHeadline = specialization.trim()
         ? `${course.trim()} - ${specialization.trim()}`
         : course.trim();
       headline = `${fresherHeadline} · ${institution.trim()}`;
-    } else if (profileType === "experienced" && jobTitle.trim()) {
+    } else if ((profileType === "experienced") && jobTitle.trim()) {
       headline = company.trim() ? `${jobTitle.trim()} at ${company.trim()}` : jobTitle.trim();
-      if (expLevel) headline += ` · ${expLevel}`;
+      const expStr = formatExperienceDuration(expYears, expMonths);
+      if (expStr) headline += ` · ${expStr}`;
     }
 
     const profile: FullProfile = {
@@ -809,9 +812,9 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
         background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
       }} />
 
-      {/* ── Sticky header ──────────────────────────────────────────── */}
+      {/* ── Sticky header (back + title, one row) ─────────────────── */}
       <div
-        className="sticky top-0 z-20 px-4 pt-10 pb-4"
+        className="sticky top-0 z-20 px-4 pt-10 pb-3"
         style={{
           background: "rgba(253,251,248,0.94)",
           backdropFilter: "blur(14px)",
@@ -820,46 +823,42 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
         }}
       >
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center justify-between mb-3"
+          className="flex items-center gap-2"
+          style={{ minHeight: 44 }}
         >
           <button
+            type="button"
             onClick={onBack}
+            aria-label="Go back"
             style={{
-              display: "flex", alignItems: "center", gap: 5,
-              background: "white", border: `1px solid rgba(28,25,23,0.08)`,
-              borderRadius: 11, padding: "6px 12px 6px 8px",
-              cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              width: "44px", height: "44px",
+              flexShrink: 0,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              background: "transparent", border: "none",
+              borderRadius: 10,
+              cursor: "pointer",
+              color: C.textMuted,
               fontFamily: "Inter, sans-serif",
             }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M8.5 10.5L5 7l3.5-3.5" stroke={C.textPrimary}
+              <path d="M8.5 10.5L5 7l3.5-3.5" stroke="currentColor"
                 strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span style={{ fontSize: 13, fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.01em" }}>
-              Back
-            </span>
           </button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-        >
           <h1 style={{
-            fontSize: "clamp(20px, 5.5vw, 24px)", fontWeight: 800,
+            flex: 1,
+            minWidth: 0,
+            margin: 0,
+            fontSize: "clamp(18px, 5vw, 22px)", fontWeight: 800,
             color: C.textPrimary, letterSpacing: "-0.04em",
-            lineHeight: 1.2, marginBottom: 2,
+            lineHeight: 1.2,
           }}>
             Tell us about yourself
           </h1>
-          <p style={{ fontSize: 13, color: C.textMuted, letterSpacing: "-0.01em", borderRadius: 99 }}>
-            FIll in the essentials, take about a minute
-          </p>
         </motion.div>
       </div>
 
@@ -870,14 +869,6 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
         style={{ paddingBottom: 24 }}
       >
 
-        {/* ── Profile type ────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <ProfileToggle value={profileType} onChange={setProfileType} />
-        </motion.div>
         {showRequiredErrors && submitError && (
           <div style={{
             padding: "10px 12px",
@@ -898,7 +889,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.42, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.42, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
         >
           <SectionLabel icon={
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
@@ -1047,14 +1038,13 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                             style={{ marginTop: 10 }}
                           >
                             <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
-                              <input
+                              <FloatingLabelInput
+                                label="OTP"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
                                 inputMode="numeric"
-                                placeholder="Enter OTP"
+                                type="text"
                                 style={{
-                                  width: "100%", padding: "10px 12px", borderRadius: 10,
-                                  border: `1px solid ${C.border}`, background: "white",
                                   fontFamily: "Inter, sans-serif", fontSize: 14,
                                   letterSpacing: "0.08em", outline: "none",
                                   color: C.textPrimary,
@@ -1096,14 +1086,117 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           </div>
         </motion.div>
 
-        {/* ── Background (adapts) ─────────────────────────────────── */}
+        {/* ── Fresher / Experienced (choice chips) ────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.42, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.42, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
         >
+          <div style={{
+            fontSize: 13, fontWeight: 500, color: C.textMuted,
+            marginBottom: 10, letterSpacing: "-0.01em",
+          }}>
+            Are you a fresher or experienced?
+          </div>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            {(["fresher", "experienced"] as const).map((t) => {
+              const sel = profileType === t;
+              const other = profileType !== null && !sel;
+              return (
+                <motion.button
+                  key={t}
+                  type="button"
+                  onClick={() => setProfileType(t)}
+                  whileTap={{ scale: 0.97 }}
+                  animate={{
+                    borderColor: sel
+                      ? "rgba(194,65,12,0.4)"
+                      : other
+                        ? "rgba(28,25,23,0.07)"
+                        : "rgba(28,25,23,0.12)",
+                    opacity: other ? 0.55 : 1,
+                  }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    flex: 1,
+                    padding: "11px 10px",
+                    borderRadius: 12,
+                    border: "1.5px solid",
+                    background: sel ? "rgba(194,65,12,0.05)" : "white",
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 7,
+                    boxShadow: sel
+                      ? "0 0 0 3px rgba(194,65,12,0.06)"
+                      : "0 1px 3px rgba(0,0,0,0.04)",
+                    transition: "background 0.2s, box-shadow 0.2s",
+                  }}
+                >
+                  <span style={{ fontSize: 15, lineHeight: 1 }} aria-hidden>
+                    {t === "fresher" ? "🎓" : "💼"}
+                  </span>
+                  <span style={{
+                    fontSize: 13.5,
+                    fontWeight: sel ? 700 : 500,
+                    color: sel ? C.brand : C.textPrimary,
+                    letterSpacing: "-0.02em",
+                    whiteSpace: "nowrap" as const,
+                  }}>
+                    {t === "fresher" ? "Fresher" : "Experienced"}
+                  </span>
+                  {sel && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 26 }}
+                      style={{
+                        width: 16, height: 16, borderRadius: "50%",
+                        background: C.brand,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginLeft: 1, flexShrink: 0,
+                      }}
+                    >
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5.2l2 2L8 3" stroke="white" strokeWidth="1.6"
+                          strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </motion.div>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {showRequiredErrors && profileType === null && (
+            <div style={{
+              marginTop: 6, fontSize: 11, color: "#B91C1C",
+              lineHeight: 1.35, letterSpacing: "-0.01em",
+            }}>
+              Please select to continue.
+            </div>
+          )}
+        </motion.div>
+
+        {/* ── Background-specific sections (only after Fresher / Experienced) ─ */}
+        <AnimatePresence>
+          {(profileType === "fresher" || profileType === "experienced") && (
+            <motion.div
+              key="type-sections"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+              style={{ display: "flex", flexDirection: "column", gap: 28 }}
+            >
+
+        {/* ── Background fields (adapts) — explicit branches (no ternary on null) ─ */}
+        <div>
           <AnimatePresence mode="wait">
-            {profileType === "fresher" ? (
+            {profileType === "fresher" && (
               <motion.div
                 key="fresher-bg"
                 initial={{ opacity: 0, y: 10 }}
@@ -1233,7 +1326,8 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   Add earlier education
                 </button>
               </motion.div>
-            ) : (
+            )}
+            {profileType === "experienced" && (
               <motion.div
                 key="exp-bg"
                 initial={{ opacity: 0, y: 10 }}
@@ -1265,7 +1359,10 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       textTransform: "uppercase" as const,
                       marginBottom: 8, fontFamily: "Inter, sans-serif",
                     }}>Total Experience</label>
-                    <ExpChips value={expLevel} onChange={setExpLevel} />
+                    <ExperienceDurationPicker
+                      years={expYears} months={expMonths}
+                      onYearsChange={setExpYears} onMonthsChange={setExpMonths}
+                    />
                   </div>
                   <div className="flex flex-col gap-3">
                     <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -1334,6 +1431,30 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           onChange={(v) => { const n = [...moreExp]; n[idx] = { ...n[idx], title: v }; setMoreExp(n); }}
                           placeholder="Role" />
                       </div>
+                      <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+                        <Input
+                          label="From"
+                          value={exp.start}
+                          onChange={(v) => {
+                            const n = [...moreExp];
+                            n[idx] = { ...n[idx], start: v.replace(/\D/g, "").slice(0, 4) };
+                            setMoreExp(n);
+                          }}
+                          placeholder="2020"
+                          inputMode="numeric"
+                        />
+                        <Input
+                          label="To"
+                          value={exp.end}
+                          onChange={(v) => {
+                            const n = [...moreExp];
+                            n[idx] = { ...n[idx], end: v.replace(/\D/g, "").slice(0, 4), current: false };
+                            setMoreExp(n);
+                          }}
+                          placeholder="2022"
+                          inputMode="numeric"
+                        />
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -1357,14 +1478,38 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
+
+        {profileType === "experienced" && (
+          <div>
+            <SectionLabel icon={
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M1 7c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6-6-2.7-6-6z"
+                  stroke={C.brand} strokeWidth="1.2" />
+                <path d="M5 5h4M5 7h3M5 9h4" stroke={C.brand} strokeWidth="1.2"
+                  strokeLinecap="round" />
+              </svg>
+            }>Portfolio</SectionLabel>
+
+            <div style={{
+              borderRadius: 14, border: `1.5px solid rgba(194,65,12,0.12)`,
+              background: "white", padding: 16,
+              boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
+            }}>
+              <Input
+                label="Portfolio links"
+                value={portfolioLinks}
+                onChange={setPortfolioLinks}
+                placeholder="Perosnal website, GitHub, Behanceetc"
+                multiline
+                multilineHeight={44}
+              />
+            </div>
+          </div>
+        )}
 
         {profileType === "fresher" && (
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.42, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          >
+          <div>
             <SectionLabel icon={
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                 <path
@@ -1456,15 +1601,11 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {profileType === "experienced" && (
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.42, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          >
+          <div>
             <SectionLabel icon={
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                 <path d="M1 5l6-3 6 3-6 3-6-3z" stroke={C.brand} strokeWidth="1.3"
@@ -1502,13 +1643,22 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       style={{ marginTop: 2 }}
                     >
                       <button
+                        type="button"
                         onClick={() => setShowOptEdu(true)}
                         style={{
-                          background: "none", border: "none", cursor: "pointer",
+                          background: "transparent",
+                          border: "none",
+                          borderRadius: 0,
+                          minHeight: 40,
+                          width: "100%",
+                          cursor: "pointer",
                           fontFamily: "Inter, sans-serif",
-                          fontSize: 11, fontWeight: 500, color: C.textSecondary,
-                          padding: 0,
-                          display: "inline-flex", alignItems: "center", gap: 4,
+                          fontSize: 11, fontWeight: 600, color: C.brand,
+                          padding: "10px 0",
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          justifyContent: "center",
+                          WebkitTapHighlightColor: "rgba(194,65,12,0.12)",
+                          touchAction: "manipulation" as const,
                         }}
                       >
                         <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
@@ -1708,16 +1858,12 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* ── Optional (fresher only) ──────────────────────────────── */}
         {profileType === "fresher" && (
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.42, delay: 0.24, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div>
           <SectionLabel icon={
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
               <path d="M7 2v10M2 7h10" stroke={C.brand} strokeWidth="1.4" strokeLinecap="round" />
@@ -1885,8 +2031,12 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   </div>
                 </OptionalSection>
           </div>
-        </motion.div>
+        </div>
         )}
+
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── CTA at form end ─────────────────────────────────────── */}

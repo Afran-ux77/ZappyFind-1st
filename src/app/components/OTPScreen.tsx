@@ -5,15 +5,15 @@ import { motion, AnimatePresence } from "motion/react";
 const C = {
   bg: "#FDFBF8",
   primary: "#1C1917",
-  brand: "#C2410C",
-  brandGradient: "linear-gradient(135deg, #92400E 0%, #C2410C 100%)",
+  brand: "#EA580C",
+  brandGradient: "linear-gradient(135deg, #EA580C 0%, #EA580C 100%)",
   textPrimary: "#1C1917",
   textMuted: "#78716C",
   textSecondary: "#A8A29E",
   border: "rgba(28,25,23,0.09)",
   error: "#DC6D6D",
   errorBg: "rgba(220,109,109,0.08)",
-  orbA: "rgba(194,65,12,0.07)",
+  orbA: "rgba(234,88,12,0.07)",
   orbB: "rgba(146,64,14,0.05)",
 };
 
@@ -165,25 +165,26 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
         >
           <button
             onClick={onBack}
+            aria-label="Go back"
             style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "white",
-              border: `1.5px solid ${C.border}`,
-              borderRadius: "12px",
-              padding: "8px 14px 8px 10px",
+              width: "44px",
+              height: "44px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "transparent",
+              border: "none",
+              borderRadius: "10px",
               cursor: "pointer",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+              color: C.textMuted,
               fontFamily: "Inter, sans-serif",
             }}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
               <path d="M9 11.5L5 7.5l4-4"
-                stroke={C.textPrimary} strokeWidth="1.6"
+                stroke="currentColor" strokeWidth="1.6"
                 strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.01em" }}>
-              Back
-            </span>
           </button>
         </motion.div>
 
@@ -195,8 +196,8 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
           className="flex items-center justify-center rounded-[22px] mb-6"
           style={{
             width: "64px", height: "64px",
-            background: "rgba(194,65,12,0.07)",
-            border: "1.5px solid rgba(194,65,12,0.14)",
+            background: "rgba(234,88,12,0.07)",
+            border: "1.5px solid rgba(234,88,12,0.14)",
           }}
         >
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -298,9 +299,9 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
                   boxShadow: showError
                     ? "0 0 0 3px rgba(220,109,109,0.12), 0 2px 10px rgba(0,0,0,0.05)"
                     : activeIndex === i
-                      ? "0 0 0 3px rgba(194,65,12,0.08), 0 6px 16px rgba(0,0,0,0.07)"
+                      ? "0 0 0 3px rgba(234,88,12,0.08), 0 6px 16px rgba(0,0,0,0.07)"
                       : digit
-                        ? "0 0 0 3px rgba(194,65,12,0.1), 0 2px 10px rgba(0,0,0,0.06)"
+                        ? "0 0 0 3px rgba(234,88,12,0.1), 0 2px 10px rgba(0,0,0,0.06)"
                         : "0 1px 4px rgba(0,0,0,0.05)",
                   transition: "all 0.18s ease",
                   fontFamily: "Inter, sans-serif",
@@ -372,24 +373,47 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
                 onClick={handleResend}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                  background: "white",
-                  border: `1.5px solid ${C.border}`,
-                  borderRadius: "12px",
-                  padding: "8px 14px 8px 10px",
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "10px",
+                  minHeight: "44px",
+                  padding: "10px 12px",
                   fontSize: "13px", fontWeight: 600,
-                  color: C.textPrimary,
+                  color: C.brand,
                   cursor: "pointer",
                   fontFamily: "Inter, sans-serif",
                   letterSpacing: "-0.01em",
                   display: "flex", alignItems: "center", gap: "6px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                  boxShadow: "none",
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M1 7a6 6 0 0010.9-3.4M13 7A6 6 0 002.1 10.4"
-                    stroke={C.textPrimary} strokeWidth="1.4" strokeLinecap="round" />
-                  <path d="M11.5 3V5.5H9"
-                    stroke={C.textPrimary} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path
+                    d="M11.8 7A4.8 4.8 0 0 1 3.6 10.4"
+                    stroke={C.brand}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M3.6 12V10.2H5.4"
+                    stroke={C.brand}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M2.2 7A4.8 4.8 0 0 1 10.4 3.6"
+                    stroke={C.brand}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10.4 2V3.8H8.6"
+                    stroke={C.brand}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 Resend Code
               </motion.button>
@@ -422,8 +446,8 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
                   className="flex items-center justify-center rounded-full"
                   style={{
                     width: "56px", height: "56px",
-                    background: "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)",
-                    boxShadow: "0 4px 20px rgba(255,107,53,0.35)",
+                    background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+                    boxShadow: "0 4px 20px rgba(234,88,12,0.35)",
                   }}
                 >
                   <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -463,7 +487,7 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
                   >
                     <span style={{
                       width: "15px", height: "15px",
-                      border: "2px solid rgba(194,65,12,0.25)",
+                      border: "2px solid rgba(234,88,12,0.25)",
                       borderTopColor: C.brand,
                       borderRadius: "50%",
                       animation: "spin 0.65s linear infinite",
@@ -471,9 +495,7 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
                     }} />
                     Verifying code…
                   </motion.div>
-                ) : (
-                  "Enter the 4-digit code to continue"
-                )}
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>

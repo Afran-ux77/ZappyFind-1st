@@ -294,7 +294,7 @@ const JOBS: Job[] = [
     locationType: "Onsite",
     salary: "est. 20 LPA – 28 LPA",
     logoLetter: "B",
-    logoColor: "#F97316",
+    logoColor: "#EA580C",
     matchScore: 82,
     headlines:
       "Bazaar's marketplace connects buyers and sellers. You'd design discovery, search, and transaction flows.",
@@ -873,7 +873,7 @@ export function JobReviewScreen({
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background: "#FF6B35",
+                background: "#EA580C",
                 border: "2px solid #FAFAF9",
               }}
             />
@@ -886,13 +886,13 @@ export function JobReviewScreen({
               borderRadius: 999,
               background:
                 "linear-gradient(135deg, rgba(255,140,90,0.15) 0%, rgba(255,106,43,0.28) 100%)",
-              border: "1.5px solid rgba(255,107,53,0.18)",
+              border: "1.5px solid rgba(234,88,12,0.18)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 13,
               fontWeight: 600,
-              color: "#FF6B35",
+              color: "#EA580C",
               letterSpacing: "-0.02em",
             }}
           >
@@ -918,10 +918,10 @@ export function JobReviewScreen({
             borderRadius: 14,
             background: searchMode ? "#FFFFFF" : "rgba(0,0,0,0.03)",
             border: searchMode
-              ? "1.5px solid rgba(255,107,53,0.22)"
+              ? "1.5px solid rgba(234,88,12,0.22)"
               : "1.5px solid transparent",
             boxShadow: searchMode
-              ? "0 2px 12px rgba(255,107,53,0.06)"
+              ? "0 2px 12px rgba(234,88,12,0.06)"
               : "none",
             transition: "all 0.2s ease",
             cursor: searchMode ? "default" : "pointer",
@@ -1276,7 +1276,7 @@ export function JobReviewScreen({
                     borderRadius: 999,
                     border: "none",
                     background:
-                      "linear-gradient(135deg, #FB923C 0%, #F97316 45%, #EA580C 100%)",
+                      "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
                     color: "#FFFFFF",
                     fontSize: 14,
                     fontWeight: 600,
@@ -1380,7 +1380,7 @@ export function JobReviewScreen({
                 borderRadius: 16,
                 border: "none",
                 background:
-                  "linear-gradient(135deg, #FB923C 0%, #F97316 45%, #EA580C 100%)",
+                  "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
                 color: "#FFFFFF",
                 fontSize: 14,
                 fontWeight: 600,
@@ -1579,7 +1579,7 @@ function AppliedJobCard({ job, meta }: { job: Job; meta?: AppliedMeta }) {
                 height: 44,
                 borderRadius: 14,
                 border: "none",
-                background: "linear-gradient(135deg, #FB923C 0%, #F97316 45%, #EA580C 100%)",
+                background: "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
                 color: "#FFFFFF",
                 fontSize: 13,
                 fontWeight: 900,
@@ -1789,7 +1789,7 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
             padding: "5px 12px",
             borderRadius: 999,
             backgroundColor: "#FFFBEB",
-            color: "#92400E",
+            color: "#EA580C",
             border: "1px dashed rgba(217,119,6,0.35)",
           }}
         >
@@ -1863,7 +1863,7 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
               padding: 0,
               border: "none",
               background: "transparent",
-              color: "#F97316",
+              color: "#EA580C",
               fontSize: 13,
               fontWeight: 500,
               cursor: "pointer",
@@ -2245,7 +2245,7 @@ function SearchResultCard({
         padding: 16,
         background: "#FFFFFF",
         border: expanded
-          ? "1px solid rgba(255,107,53,0.12)"
+          ? "1px solid rgba(234,88,12,0.12)"
           : "1px solid rgba(0,0,0,0.06)",
         boxShadow: expanded
           ? "0 4px 16px rgba(0,0,0,0.06)"
@@ -2300,13 +2300,13 @@ function SearchResultCard({
                 borderRadius: 999,
                 background:
                   job.source === "zappyfind"
-                    ? "rgba(255,107,53,0.08)"
+                    ? "rgba(234,88,12,0.08)"
                     : "rgba(0,0,0,0.04)",
                 flexShrink: 0,
               }}
             >
               {job.source === "zappyfind" ? (
-                <Sparkles size={10} color="#FF6B35" strokeWidth={2.5} />
+                <Sparkles size={10} color="#EA580C" strokeWidth={2.5} />
               ) : (
                 <Globe size={10} color="#6B7280" strokeWidth={2} />
               )}
@@ -2492,10 +2492,10 @@ function SearchResultCard({
                     padding: "0 14px",
                     borderRadius: 12,
                     border: saved
-                      ? "1px solid rgba(255,107,53,0.2)"
+                      ? "1px solid rgba(234,88,12,0.2)"
                       : "1px solid rgba(0,0,0,0.08)",
-                    background: saved ? "rgba(255,107,53,0.06)" : "#FFFFFF",
-                    color: saved ? "#FF6B35" : "#374151",
+                    background: saved ? "rgba(234,88,12,0.06)" : "#FFFFFF",
+                    color: saved ? "#EA580C" : "#374151",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -2508,7 +2508,7 @@ function SearchResultCard({
                   <Bookmark
                     size={14}
                     strokeWidth={2}
-                    fill={saved ? "#FF6B35" : "none"}
+                    fill={saved ? "#EA580C" : "none"}
                   />
                   {saved ? "Saved" : "Save"}
                 </motion.button>
@@ -2539,7 +2539,7 @@ function SearchResultCard({
                     borderRadius: 12,
                     border: "none",
                     background:
-                      "linear-gradient(135deg, #FB923C 0%, #F97316 45%, #EA580C 100%)",
+                      "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
                     color: "#FFFFFF",
                     fontSize: 13,
                     fontWeight: 600,

@@ -48,6 +48,10 @@ export default function App() {
   const [parsedProfile, setParsedProfile] = useState<FullProfile | null>(null);
   /** Previous screen for JobPreferences "Back" (and similar flows). */
   const [prefPrev, setPrefPrev] = useState<Screen>("profileReview");
+  /** After completing prefs, Welcome is step 6; going back should reopen prefs at step 5. */
+  const [jobPrefsResumeStep, setJobPrefsResumeStep] = useState<1 | 2 | 3 | 4 | 5 | undefined>(
+    undefined,
+  );
   /** Return target after profile edit (Save / Back). */
   const [profileReturnScreen, setProfileReturnScreen] = useState<Screen>("welcome");
 
@@ -185,6 +189,7 @@ export default function App() {
                     hasCompletedInterview: false,
                     onboardingComplete: false,
                   });
+                  setJobPrefsResumeStep(undefined);
                   setPrefPrev("otp");
                   goTo("jobPreferences", "forward");
                 }}
@@ -250,6 +255,7 @@ export default function App() {
             <motion.div key="jobPreferences" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
               <JobPreferencesScreen
                 firstName={firstName}
+                resumeAtStep={jobPrefsResumeStep}
                 onComplete={(prefs: JobPreferences) => {
                   setParsedProfile((prev) =>
                     prev ? { ...prev, preferences: prefs } : prev
@@ -259,9 +265,13 @@ export default function App() {
                       ? { ...parsedProfile, preferences: prefs }
                       : undefined,
                   });
+                  setJobPrefsResumeStep(5);
                   goTo("welcome", "forward");
                 }}
-                onBack={() => goTo(prefPrev, "back")}
+                onBack={() => {
+                  setJobPrefsResumeStep(undefined);
+                  goTo(prefPrev, "back");
+                }}
               />
             </motion.div>
           )}
@@ -414,53 +424,310 @@ export default function App() {
 }
 
 // ── Setting up your profile (after step 5: upload resume) ─────────────────────
-const SETUP_MSGS = [
+const SETUP_STEPS = [
   "Setting up your profile…",
+  "Analyzing your experience…",
   "Calibrating job matches…",
   "Almost ready!",
 ];
+const STEP_INTERVAL = 1700;
+const SETUP_TOTAL_DURATION = SETUP_STEPS.length * STEP_INTERVAL + 800;
+
+const FLOATING_PARTICLES = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  initialX: 8 + ((i * 7 + 13) % 84),
+  initialY: 55 + ((i * 11 + 5) % 40),
+  size: 3 + ((i * 3) % 5),
+  duration: 4 + ((i * 7) % 5),
+  delay: (i * 0.4) % 3,
+  opacity: 0.15 + ((i * 5) % 25) / 100,
+}));
 
 function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
-  const [msgIndex, setMsgIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
-    const interval = setInterval(() => setMsgIndex((i) => Math.min(i + 1, SETUP_MSGS.length - 1)), 700);
-    const done = setTimeout(onDone, 2600);
-    return () => { clearInterval(interval); clearTimeout(done); };
+    const interval = setInterval(
+      () => setStepIndex((i) => Math.min(i + 1, SETUP_STEPS.length - 1)),
+      STEP_INTERVAL,
+    );
+    const done = setTimeout(onDone, SETUP_TOTAL_DURATION);
+    let accumulated = 0;
+    const increment = 100 / (SETUP_TOTAL_DURATION / 50);
+    const tick = setInterval(() => {
+      accumulated = Math.min(accumulated + increment, 100);
+      setProgress(accumulated);
+    }, 50);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(done);
+      clearInterval(tick);
+    };
   }, [onDone]);
 
   return (
-    <div style={{
-      height: "100vh", background: "#FDFBF8", fontFamily: "Inter, sans-serif",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px",
-    }}>
+    <div
+      style={{
+        height: "100vh",
+        background: "#FDFBF8",
+        fontFamily: "Inter, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 24px",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Animated background gradient orbs */}
       <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        animate={{
+          x: [0, 30, -20, 0],
+          y: [0, -30, 20, 0],
+          scale: [1, 1.2, 0.9, 1],
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          width: 52, height: 52, marginBottom: 32,
-          border: "3.5px solid rgba(194,65,12,0.14)",
-          borderTopColor: "#C2410C", borderRadius: "50%",
+          position: "absolute",
+          top: "15%",
+          left: "10%",
+          width: 180,
+          height: 180,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(255,143,86,0.12) 0%, transparent 70%)",
+          filter: "blur(40px)",
+          pointerEvents: "none",
         }}
       />
+      <motion.div
+        animate={{
+          x: [0, -25, 15, 0],
+          y: [0, 20, -25, 0],
+          scale: [1, 0.85, 1.15, 1],
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          bottom: "20%",
+          right: "5%",
+          width: 200,
+          height: 200,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(234,88,12,0.08) 0%, transparent 70%)",
+          filter: "blur(50px)",
+          pointerEvents: "none",
+        }}
+      />
+      <motion.div
+        animate={{ x: [0, 15, -10, 0], y: [0, -15, 10, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          top: "45%",
+          right: "30%",
+          width: 120,
+          height: 120,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(234,88,12,0.06) 0%, transparent 70%)",
+          filter: "blur(35px)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Floating rising particles */}
+      {FLOATING_PARTICLES.map((p) => (
+        <motion.div
+          key={p.id}
+          animate={{
+            y: [0, -(120 + (p.id % 4) * 20)],
+            x: [0, ((p.id % 2 === 0 ? 1 : -1) * ((p.id * 7) % 30))],
+            opacity: [0, p.opacity, p.opacity, 0],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: "easeOut",
+          }}
+          style={{
+            position: "absolute",
+            left: `${p.initialX}%`,
+            top: `${p.initialY}%`,
+            width: p.size,
+            height: p.size,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #FF8F56, #EA580C)",
+            pointerEvents: "none",
+          }}
+        />
+      ))}
+
+      {/* Softer icon cluster (no ripple rings) */}
+      <div
+        style={{
+          position: "relative",
+          marginBottom: 34,
+          width: 120,
+          height: 66,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <motion.div
+          animate={{ y: [0, -2, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.85)",
+            border: "1px solid rgba(234,88,12,0.18)",
+            boxShadow: "0 4px 16px rgba(234,88,12,0.12)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          <Shield size={20} color="#EA580C" strokeWidth={2.1} />
+        </motion.div>
+
+        <motion.div
+          animate={{ x: [0, -2, 0], opacity: [0.55, 0.8, 0.55] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            left: 14,
+            top: 20,
+            width: 28,
+            height: 28,
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.7)",
+            border: "1px solid rgba(234,88,12,0.14)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Users size={14} color="#C2410C" strokeWidth={2} />
+        </motion.div>
+
+        <motion.div
+          animate={{ x: [0, 2, 0], opacity: [0.55, 0.8, 0.55] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+          style={{
+            position: "absolute",
+            right: 14,
+            top: 20,
+            width: 28,
+            height: 28,
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.7)",
+            border: "1px solid rgba(234,88,12,0.14)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <MessageCircle size={14} color="#C2410C" strokeWidth={2} />
+        </motion.div>
+      </div>
+
+      {/* Title */}
       <motion.h2
-        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        style={{ fontSize: "20px", fontWeight: 800, color: "#1C1917", letterSpacing: "-0.03em", marginBottom: 10, textAlign: "center" }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          fontSize: "22px",
+          fontWeight: 800,
+          color: "#1C1917",
+          letterSpacing: "-0.035em",
+          marginBottom: 8,
+          textAlign: "center",
+        }}
       >
         Setting up your profile
       </motion.h2>
-      <motion.p
-        key={msgIndex}
-        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-        style={{ fontSize: "14px", color: "#78716C", textAlign: "center" }}
+
+      {/* Animated subtitle with crossfade */}
+      <div
+        style={{
+          height: 28,
+          position: "relative",
+          marginBottom: 32,
+          overflow: "hidden",
+          width: "100%",
+        }}
       >
-        {SETUP_MSGS[msgIndex]}
-      </motion.p>
-      <div style={{ display: "flex", gap: 6, marginTop: 28 }}>
-        {SETUP_MSGS.map((_, i) => (
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={stepIndex}
+            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontSize: "14px",
+              color: "#78716C",
+              textAlign: "center",
+              position: "absolute",
+              width: "100%",
+              margin: 0,
+            }}
+          >
+            {SETUP_STEPS[stepIndex]}
+          </motion.p>
+        </AnimatePresence>
+      </div>
+
+      {/* Smooth progress bar */}
+      <div
+        style={{
+          width: "min(220px, 60%)",
+          height: 4,
+          borderRadius: 4,
+          background: "rgba(28,25,23,0.06)",
+          overflow: "hidden",
+          marginBottom: 24,
+        }}
+      >
+        <motion.div
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.1, ease: "linear" }}
+          style={{
+            height: "100%",
+            borderRadius: 4,
+            background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+            boxShadow: "0 0 8px rgba(234,88,12,0.3)",
+          }}
+        />
+      </div>
+
+      {/* Step dots */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {SETUP_STEPS.map((_, i) => (
           <motion.div
             key={i}
-            animate={{ background: i <= msgIndex ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "rgba(28,25,23,0.1)", scale: i === msgIndex ? 1.3 : 1 }}
-            transition={{ duration: 0.3 }}
+            animate={{
+              background:
+                i <= stepIndex
+                  ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)"
+                  : "rgba(28,25,23,0.1)",
+              scale: i === stepIndex ? 1.4 : 1,
+              boxShadow:
+                i === stepIndex
+                  ? "0 0 8px rgba(234,88,12,0.4)"
+                  : "0 0 0px rgba(234,88,12,0)",
+            }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             style={{ width: 6, height: 6, borderRadius: "50%" }}
           />
         ))}
@@ -471,8 +738,8 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
 
 // ── Zappy Home Screen ─────────────────────────────────────────────────────────
 const C = {
-  bg: "#FDFBF8", primary: "#1C1917", brand: "#C2410C",
-  brandLight: "rgba(194,65,12,0.08)", brandBorder: "rgba(194,65,12,0.2)",
+  bg: "#FDFBF8", primary: "#1C1917", brand: "#EA580C",
+  brandLight: "rgba(234,88,12,0.08)", brandBorder: "rgba(234,88,12,0.2)",
   textPrimary: "#1C1917", textMuted: "#78716C", textSec: "#A8A29E",
   border: "rgba(28,25,23,0.08)", white: "#FFFFFF",
 };
@@ -558,9 +825,9 @@ function AnalyzingPhase() {
           animate={{
             scale: [1, 1.15, 1],
             boxShadow: [
-              "0 0 0 0px rgba(255,107,53,0.15), 0 0 20px rgba(255,107,53,0.1)",
-              "0 0 0 12px rgba(255,107,53,0.06), 0 0 30px rgba(255,107,53,0.15)",
-              "0 0 0 0px rgba(255,107,53,0.15), 0 0 20px rgba(255,107,53,0.1)",
+              "0 0 0 0px rgba(234,88,12,0.15), 0 0 20px rgba(234,88,12,0.1)",
+              "0 0 0 12px rgba(234,88,12,0.06), 0 0 30px rgba(234,88,12,0.15)",
+              "0 0 0 0px rgba(234,88,12,0.15), 0 0 20px rgba(234,88,12,0.1)",
             ],
           }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -568,7 +835,7 @@ function AnalyzingPhase() {
             width: 44,
             height: 44,
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #FF8F56 0%, #FF6B35 50%, #E85A22 100%)",
+            background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 50%, #E85A22 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -632,7 +899,7 @@ function AnalyzingPhase() {
                   background: isDone
                     ? "rgba(5,150,105,0.1)"
                     : isActive
-                      ? "rgba(255,107,53,0.1)"
+                      ? "rgba(234,88,12,0.1)"
                       : "rgba(28,25,23,0.04)",
                   display: "flex",
                   alignItems: "center",
@@ -658,8 +925,8 @@ function AnalyzingPhase() {
                     style={{
                       width: 13,
                       height: 13,
-                      border: "2px solid rgba(255,107,53,0.2)",
-                      borderTopColor: "#FF6B35",
+                      border: "2px solid rgba(234,88,12,0.2)",
+                      borderTopColor: "#EA580C",
                       borderRadius: "50%",
                     }}
                   />
@@ -706,17 +973,17 @@ function InterviewPromptPhase({
 
   const FLOW_STEPS = [
     {
-      icon: <Mic size={18} color="#FF6B35" strokeWidth={2} />,
+      icon: <Mic size={18} color="#EA580C" strokeWidth={2} />,
       label: "You share",
       sub: "~10 min call",
     },
     {
-      icon: <Sparkles size={18} color="#FF6B35" strokeWidth={2} />,
+      icon: <Sparkles size={18} color="#EA580C" strokeWidth={2} />,
       label: "Zappy Enhances",
       sub: "your profile",
     },
     {
-      icon: <Users size={18} color="#FF6B35" strokeWidth={2} />,
+      icon: <Users size={18} color="#EA580C" strokeWidth={2} />,
       label: "Recruiters",
       sub: "contact you",
     },
@@ -729,9 +996,9 @@ function InterviewPromptPhase({
       color: "#059669",
     },
     {
-      icon: <Sparkles size={13} color="#FF6B35" strokeWidth={2} />,
+      icon: <Sparkles size={13} color="#EA580C" strokeWidth={2} />,
       text: "Required to activate direct recruiter introductions",
-      color: "#FF6B35",
+      color: "#EA580C",
     },
   ];
 
@@ -757,7 +1024,7 @@ function InterviewPromptPhase({
         style={{
           height: 3,
           background:
-            "linear-gradient(90deg, #FF8F56 0%, #FF6B35 50%, #E85A22 100%)",
+            "linear-gradient(90deg, #FF8F56 0%, #EA580C 50%, #E85A22 100%)",
         }}
       />
 
@@ -772,9 +1039,9 @@ function InterviewPromptPhase({
           <motion.div
             animate={{
               boxShadow: [
-                "0 0 0 0px rgba(255,107,53,0.12)",
-                "0 0 0 8px rgba(255,107,53,0.04)",
-                "0 0 0 0px rgba(255,107,53,0.12)",
+                "0 0 0 0px rgba(234,88,12,0.12)",
+                "0 0 0 8px rgba(234,88,12,0.04)",
+                "0 0 0 0px rgba(234,88,12,0.12)",
               ],
             }}
             transition={{
@@ -786,15 +1053,15 @@ function InterviewPromptPhase({
               width: 44,
               height: 44,
               borderRadius: 13,
-              background: "rgba(194,65,12,0.10)",
-              border: "1px solid rgba(194,65,12,0.16)",
+              background: "rgba(234,88,12,0.10)",
+              border: "1px solid rgba(234,88,12,0.16)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               boxShadow: "0 2px 10px rgba(28,25,23,0.06)",
             }}
           >
-            <Sparkles size={20} color="#C2410C" strokeWidth={2} />
+            <Sparkles size={20} color="#EA580C" strokeWidth={2} />
           </motion.div>
         </motion.div>
 
@@ -848,8 +1115,8 @@ function InterviewPromptPhase({
             paddingRight: 14,
             borderRadius: 16,
             background:
-              "linear-gradient(135deg, rgba(255,107,53,0.04) 0%, rgba(255,143,86,0.02) 100%)",
-            border: "1px solid rgba(255,107,53,0.08)",
+              "linear-gradient(135deg, rgba(234,88,12,0.04) 0%, rgba(255,143,86,0.02) 100%)",
+            border: "1px solid rgba(234,88,12,0.08)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -885,12 +1152,12 @@ function InterviewPromptPhase({
                     height: 40,
                     borderRadius: 12,
                     background: C.white,
-                    border: "1px solid rgba(255,107,53,0.12)",
+                    border: "1px solid rgba(234,88,12,0.12)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     boxShadow:
-                      "0 1px 4px rgba(255,107,53,0.08)",
+                      "0 1px 4px rgba(234,88,12,0.08)",
                   }}
                 >
                   {step.icon}
@@ -936,7 +1203,7 @@ function InterviewPromptPhase({
                 >
                   <ArrowRight
                     size={14}
-                    color="rgba(255,107,53,0.35)"
+                    color="rgba(234,88,12,0.35)"
                     strokeWidth={2.5}
                   />
                 </motion.div>
@@ -1002,14 +1269,14 @@ function InterviewPromptPhase({
             padding: "14px",
             borderRadius: 14,
             border: "none",
-            background: "linear-gradient(135deg, #FF8F56 0%, #FF6B35 100%)",
+            background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
             color: "white",
             fontSize: 15,
             fontWeight: 600,
             letterSpacing: "-0.02em",
             cursor: "pointer",
             fontFamily: "Inter, sans-serif",
-            boxShadow: "0 4px 18px rgba(255,107,53,0.35)",
+            boxShadow: "0 4px 18px rgba(234,88,12,0.35)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1351,7 +1618,7 @@ function ZappyHomeScreen({
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{
-            width: 28, height: 28, borderRadius: 8, background: "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)",
+            width: 28, height: 28, borderRadius: 8, background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <Sparkles size={14} color="white" strokeWidth={2} />
@@ -1649,7 +1916,7 @@ function ZappyHomeScreen({
                 onClick={isRecording ? stopRecording : startRecording}
                 style={{
                   width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-                  background: isRecording ? "rgba(194,65,12,0.12)" : "rgba(28,25,23,0.08)",
+                  background: isRecording ? "rgba(234,88,12,0.12)" : "rgba(28,25,23,0.08)",
                   border: "none", display: "flex", alignItems: "center", justifyContent: "center",
                   cursor: "pointer",
                   transition: "background 0.18s",
@@ -1657,7 +1924,7 @@ function ZappyHomeScreen({
               >
                 <Mic
                   size={16}
-                  color={isRecording ? "#C2410C" : C.textSec}
+                  color={isRecording ? "#EA580C" : C.textSec}
                   strokeWidth={2}
                 />
               </motion.button>
@@ -1667,7 +1934,7 @@ function ZappyHomeScreen({
               onClick={handleSend}
               style={{
                 width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-                background: prompt.trim() ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "rgba(28,25,23,0.08)",
+                background: prompt.trim() ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.08)",
                 border: "none", display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: prompt.trim() ? "pointer" : "default",
                 transition: "background 0.18s",

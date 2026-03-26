@@ -1,18 +1,19 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { ParsedProfile } from "./WelcomeScreen";
+import { FloatingLabelInput } from "./ui/FloatingLabelInput";
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
   bg: "#FDFBF8",
   primary: "#1C1917",
-  brand: "#C2410C",
+  brand: "#EA580C",
   textPrimary: "#1C1917",
   textMuted: "#78716C",
   textSecondary: "#A8A29E",
   border: "rgba(28,25,23,0.09)",
   inputBg: "#FFFFFF",
-  orbA: "rgba(194,65,12,0.06)",
+  orbA: "rgba(234,88,12,0.06)",
   orbB: "rgba(146,64,14,0.04)",
 };
 
@@ -34,52 +35,27 @@ function Field({
   label: string; value: string; onChange: (v: string) => void;
   placeholder?: string; type?: string; index: number;
 }) {
-  const [focused, setFocused] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.42, delay: 0.08 + index * 0.07, ease: [0.16, 1, 0.3, 1] }}
     >
-      <label style={{
-        display: "block", fontSize: "11px", fontWeight: 600,
-        color: focused ? C.brand : C.textSecondary,
-        letterSpacing: "0.06em", textTransform: "uppercase",
-        marginBottom: "8px",
-        transition: "color 0.2s",
-      }}>
-        {label}
-      </label>
-      <div style={{
-        borderRadius: "14px",
-        background: C.inputBg,
-        border: focused
-          ? "1.5px solid rgba(194,65,12,0.35)"
-          : `1.5px solid ${C.border}`,
-        boxShadow: focused
-          ? "0 0 0 3px rgba(194,65,12,0.08), 0 1px 4px rgba(0,0,0,0.04)"
-          : "0 1px 3px rgba(0,0,0,0.04)",
-        transition: "border-color 0.2s, box-shadow 0.2s",
-      }}>
-        <input
-          type={type}
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={{
-            width: "100%",
-            padding: "15px 16px",
-            fontSize: "15px", fontWeight: 400,
-            color: C.textPrimary,
-            background: "transparent",
-            border: "none", outline: "none",
-            borderRadius: "14px",
-            fontFamily: "Inter, sans-serif",
-          }}
-        />
-      </div>
+      <FloatingLabelInput
+        label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        type={type}
+        autoComplete="off"
+        fieldStyle={{
+          ["--zf-bg" as any]: C.inputBg,
+          ["--zf-fg" as any]: C.textPrimary,
+          ["--zf-muted" as any]: C.textMuted,
+          ["--zf-border" as any]: C.border,
+          ["--zf-border-focus" as any]: "rgba(234,88,12,0.35)",
+          ["--zf-ring-focus" as any]: "rgba(234,88,12,0.08)",
+        }}
+      />
     </motion.div>
   );
 }
@@ -95,14 +71,14 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
         padding: "8px 16px",
         borderRadius: "100px",
         border: active ? "1.5px solid transparent" : `1.5px solid ${C.border}`,
-        background: active ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "white",
+        background: active ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "white",
         color: active ? "white" : C.textMuted,
         fontSize: "13px", fontWeight: active ? 600 : 500,
         cursor: "pointer",
         letterSpacing: "-0.01em",
         fontFamily: "Inter, sans-serif",
         boxShadow: active
-          ? "0 2px 10px rgba(255,107,53,0.3)"
+          ? "0 2px 10px rgba(234,88,12,0.3)"
           : "0 1px 3px rgba(0,0,0,0.04)",
         transition: "background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s",
         whiteSpace: "nowrap",
@@ -186,25 +162,26 @@ export function ProfileFormScreen({
         >
           <button
             onClick={onBack}
+            aria-label="Go back"
             style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "white",
-              border: `1.5px solid ${C.border}`,
-              borderRadius: "12px",
-              padding: "7px 13px 7px 9px",
+              width: "44px",
+              height: "44px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "transparent",
+              border: "none",
+              borderRadius: "10px",
               cursor: "pointer",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+              color: C.textMuted,
               fontFamily: "Inter, sans-serif",
             }}
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
               <path d="M9 11.5L5 7.5l4-4"
-                stroke={C.textPrimary} strokeWidth="1.6"
+                stroke="currentColor" strokeWidth="1.6"
                 strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.01em" }}>
-              Back
-            </span>
           </button>
 
           {/* Step dots */}
@@ -216,7 +193,7 @@ export function ProfileFormScreen({
                   width: i === 1 ? "20px" : "6px",
                   height: "6px",
                   borderRadius: "100px",
-                  background: i === 1 ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "rgba(28,25,23,0.15)",
+                  background: i === 1 ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.15)",
                 }}
                 layout
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -238,8 +215,8 @@ export function ProfileFormScreen({
               transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.1 }}
               className="inline-flex items-center gap-1.5 mb-3"
               style={{
-                background: "rgba(194,65,12,0.07)",
-                border: "1px solid rgba(194,65,12,0.18)",
+                background: "rgba(234,88,12,0.07)",
+                border: "1px solid rgba(234,88,12,0.18)",
                 borderRadius: "100px",
                 padding: "4px 12px",
               }}
@@ -273,7 +250,7 @@ export function ProfileFormScreen({
 
         {/* Full Name */}
         <Field
-          label="Full Name"
+          label="Full name"
           value={name}
           onChange={setName}
           placeholder="Alex Johnson"
@@ -282,7 +259,7 @@ export function ProfileFormScreen({
 
         {/* Current Role */}
         <Field
-          label="Current Role / Title"
+          label="Current role / title"
           value={title}
           onChange={setTitle}
           placeholder="e.g. Product Designer"
@@ -316,7 +293,7 @@ export function ProfileFormScreen({
 
         {/* Location */}
         <Field
-          label="Current Location"
+          label="Current location"
           value={location}
           onChange={setLocation}
           placeholder="e.g. Bangalore, India"
@@ -351,7 +328,7 @@ export function ProfileFormScreen({
                     display: "inline-flex", alignItems: "center", gap: "6px",
                     padding: "6px 12px",
                     borderRadius: "100px",
-                    background: "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)",
+                    background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
                     color: "white",
                     fontSize: "13px", fontWeight: 500,
                     letterSpacing: "-0.01em",
@@ -384,70 +361,58 @@ export function ProfileFormScreen({
           </div>
 
           {/* Skill input */}
-          <div style={{
-            borderRadius: "14px",
-            background: C.inputBg,
-            border: `1.5px solid ${C.border}`,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center",
-            paddingRight: "6px",
-          }}>
-            <input
-              ref={skillRef}
-              type="text"
-              value={skillInput}
-              placeholder="Add a skill and press Enter"
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v.endsWith(",")) { addSkill(v); return; }
-                setSkillInput(v);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") { e.preventDefault(); addSkill(skillInput); }
-                if (e.key === "Backspace" && !skillInput && skills.length)
-                  removeSkill(skills[skills.length - 1]);
-              }}
-              onFocus={(e) => {
-                e.target.parentElement!.style.border = "1.5px solid rgba(194,65,12,0.35)";
-                e.target.parentElement!.style.boxShadow = "0 0 0 3px rgba(194,65,12,0.08)";
-              }}
-              onBlur={(e) => {
-                if (skillInput) addSkill(skillInput);
-                e.target.parentElement!.style.border = `1.5px solid ${C.border}`;
-                e.target.parentElement!.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)";
-              }}
-              style={{
-                flex: 1,
-                padding: "14px 16px",
-                fontSize: "15px", fontWeight: 400,
-                color: C.textPrimary,
-                background: "transparent",
-                border: "none", outline: "none",
-                fontFamily: "Inter, sans-serif",
-              }}
-            />
-            {skillInput && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                onClick={() => addSkill(skillInput)}
-                style={{
-                  width: "32px", height: "32px",
-                  borderRadius: "10px",
-                  background: "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)",
-                  border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 2v10M2 7h10"
-                    stroke="white" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              </motion.button>
-            )}
-          </div>
+          <FloatingLabelInput
+            ref={skillRef}
+            label="Add a skill"
+            type="text"
+            value={skillInput}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v.endsWith(",")) { addSkill(v); return; }
+              setSkillInput(v);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); addSkill(skillInput); }
+              if (e.key === "Backspace" && !skillInput && skills.length)
+                removeSkill(skills[skills.length - 1]);
+            }}
+            onBlur={() => {
+              if (skillInput) addSkill(skillInput);
+            }}
+            rightAdornment={
+              skillInput ? (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  onClick={() => addSkill(skillInput)}
+                  style={{
+                    width: "32px", height: "32px",
+                    borderRadius: "10px",
+                    background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+                    border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                  aria-label="Add skill"
+                  type="button"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 2v10M2 7h10"
+                      stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </motion.button>
+              ) : undefined
+            }
+            rightAdornmentWidth={42}
+            fieldStyle={{
+              ["--zf-bg" as any]: C.inputBg,
+              ["--zf-fg" as any]: C.textPrimary,
+              ["--zf-muted" as any]: C.textMuted,
+              ["--zf-border" as any]: C.border,
+              ["--zf-border-focus" as any]: "rgba(234,88,12,0.35)",
+              ["--zf-ring-focus" as any]: "rgba(234,88,12,0.08)",
+            }}
+          />
         </motion.div>
 
         {/* Work Preference */}
@@ -530,13 +495,13 @@ export function ProfileFormScreen({
             padding: "18px",
             borderRadius: "16px",
             border: "none",
-            background: canSubmit ? "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)" : "#EAE6E1",
+            background: canSubmit ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "#EAE6E1",
             color: canSubmit ? "white" : "#B8AFA6",
             fontSize: "15px", fontWeight: 600,
             letterSpacing: "-0.01em",
             cursor: canSubmit && !submitted ? "pointer" : "not-allowed",
             boxShadow: canSubmit
-              ? "0 4px 20px rgba(255,107,53,0.35), 0 1px 4px rgba(255,107,53,0.2)"
+              ? "0 4px 20px rgba(234,88,12,0.35), 0 1px 4px rgba(234,88,12,0.2)"
               : "none",
             transition: "background 0.22s, color 0.22s, box-shadow 0.22s",
             fontFamily: "Inter, sans-serif",

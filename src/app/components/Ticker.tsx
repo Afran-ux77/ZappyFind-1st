@@ -42,7 +42,7 @@ export function Ticker() {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: "9px", color: "#C2410C", lineHeight: 1 }}>
+            <span style={{ fontSize: "9px", color: "#EA580C", lineHeight: 1 }}>
               {item.icon}
             </span>
             {item.text}
