@@ -13,6 +13,7 @@ import { VoiceCallScreen } from "./components/VoiceCallScreen";
 import { DashboardPreviewScreen } from "./components/DashboardPreviewScreen";
 import { JobReviewScreen } from "./components/JobReviewScreen";
 import { JobSeekerProfileScreen } from "./components/JobSeekerProfileScreen";
+import { MatchCelebrationScreen } from "./components/MatchCelebrationScreen";
 
 type Screen =
   | "login"
@@ -23,6 +24,7 @@ type Screen =
   | "jobPreferences"
   | "profileSummary"
   | "settingUpProfile"
+  | "matchCelebration"
   | "success"
   | "dashboardPreview"
   | "voiceCall"
@@ -298,8 +300,14 @@ export default function App() {
                   setProfileReturnScreen("profileSummary");
                   goTo("profileEdit", "forward");
                 }}
-                onContinue={() => goTo("success", "forward")}
+                onContinue={() => goTo("matchCelebration", "forward")}
               />
+            </motion.div>
+          )}
+
+          {screen === "matchCelebration" && (
+            <motion.div key="matchCelebration" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
+              <MatchCelebrationScreen onContinue={() => goTo("success", "forward")} />
             </motion.div>
           )}
 
@@ -745,7 +753,7 @@ const C = {
 };
 
 const AI_ONBOARDING_PARAGRAPHS = [
-  "Before we review the 369 matching roles or introduce you directly to the recruiters, we just need answers to 3 quick questions.",
+  "Before we review the 74 matching roles or introduce you directly to the recruiters, we just need answers to 3 quick questions.",
   "Shall we get started?",
 ];
 
@@ -1586,6 +1594,7 @@ function ZappyHomeScreen({
       setShowCallCard(true);
     }
   };
+  const hasPromptText = prompt.trim().length > 0;
 
   const renderWithBoldThreeQuestions = (text: string) => {
     const target = "3 quick questions";
@@ -1789,57 +1798,42 @@ function ZappyHomeScreen({
             padding: "12px 16px 24px",
             background: "rgba(253,251,248,0.96)",
             backdropFilter: "blur(14px)",
-            borderTop: `1px solid ${C.border}`,
           }}
         >
-          {/* Template quick reply chips (shown after AI finishes typing) */}
+          {/* Quick reply chips */}
           <AnimatePresence>
             {showQuickReplies && typingDone && (
               <motion.div
                 key="quick-replies"
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginBottom: 10,
-                }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}
               >
                 <button
                   type="button"
                   onClick={() => {
                     const userId = nextMessageIdRef.current++;
-                    const displayName = firstName
-                      ? firstName.split(" ")[0]
-                      : "Alex";
-                    const followUp =
-                      `Great ${displayName}, so what is the tech stack you have been using mostly at Amazon?`;
+                    const displayName = firstName ? firstName.split(" ")[0] : "Alex";
+                    const followUp = `Great ${displayName}, so what is the tech stack you have been using mostly at Amazon?`;
                     setMessages((prev) => {
-                      const next = [
-                        ...prev,
-                        { id: userId, role: "user", text: "Yes, let's start" },
-                      ];
+                      const next = [...prev, { id: userId, role: "user", text: "Yes, let's start" }];
                       const userCount = next.filter((m) => m.role === "user").length;
-                      if (userCount >= 2) {
-                        setPostChatPhase("analyzing");
-                        setShowQuickReplies(false);
-                      }
+                      if (userCount >= 2) { setPostChatPhase("analyzing"); setShowQuickReplies(false); }
                       return next;
                     });
                     setShowQuickReplies(false);
                     setSecondQuestionSource(followUp);
                   }}
                   style={{
-                    border: "none",
+                    border: "1px solid rgba(234,88,12,0.22)",
                     cursor: "pointer",
                     borderRadius: 999,
-                    padding: "10px 16px",
-                    background: "#FFF1E8",
-                    color: "#FF6A2B",
-                    fontSize: 14,
+                    padding: "6px 13px",
+                    background: "rgba(255,241,232,0.7)",
+                    color: "#C2410C",
+                    fontSize: 12.5,
                     fontWeight: 500,
                     letterSpacing: "-0.01em",
                     fontFamily: "Inter, sans-serif",
@@ -1852,27 +1846,21 @@ function ZappyHomeScreen({
                   onClick={() => {
                     const id = nextMessageIdRef.current++;
                     setMessages((prev) => {
-                      const next = [
-                        ...prev,
-                        { id, role: "user", text: "No, I'll answer later" },
-                      ];
+                      const next = [...prev, { id, role: "user", text: "No, I'll answer later" }];
                       const userCount = next.filter((m) => m.role === "user").length;
-                      if (userCount >= 2) {
-                        setPostChatPhase("analyzing");
-                        setShowQuickReplies(false);
-                      }
+                      if (userCount >= 2) { setPostChatPhase("analyzing"); setShowQuickReplies(false); }
                       return next;
                     });
                     setShowQuickReplies(false);
                   }}
                   style={{
-                    border: "none",
+                    border: "1px solid rgba(234,88,12,0.22)",
                     cursor: "pointer",
                     borderRadius: 999,
-                    padding: "10px 16px",
-                    background: "#FFF1E8",
-                    color: "#FF6A2B",
-                    fontSize: 14,
+                    padding: "6px 13px",
+                    background: "rgba(255,241,232,0.7)",
+                    color: "#C2410C",
+                    fontSize: 12.5,
                     fontWeight: 500,
                     letterSpacing: "-0.01em",
                     fontFamily: "Inter, sans-serif",
@@ -1884,6 +1872,7 @@ function ZappyHomeScreen({
             )}
           </AnimatePresence>
 
+          {/* Prompt bar */}
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             background: C.white, borderRadius: 16,
@@ -1908,7 +1897,6 @@ function ZappyHomeScreen({
                 fontSize: "14px", color: C.textPrimary, fontFamily: "Inter, sans-serif",
                 letterSpacing: "-0.01em", padding: "10px 0",
               }}
-              disabled={!conversationStarted || !typingDone}
             />
             {speechAvailable && (
               <motion.button
@@ -1916,31 +1904,30 @@ function ZappyHomeScreen({
                 onClick={isRecording ? stopRecording : startRecording}
                 style={{
                   width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-                  background: isRecording ? "rgba(234,88,12,0.12)" : "rgba(28,25,23,0.08)",
-                  border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: isRecording ? "rgba(234,88,12,0.1)" : "rgba(28,25,23,0.04)",
+                  border: isRecording ? "1px solid rgba(234,88,12,0.28)" : "1px solid rgba(28,25,23,0.1)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                   cursor: "pointer",
-                  transition: "background 0.18s",
+                  transition: "background 0.18s, border-color 0.18s",
                 }}
               >
-                <Mic
-                  size={16}
-                  color={isRecording ? "#EA580C" : C.textSec}
-                  strokeWidth={2}
-                />
+                <Mic size={16} color={isRecording ? "#C2410C" : "#78716C"} strokeWidth={2} />
               </motion.button>
             )}
             <motion.button
-              whileTap={{ scale: 0.92 }}
+              whileTap={hasPromptText ? { scale: 0.92 } : undefined}
               onClick={handleSend}
+              disabled={!hasPromptText}
               style={{
                 width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-                background: prompt.trim() ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.08)",
+                background: hasPromptText ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.08)",
                 border: "none", display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: prompt.trim() ? "pointer" : "default",
-                transition: "background 0.18s",
+                cursor: hasPromptText ? "pointer" : "not-allowed",
+                opacity: hasPromptText ? 1 : 0.72,
+                transition: "background 0.18s, opacity 0.18s",
               }}
             >
-              <Send size={15} color={prompt.trim() ? "white" : C.textSec} strokeWidth={2} />
+              <Send size={15} color={hasPromptText ? "white" : C.textSec} strokeWidth={2} />
             </motion.button>
           </div>
         </motion.div>

@@ -18,8 +18,6 @@ const C = {
 
 type ProfileType = "fresher" | "experienced";
 
-const EXP_YEARS_OPTIONS = Array.from({ length: 31 }, (_, i) => i);
-const EXP_MONTHS_OPTIONS = Array.from({ length: 12 }, (_, i) => i);
 const COURSE_OPTIONS = [
   "B.Tech",
   "B.E.",
@@ -232,120 +230,57 @@ function SelectField({
 // ── Experience duration picker (years + months stepper) ──────────────────────
 function ExperienceDurationPicker({
   years, months, onYearsChange, onMonthsChange,
+  yearsError,
 }: {
-  years: number; months: number;
-  onYearsChange: (v: number) => void;
-  onMonthsChange: (v: number) => void;
+  years: string; months: string;
+  onYearsChange: (v: string) => void;
+  onMonthsChange: (v: string) => void;
+  yearsError?: boolean;
 }) {
-  const stepBtnStyle = (disabled: boolean): React.CSSProperties => ({
-    width: 40, height: 40, borderRadius: 12, border: "none",
-    background: disabled ? "rgba(28,25,23,0.04)" : "rgba(28,25,23,0.06)",
-    color: disabled ? C.textSecondary : C.textMuted,
-    cursor: disabled ? "not-allowed" : "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontFamily: "Inter, sans-serif", fontSize: 20, fontWeight: 500,
-    transition: "background 0.15s, color 0.15s",
-    WebkitTapHighlightColor: "rgba(194,65,12,0.12)",
-    touchAction: "manipulation" as const,
-    flexShrink: 0,
-  });
+  const sanitizeYears = (value: string) => value.replace(/\D/g, "").slice(0, 2);
+  const sanitizeMonths = (value: string) => value.replace(/\D/g, "").slice(0, 2);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       {/* Years */}
-      <div style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-        borderRadius: 14, background: "rgba(28,25,23,0.025)", padding: "12px 8px",
-      }}>
-        <span style={{
-          fontSize: 10, fontWeight: 700, color: C.textSecondary,
-          letterSpacing: "0.06em", textTransform: "uppercase" as const,
-          marginBottom: 2,
-        }}>Years</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <motion.button
-            type="button" whileTap={{ scale: 0.9 }}
-            disabled={years <= 0}
-            onClick={() => onYearsChange(Math.max(0, years - 1))}
-            style={stepBtnStyle(years <= 0)}
-          >−</motion.button>
-          <select
-            value={years}
-            onChange={(e) => onYearsChange(+e.target.value)}
-            aria-label="Years of experience"
-            style={{
-              width: 48, textAlign: "center",
-              fontSize: 28, fontWeight: 800, color: C.textPrimary,
-              letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums",
-              fontFamily: "Inter, sans-serif", lineHeight: 1,
-              background: "transparent", border: "none",
-              appearance: "none", WebkitAppearance: "none",
-              cursor: "pointer", padding: 0,
-            }}
-          >
-            {EXP_YEARS_OPTIONS.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-          <motion.button
-            type="button" whileTap={{ scale: 0.9 }}
-            disabled={years >= 30}
-            onClick={() => onYearsChange(Math.min(30, years + 1))}
-            style={{
-              ...stepBtnStyle(years >= 30),
-              background: years >= 30 ? "rgba(28,25,23,0.04)" : "rgba(28,25,23,0.06)",
-              color: years >= 30 ? C.textSecondary : C.textMuted,
-            }}
-          >+</motion.button>
-        </div>
+      <div>
+        <Input
+          label="Years"
+          value={years}
+          onChange={(v) => {
+            const cleaned = sanitizeYears(v);
+            if (!cleaned) {
+              onYearsChange("");
+              return;
+            }
+            const n = Math.min(30, Number(cleaned));
+            onYearsChange(String(n));
+          }}
+          placeholder="0-30"
+          inputMode="numeric"
+          required
+          error={yearsError}
+          errorText="Years is required."
+        />
       </div>
 
       {/* Months */}
-      <div style={{
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-        borderRadius: 14, background: "rgba(28,25,23,0.025)", padding: "12px 8px",
-      }}>
-        <span style={{
-          fontSize: 10, fontWeight: 700, color: C.textSecondary,
-          letterSpacing: "0.06em", textTransform: "uppercase" as const,
-          marginBottom: 2,
-        }}>Months</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <motion.button
-            type="button" whileTap={{ scale: 0.9 }}
-            disabled={months <= 0}
-            onClick={() => onMonthsChange(Math.max(0, months - 1))}
-            style={stepBtnStyle(months <= 0)}
-          >−</motion.button>
-          <select
-            value={months}
-            onChange={(e) => onMonthsChange(+e.target.value)}
-            aria-label="Months of experience"
-            style={{
-              width: 48, textAlign: "center",
-              fontSize: 28, fontWeight: 800, color: C.textPrimary,
-              letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums",
-              fontFamily: "Inter, sans-serif", lineHeight: 1,
-              background: "transparent", border: "none",
-              appearance: "none", WebkitAppearance: "none",
-              cursor: "pointer", padding: 0,
-            }}
-          >
-            {EXP_MONTHS_OPTIONS.map((v) => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-          <motion.button
-            type="button" whileTap={{ scale: 0.9 }}
-            disabled={months >= 11}
-            onClick={() => onMonthsChange(Math.min(11, months + 1))}
-            style={{
-              ...stepBtnStyle(months >= 11),
-              background: months >= 11 ? "rgba(28,25,23,0.04)" : "rgba(28,25,23,0.06)",
-              color: months >= 11 ? C.textSecondary : C.textMuted,
-            }}
-          >+</motion.button>
-        </div>
+      <div>
+        <Input
+          label="Months"
+          value={months}
+          onChange={(v) => {
+            const cleaned = sanitizeMonths(v);
+            if (!cleaned) {
+              onMonthsChange("");
+              return;
+            }
+            const n = Math.min(11, Number(cleaned));
+            onMonthsChange(String(n));
+          }}
+          placeholder="0-11"
+          inputMode="numeric"
+        />
       </div>
     </div>
   );
@@ -557,8 +492,8 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [moreEdu, setMoreEdu] = useState<Array<{ institution: string; degree: string; year: string }>>([]);
 
   // Experience (experienced)
-  const [expYears, setExpYears] = useState(0);
-  const [expMonths, setExpMonths] = useState(0);
+  const [expYears, setExpYears] = useState("");
+  const [expMonths, setExpMonths] = useState("");
   const [company, setCompany] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [startYear, setStartYear] = useState("");
@@ -609,6 +544,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const missingCompany = company.trim().length === 0;
   const missingJobTitle = jobTitle.trim().length === 0;
   const missingHighestQualification = highestQualification.trim().length === 0;
+  const missingExpYears = profileType === "experienced" && expYears.trim().length === 0;
 
   const requiredMissingFields: string[] = [];
   if (missingFullName) requiredMissingFields.push("Full Name");
@@ -627,6 +563,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
     if (missingSpecialization) requiredMissingFields.push("Specialization");
     if (missingGradYear) requiredMissingFields.push("Graduation Year");
   } else {
+    if (missingExpYears) requiredMissingFields.push("Total experience years");
     if (missingCompany) requiredMissingFields.push("Company");
     if (missingJobTitle) requiredMissingFields.push("Job Title");
     if (missingHighestQualification) requiredMissingFields.push("Highest qualification");
@@ -776,7 +713,12 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
       headline = `${fresherHeadline} · ${institution.trim()}`;
     } else if ((profileType === "experienced") && jobTitle.trim()) {
       headline = company.trim() ? `${jobTitle.trim()} at ${company.trim()}` : jobTitle.trim();
-      const expStr = formatExperienceDuration(expYears, expMonths);
+      const parsedYears = Number.parseInt(expYears, 10);
+      const parsedMonths = Number.parseInt(expMonths, 10);
+      const expStr = formatExperienceDuration(
+        Number.isFinite(parsedYears) ? parsedYears : 0,
+        Number.isFinite(parsedMonths) ? parsedMonths : 0,
+      );
       if (expStr) headline += ` · ${expStr}`;
     }
 
@@ -1361,6 +1303,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                     }}>Total Experience</label>
                     <ExperienceDurationPicker
                       years={expYears} months={expMonths}
+                      yearsError={showRequiredErrors && missingExpYears}
                       onYearsChange={setExpYears} onMonthsChange={setExpMonths}
                     />
                   </div>
@@ -1718,7 +1661,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           <Input label="Institution" value={optEdu.institution}
                             onChange={(v) => setOptEdu((prev) => ({ ...prev, institution: v }))}
                             placeholder="e.g. IIT Delhi" />
-                          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr" }}>
                             <SelectField
                               label="Course"
                               value={optEdu.course}
@@ -1742,7 +1685,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                               placeholder={optEdu.course ? "Select specialization" : "Select course first"}
                             />
                           </div>
-                          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr" }}>
                             <Input label="Graduation Year" value={optEdu.year}
                               onChange={(v) => setOptEdu((prev) => ({ ...prev, year: v.replace(/\D/g, "").slice(0, 4) }))}
                               placeholder="2024" inputMode="numeric" />
@@ -1787,7 +1730,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                                 Remove
                               </button>
                             </div>
-                            <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                            <div className="grid gap-3" style={{ gridTemplateColumns: "1fr" }}>
                               <Input label="Institution" value={edu.institution}
                                 onChange={(v) => {
                                   const n = [...optMoreEdu];
@@ -1811,7 +1754,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                                 placeholder="Select course"
                               />
                             </div>
-                            <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+                            <div className="grid gap-3" style={{ gridTemplateColumns: "1fr", marginTop: 12 }}>
                               <SelectField
                                 label="Specialization"
                                 value={edu.specialization}

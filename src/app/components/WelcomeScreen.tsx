@@ -909,34 +909,28 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                       )}
                     </div>
 
-                    {/* Quick reply chips (shown only after AI finishes typing) */}
+                    {/* Quick reply chips */}
                     <AnimatePresence>
                       {showQuickReplies && !isAiTyping && (
                         <motion.div
                           key="zappy-quick-replies"
-                          initial={{ opacity: 0, y: 8 }}
+                          initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 8 }}
-                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 8,
-                            marginTop: 14,
-                            marginBottom: 10,
-                          }}
+                          exit={{ opacity: 0, y: 6 }}
+                          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}
                         >
                           <button
                             type="button"
                             onClick={() => handleQuickReply("Yes, let's start")}
                             style={{
-                              border: "none",
+                              border: "1px solid rgba(234,88,12,0.22)",
                               cursor: "pointer",
                               borderRadius: 999,
-                              padding: "10px 16px",
-                              background: "#FFF1E8",
-                              color: "#FF6A2B",
-                              fontSize: 14,
+                              padding: "6px 13px",
+                              background: "rgba(255,241,232,0.7)",
+                              color: "#C2410C",
+                              fontSize: 12.5,
                               fontWeight: 500,
                               letterSpacing: "-0.01em",
                               fontFamily: "Inter, sans-serif",
@@ -948,13 +942,13 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                             type="button"
                             onClick={() => handleQuickReply("No, I'll answer later")}
                             style={{
-                              border: "none",
+                              border: "1px solid rgba(234,88,12,0.22)",
                               cursor: "pointer",
                               borderRadius: 999,
-                              padding: "10px 16px",
-                              background: "#FFF1E8",
-                              color: "#FF6A2B",
-                              fontSize: 14,
+                              padding: "6px 13px",
+                              background: "rgba(255,241,232,0.7)",
+                              color: "#C2410C",
+                              fontSize: 12.5,
                               fontWeight: 500,
                               letterSpacing: "-0.01em",
                               fontFamily: "Inter, sans-serif",
@@ -1012,6 +1006,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                         </svg>
                       </div>
                     </div>
+
                   </motion.div>
                 )}
               </AnimatePresence>

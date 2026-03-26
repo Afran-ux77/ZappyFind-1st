@@ -1,21 +1,36 @@
-import React from "react";
-import { motion } from "motion/react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Sparkles, Briefcase, GraduationCap, Wrench,
+  Clock, IndianRupee, Building2, Target, ChevronRight, Heart,
+} from "lucide-react";
 import type { FullProfile } from "./WelcomeScreen";
 
-const C = {
-  bgTop: "#FFF5EE",
-  bgMiddle: "#FFD7B2",
-  bgBottom: "#FFE9DC",
-  textPrimary: "#1C1917",
-  textMuted: "#6B6B6B",
-  textSec: "#8C8C8C",
-  cardBorder: "#F2E6DC",
-  cardGlow: "rgba(255, 217, 204, 1)",
-  avatarGrad: "linear-gradient(135deg, #FFB36B 0%, #FF6A2B 100%)",
-  avatarShadow: "0 8px 22px rgba(255,106,43,0.35)",
-  preferenceChipBg: "#FCE8DA",
-  preferenceChipText: "#5A4A42",
-  buttonBorder: "#E3E0DD",
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+const PRIORITY_LABELS: Record<string, string> = {
+  meaningful: "Meaningful work", leaders: "Experienced leaders",
+  investors: "Top investors", manyhats: "Wear many hats",
+  smart: "Smart teammates", challenge: "Challenging work",
+  growth: "Growing fast", startup: "Cool startup",
+  stable: "Stable company", tech: "Innovative technology",
+  flexible: "Flexible hours", benefits: "Great benefits",
+  remote: "Remote friendly", wlb: "Work-life balance",
+};
+const CATEGORY_LABELS: Record<string, string> = {
+  swe: "Software Engineering", design: "Design", data: "Data",
+  product: "Product", marketing: "Marketing", finance: "Finance",
+  sales: "Sales", hr: "Human Resources", consulting: "Consulting",
+  ops: "Operations & Strategy", cs: "Customer Success", legal: "Legal",
+  security: "Security", health: "Healthcare", misc: "Misc. Engineering",
+  other: "Other",
+};
+const SETUP_LABELS: Record<string, string> = {
+  onsite: "Onsite", hybrid: "Hybrid", remote: "Remote",
+};
+const TIMELINE_LABELS: Record<string, string> = {
+  immediately: "Immediately", "1month": "Within 1 month",
+  "3months": "Within 3 months", exploring: "Just exploring",
 };
 
 interface ProfileSummaryScreenProps {
@@ -31,390 +46,732 @@ export function ProfileSummaryScreen({
   onEditProfile,
   onContinue,
 }: ProfileSummaryScreenProps) {
-  const anyProfile = (profile || {}) as any;
-  const name: string = anyProfile.name || anyProfile.fullName || "Alex Johnson";
+  const p = (profile || {}) as any;
+  const name: string = p.name || p.fullName || "";
+  const firstName = name.trim().split(/\s+/)[0] || email.split("@")[0] || "there";
+  const initial = firstName.charAt(0).toUpperCase();
+  const headline: string = p.headline || p.currentRole || "";
+  const location: string = p.location || p.city || "";
+  const skills: string[] = Array.isArray(p.skills) ? p.skills : [];
+  const experiences: any[] = Array.isArray(p.experiences) ? p.experiences : [];
+  const education: any[] = Array.isArray(p.education) ? p.education : [];
+  const prefs = p.preferences || {};
 
-  const currentRole: string =
-    anyProfile.currentRole ||
-    anyProfile.headline ||
-    "Mid level sales professional";
+  const topExperiences = experiences.slice(0, 2);
+  const topEdu = education[0];
+  const totalYears = p.yearsOfExperience || p.totalExperience || "";
 
-  const years: string =
-    anyProfile.yearsOfExperience ||
-    anyProfile.totalExperience ||
-    "3–6 years experience";
+  const categoryLabels = ((prefs.categories && prefs.categories.length > 0)
+    ? prefs.categories
+    : (prefs.category ? [prefs.category] : []))
+    .map((id: string) => CATEGORY_LABELS[id] || id)
+    .slice(0, 3);
+  const allRoles = (
+    Object.values(prefs.rolesByCategory || {}).flat() as string[]
+  ).concat(Array.isArray(prefs.roles) ? prefs.roles : []);
+  const workSetups = (prefs.workSetups || [])
+    .map((id: string) => SETUP_LABELS[id] || id);
+  const locations: string[] = Array.isArray(prefs.locations) ? prefs.locations : [];
+  const priorities = (prefs.priorities || [])
+    .map((id: string) => PRIORITY_LABELS[id] || id);
+  const timeline = TIMELINE_LABELS[prefs.switchTimeline] || prefs.switchTimeline || "";
+  const salMin = prefs.salaryMin;
+  const salMax = prefs.salaryMax;
+  const salCurrency = prefs.salaryCurrency || "INR";
+  const salaryText = salMin != null && salMax != null
+    ? salCurrency === "INR"
+      ? `₹${salMin}–${salMax} LPA`
+      : `${salMin}–${salMax} (${salCurrency})`
+    : "";
 
-  const location: string =
-    anyProfile.location ||
-    anyProfile.city ||
-    "Based in India";
+  const aiSummary = p.summary || buildAiSummary(firstName, headline, totalYears, skills, categoryLabels, workSetups);
 
-  const education: string =
-    anyProfile.educationSummary ||
-    anyProfile.education?.[0]?.institution ||
-    "Bachelor’s degree";
-
-  const desiredRole: string =
-    anyProfile.preferredRole ||
-    "Mid level sales roles";
-
-  const workSetup: string =
-    anyProfile.workSetup ||
-    "Hybrid or remote";
-
-  const salaryExpectation: string =
-    anyProfile.salaryRange ||
-    "₹20L – ₹30L (flexible)";
-
-  const firstInitial = name.trim().charAt(0).toUpperCase() || "Y";
-
-  const aiSummary =
-    anyProfile.summary ||
-    `ZappyFind sees you as a ${currentRole.toLowerCase()} with around ${years.toLowerCase()}, strong communication skills, and a track record in relationship-driven roles. You’re currently targeting ${desiredRole.toLowerCase()} in modern, growth‑oriented teams.`;
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 300);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div
       style={{
         minHeight: "100dvh",
-        background: `linear-gradient(180deg, ${C.bgTop} 0%, ${C.bgMiddle} 45%, ${C.bgBottom} 100%)`,
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 18px",
+        position: "relative",
+        overflow: "hidden",
+        background: "#FDFBF8",
       }}
     >
-      {/* Top icon */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 12,
-          backgroundColor: "#FF6A2B",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 10px 26px rgba(255,106,43,0.35)",
-          marginBottom: 20,
-        }}
-      >
-        <span style={{ fontSize: 22, color: "white" }}>✨</span>
-      </motion.div>
-
-      {/* Headline */}
-      <motion.h1
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          maxWidth: 360,
-          textAlign: "center",
-          fontSize: 20,
-          lineHeight: "28px",
-          fontWeight: 500,
-          color: C.textPrimary,
-          letterSpacing: "-0.02em",
-          marginBottom: 24,
-        }}
-      >
-        We found{" "}
-        <span style={{ fontWeight: 800 }}>369 roles</span>{" "}
-        that best fits your preference for Sales Manager role 🎉
-      </motion.h1>
-
-      {/* Profile card */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          width: "100%",
-          maxWidth: 380,
-          borderRadius: 28,
-          padding: 4,
-          background: "white",
-          boxShadow:
-            "0px 18px 45px 0px rgba(241, 173, 140, 0.48), 0px 0px 0px 1px rgba(241, 209, 181, 0.9)",
-          border: `3px solid ${C.cardGlow}`,
-          borderImage: "none",
-        }}
-      >
-        <div
-          style={{
-            borderRadius: 24,
-            background: "white",
-            padding: 20,
-            boxShadow: "0 12px 32px rgba(15,23,42,0.08)",
-          }}
-        >
-          {/* Profile header */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: C.avatarGrad,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: C.avatarShadow,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  color: "white",
-                  letterSpacing: "-0.04em",
-                }}
-              >
-                {firstInitial}
-              </span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: C.textPrimary,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                {name}
-              </div>
-            </div>
-          </div>
-
-          {/* Summary box */}
-          <div
-            style={{
-              background: "rgba(248, 235, 228, 1)",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 20,
-            }}
-          >
-            <p
-              style={{
-                fontSize: 14,
-                lineHeight: "22px",
-                color: "rgba(31, 31, 31, 1)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {aiSummary}
-            </p>
-          </div>
-
-          {/* Info sections */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              marginBottom: 20,
-            }}
-          >
-            <SectionRow
-              icon="💼"
-              label="Experience"
-              text="Experience across relationship-driven roles, working closely with customers and revenue teams."
-            />
-            <SectionRow
-              icon="🛠"
-              label="Skills"
-              text="Strong communication, pipeline ownership, stakeholder management, and closing discipline."
-            />
-            <SectionRow
-              icon="🎓"
-              label="Education"
-              text="Indian Institute of Technology, Delhi"
-            />
-          </div>
-
-          {/* Preferences */}
-          <div
-            style={{
-              background: "rgba(247, 245, 243, 0)",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 20,
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: C.textSec,
-                marginBottom: 12,
-              }}
-            >
-              Preferences
-            </p>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              <PreferenceChip label={`Desired role: ${desiredRole}`} />
-              <PreferenceChip label={`Work setup: ${workSetup}`} />
-              <PreferenceChip label={`Salary: ${salaryExpectation}`} />
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 12,
-            }}
-          >
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={onEditProfile}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 24,
-                border: `1px solid ${C.buttonBorder}`,
-                background: "transparent",
-                color: "#333333",
-                fontSize: 14,
-                fontWeight: 500,
-                letterSpacing: "-0.01em",
-                cursor: "pointer",
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              Edit profile
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={onContinue}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 24,
-                border: "none",
-                background: "linear-gradient(135deg, #FF7A3D 0%, #FF5A1F 100%)",
-                color: "white",
-                fontSize: 14,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                cursor: "pointer",
-                fontFamily: "Inter, sans-serif",
-                boxShadow: "0 10px 30px rgba(255,106,43,0.45)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              Continue
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5 2l5 5-5 5" stroke="white" strokeWidth="1.6"
-                  strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function SectionRow({
-  icon,
-  label,
-  text,
-}: {
-  icon: string;
-  label: string;
-  text: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-      }}
-    >
+      {/* ── Noisy gradient header blob ──────────────────────────────── */}
       <div
         style={{
-          width: 24,
-          height: 24,
-          borderRadius: 999,
-          background: "rgba(0,0,0,0.02)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 13,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 320,
+          overflow: "hidden",
+          pointerEvents: "none",
         }}
       >
-        <span>{icon}</span>
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(145deg, rgba(255,220,188,0.7) 0%, rgba(255,200,160,0.5) 25%, rgba(255,240,225,0.4) 50%, rgba(253,251,248,1) 100%)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "-30%",
+            right: "-20%",
+            width: "80%",
+            height: "140%",
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse, rgba(255,143,86,0.2) 0%, transparent 65%)",
+            filter: "blur(30px)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "-10%",
+            width: "60%",
+            height: "100%",
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse, rgba(234,88,12,0.08) 0%, transparent 60%)",
+            filter: "blur(40px)",
+          }}
+        />
+        {/* Noise texture */}
+        <svg
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.35, mixBlendMode: "overlay" }}
+        >
+          <filter id="psnoise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" stitchTiles="stitch" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#psnoise)" />
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 80,
+            background: "linear-gradient(to bottom, transparent, #FDFBF8)",
+          }}
+        />
+      </div>
+
+      {/* ── Scrollable content ─────────────────────────────────────── */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overscrollBehavior: "contain",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <div style={{ padding: "44px 20px 120px" }}>
+          {/* Screen heading */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.04, ease: EASE }}
+            style={{ marginBottom: 30 }}
+          >
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#1C1917", letterSpacing: "-0.05em", lineHeight: 1.15, margin: "0 0 10px" }}>
+              Does think look like you, Alex?
+            </h1>
+
+          </motion.div>
+
+          {/* ── AI Snapshot ──────────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.12, ease: EASE }}
+            style={{
+              borderRadius: 22,
+              padding: "14px 16px",
+              background: "linear-gradient(145deg, rgba(255,255,255,0.64) 0%, rgba(255,255,255,0.5) 55%, rgba(255,245,238,0.54) 100%)",
+              backdropFilter: "blur(28px) saturate(1.7)",
+              WebkitBackdropFilter: "blur(28px) saturate(1.7)",
+              border: "1px solid rgba(255,255,255,0.74)",
+              boxShadow:
+                "0 10px 36px rgba(234,88,12,0.11), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(255,255,255,0.4)",
+              marginBottom: 18,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* Prismatic edge ring */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: 22,
+                border: "1px solid transparent",
+                background:
+                  "linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.2), rgba(255,220,188,0.34)) border-box",
+                WebkitMask:
+                  "linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)",
+                WebkitMaskComposite: "xor",
+                maskComposite: "exclude",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Reflection sheets */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "64%",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.24) 45%, rgba(255,255,255,0) 100%)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: "-24%",
+                left: "-20%",
+                width: "72%",
+                height: "112%",
+                transform: "rotate(-15deg)",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.54) 0%, rgba(255,255,255,0) 72%)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: "-18%",
+                right: "-24%",
+                width: "64%",
+                height: "102%",
+                transform: "rotate(12deg)",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(255,255,255,0) 74%)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: "30%",
+                left: "-8%",
+                width: "42%",
+                height: 1,
+                transform: "rotate(-12deg)",
+                background:
+                  "linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: "43%",
+                right: "-10%",
+                width: "38%",
+                height: 1,
+                transform: "rotate(10deg)",
+                background:
+                  "linear-gradient(90deg, transparent, rgba(255,255,255,0.88), transparent)",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Inner glow orb */}
+            <div
+              style={{
+                position: "absolute",
+                top: "-40%",
+                right: "-20%",
+                width: "70%",
+                height: "120%",
+                borderRadius: "50%",
+                background: "radial-gradient(ellipse, rgba(255,143,86,0.12) 0%, transparent 60%)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                bottom: "-30%",
+                left: "-10%",
+                width: "50%",
+                height: "80%",
+                borderRadius: "50%",
+                background: "radial-gradient(ellipse, rgba(234,88,12,0.06) 0%, transparent 60%)",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Top accent line */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 16,
+                right: 16,
+                height: 2,
+                borderRadius: 2,
+                background: "linear-gradient(90deg, transparent, rgba(234,88,12,0.35), transparent)",
+              }}
+            />
+            {/* Header label */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, position: "relative", zIndex: 1 }}>
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 7,
+                  background: "rgba(234,88,12,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Sparkles size={12} color="#EA580C" strokeWidth={2.2} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#C2410C", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                Zappy's read
+              </span>
+            </div>
+
+            {/* Role + identity line */}
+            <p style={{ fontSize: 17, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.04em", lineHeight: 1.2, margin: "0 0 8px", position: "relative", zIndex: 1 }}>
+              {headline || (categoryLabels[0] ? categoryLabels[0] + " specialist" : "Professional")}
+            </p>
+
+            {/* Chips row — years + domain */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10, position: "relative", zIndex: 1 }}>
+              {totalYears && (
+                <span style={{ padding: "3px 9px", borderRadius: 6, background: "rgba(234,88,12,0.08)", border: "1px solid rgba(234,88,12,0.12)", fontSize: 11, fontWeight: 600, color: "#C2410C", letterSpacing: "-0.01em" }}>
+                  {totalYears}
+                </span>
+              )}
+              {skills.slice(0, 3).map((sk) => (
+                <span key={sk} style={{ padding: "3px 9px", borderRadius: 6, background: "rgba(28,25,23,0.04)", border: "1px solid rgba(28,25,23,0.07)", fontSize: 11, fontWeight: 500, color: "#57534E", letterSpacing: "-0.01em" }}>
+                  {sk}
+                </span>
+              ))}
+            </div>
+
+            {/* One-line insight */}
+            <p style={{ fontSize: 12.5, lineHeight: 1.55, color: "#78716C", letterSpacing: "-0.01em", margin: 0, position: "relative", zIndex: 1 }}>
+              {aiSummary}
+            </p>
+          </motion.div>
+
+          {/* Sections appear staggered */}
+          <AnimatePresence>
+            {ready && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, ease: EASE }}
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {/* ── Experience ──────────────────────────────────────── */}
+                {topExperiences.length > 0 && (
+                  <Section
+                    icon={<Briefcase size={14} color="#EA580C" strokeWidth={2} />}
+                    title="Experience"
+                    delay={0}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      {topExperiences.map((exp: any, i: number) => (
+                        <motion.div
+                          key={exp.id || i}
+                          initial={{ opacity: 0, x: -6 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.35, delay: 0.22 + i * 0.08, ease: EASE }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.02em" }}>
+                              {exp.company || "Company"}
+                            </span>
+                            {exp.duration && (
+                              <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", letterSpacing: "-0.01em", flexShrink: 0, marginLeft: 8 }}>
+                                {exp.duration}
+                              </span>
+                            )}
+                          </div>
+                          {exp.role && (
+                            <p style={{ fontSize: 12, fontWeight: 600, color: "#78716C", margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+                              {exp.role}
+                            </p>
+                          )}
+                          {buildExpInsight(exp) && (
+                            <p style={{ fontSize: 11, color: "#A8A29E", margin: 0, lineHeight: 1.45, letterSpacing: "-0.005em", fontStyle: "italic" }}>
+                              {buildExpInsight(exp)}
+                            </p>
+                          )}
+                          {i < topExperiences.length - 1 && (
+                            <div style={{ height: 1, background: "rgba(28,25,23,0.05)", marginTop: 12 }} />
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* ── Education ───────────────────────────────────────── */}
+                {topEdu && (
+                  <Section
+                    icon={<GraduationCap size={14} color="#EA580C" strokeWidth={2} />}
+                    title="Education"
+                    delay={0.08}
+                  >
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.02em" }}>
+                          {topEdu.institution || "Institution"}
+                        </span>
+                        {topEdu.year && (
+                          <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", flexShrink: 0, marginLeft: 8 }}>
+                            {topEdu.year}
+                          </span>
+                        )}
+                      </div>
+                      {topEdu.degree && (
+                        <p style={{ fontSize: 12, fontWeight: 500, color: "#78716C", margin: 0, letterSpacing: "-0.01em" }}>
+                          {topEdu.degree}{topEdu.grade ? ` · ${topEdu.grade}` : ""}
+                        </p>
+                      )}
+                    </div>
+                  </Section>
+                )}
+
+                {/* ── Skills ──────────────────────────────────────────── */}
+                {skills.length > 0 && (
+                  <Section
+                    icon={<Wrench size={14} color="#EA580C" strokeWidth={2} />}
+                    title="Skills"
+                    delay={0.14}
+                  >
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {skills.slice(0, 8).map((s, i) => (
+                        <motion.span
+                          key={s}
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.25, delay: 0.28 + i * 0.025, ease: EASE }}
+                          style={{
+                            padding: "5px 11px",
+                            borderRadius: 8,
+                            background: "rgba(234,88,12,0.06)",
+                            border: "1px solid rgba(234,88,12,0.1)",
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: "#C2410C",
+                            letterSpacing: "-0.01em",
+                          }}
+                        >
+                          {s}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* ── Preferences ─────────────────────────────────────── */}
+                {(categoryLabels.length > 0 || allRoles.length > 0 || workSetups.length > 0 || locations.length > 0 || salaryText || timeline || priorities.length > 0) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.26, ease: EASE }}
+                    style={{
+                      borderRadius: 18,
+                      background: "white",
+                      border: "1px solid rgba(28,25,23,0.06)",
+                      boxShadow: "0 2px 12px rgba(28,25,23,0.04)",
+                      overflow: "hidden",
+                      position: "relative",
+                    }}
+                  >
+                    <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 8,
+                            background: "rgba(234,88,12,0.07)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Target size={14} color="#EA580C" strokeWidth={2} />
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.02em" }}>Preferences</span>
+                      </div>
+                      {/* Job type row */}
+                      {categoryLabels.length > 0 && (
+                        <PrefItem
+                          icon={<Briefcase size={13} strokeWidth={2} />}
+                          label="Looking for"
+                          value={allRoles.length > 0 ? allRoles.slice(0, 3).join(", ") : categoryLabels.join(", ")}
+                        />
+                      )}
+
+                      {/* Work setup */}
+                      {workSetups.length > 0 && (
+                        <PrefItem
+                          icon={<Building2 size={13} strokeWidth={2} />}
+                          label="Work setup"
+                          value={workSetups.join(", ")}
+                        />
+                      )}
+
+                      {locations.length > 0 && (
+                        <PrefItem
+                          icon={<Target size={13} strokeWidth={2} />}
+                          label="Preferred locations"
+                          value={locations.slice(0, 3).join(", ")}
+                        />
+                      )}
+
+                      {/* Salary */}
+                      {salaryText && (
+                        <PrefItem
+                          icon={<IndianRupee size={13} strokeWidth={2} />}
+                          label="Expected salary"
+                          value={salaryText}
+                        />
+                      )}
+
+                      {/* Timeline */}
+                      {timeline && (
+                        <PrefItem
+                          icon={<Clock size={13} strokeWidth={2} />}
+                          label="Switch timeline"
+                          value={timeline}
+                        />
+                      )}
+
+                      {/* Priorities */}
+                      {priorities.length > 0 && (
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                            <div style={prefIconStyle}>
+                              <Heart size={13} color="#EA580C" strokeWidth={2} />
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E" }}>What matters most</span>
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 32 }}>
+                            {priorities.map((pr) => (
+                              <span
+                                key={pr}
+                                style={{
+                                  padding: "4px 10px",
+                                  borderRadius: 100,
+                                  background: "rgba(234,88,12,0.06)",
+                                  border: "1px solid rgba(234,88,12,0.1)",
+                                  fontSize: 11,
+                                  fontWeight: 500,
+                                  color: "#C2410C",
+                                }}
+                              >
+                                {pr}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* ── Footer CTAs ────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.45, ease: EASE }}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: "14px 20px calc(14px + env(safe-area-inset-bottom))",
+          borderTop: "1px solid rgba(28,25,23,0.06)",
+          background: "rgba(253,251,248,0.92)",
+          backdropFilter: "blur(16px)",
+          display: "flex",
+          gap: 12,
+          zIndex: 10,
+        }}
+      >
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={onEditProfile}
+          style={{
+            flex: 1,
+            height: 50,
+            borderRadius: 14,
+            border: "1.5px solid rgba(28,25,23,0.1)",
+            background: "transparent",
+            color: "#78716C",
+            fontSize: 14,
+            fontWeight: 500,
+            letterSpacing: "-0.01em",
+            cursor: "pointer",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          Edit profile
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onContinue}
+          style={{
+            flex: 1,
+            height: 50,
+            borderRadius: 14,
+            border: "none",
+            background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
+            color: "white",
             fontSize: 14,
             fontWeight: 600,
-            color: C.textPrimary,
             letterSpacing: "-0.01em",
-            marginBottom: 4,
+            cursor: "pointer",
+            fontFamily: "Inter, sans-serif",
+            boxShadow: "0 6px 24px rgba(234,88,12,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
           }}
         >
-          {label}
-        </div>
-        <p
+          Continue
+          <ChevronRight size={16} strokeWidth={2.2} />
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ── Shared styles / helpers ──────────────────────────────────────────────── */
+
+const prefIconStyle: React.CSSProperties = {
+  width: 26,
+  height: 26,
+  borderRadius: 8,
+  background: "rgba(234,88,12,0.07)",
+  border: "1px solid rgba(234,88,12,0.1)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+function Section({
+  icon,
+  title,
+  delay = 0,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  delay?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: 0.18 + delay, ease: EASE }}
+      style={{
+        borderRadius: 18,
+        padding: "16px 18px",
+        background: "white",
+        border: "1px solid rgba(28,25,23,0.06)",
+        boxShadow: "0 2px 12px rgba(28,25,23,0.04)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <div
           style={{
-            fontSize: 13,
-            color: "#6B6B6B",
-            lineHeight: 1.6,
-            letterSpacing: "-0.01em",
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: "rgba(234,88,12,0.07)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
           }}
         >
-          {text}
-        </p>
+          {icon}
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.02em" }}>{title}</span>
+      </div>
+      {children}
+    </motion.div>
+  );
+}
+
+function PrefItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+      <div style={prefIconStyle}>
+        <span style={{ color: "#EA580C" }}>{icon}</span>
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: 11, color: "#A8A29E", margin: 0, fontWeight: 500 }}>{label}</p>
+        <p style={{ fontSize: 13, color: "#1C1917", margin: "2px 0 0", letterSpacing: "-0.01em", fontWeight: 600 }}>{value}</p>
       </div>
     </div>
   );
 }
 
-function PreferenceChip({ label }: { label: string }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "8px 14px",
-        borderRadius: 999,
-        background: C.preferenceChipBg,
-        color: C.preferenceChipText,
-        fontSize: 13,
-        fontWeight: 500,
-        letterSpacing: "-0.01em",
-      }}
-    >
-      {label}
-    </span>
-  );
+function buildExpInsight(exp: any): string {
+  const role = (exp.role || "").toLowerCase();
+  const company = exp.company || "";
+  if (!role && !company) return "";
+  if (role.includes("senior") || role.includes("lead") || role.includes("principal"))
+    return `Senior-level impact — strong signal for leadership readiness.`;
+  if (role.includes("product designer") || role.includes("ux"))
+    return `Product design track record across user-facing surfaces.`;
+  if (role.includes("engineer") || role.includes("developer") || role.includes("swe"))
+    return `Hands-on engineering at scale — solid technical depth.`;
+  if (role.includes("manager") || role.includes("pm") || role.includes("product manager"))
+    return `Cross-functional ownership — built and shipped end-to-end.`;
+  if (role.includes("analyst") || role.includes("data"))
+    return `Data-driven background — analytical thinking and structured work.`;
+  return `Relevant industry experience at ${company}.`;
 }
 
+function buildAiSummary(
+  firstName: string,
+  headline: string,
+  totalYears: string,
+  skills: string[],
+  categories: string[],
+  workSetups: string[],
+): string {
+  const domain = categories[0] || (headline ? headline.toLowerCase() : "their field");
+  const expDesc = totalYears ? `${totalYears} of experience` : "a strong background";
+  const skillNote = skills.length > 1 ? ` with hands-on depth in ${skills[0]} and ${skills[1]}` : "";
+  const setupNote = workSetups.length > 0 ? ` — prefers ${workSetups[0].toLowerCase()}` : "";
+  return `${firstName} brings ${expDesc} in ${domain.toLowerCase()}${skillNote}${setupNote}. A strong candidate for senior IC or lead roles.`;
+}
