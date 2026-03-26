@@ -129,7 +129,10 @@ export function LoginScreen({
       />
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 px-4 pt-12 pb-8 items-center text-center">
+      <div
+        className="flex flex-col flex-1 px-4 pt-12 items-center text-center"
+        style={{ paddingBottom: "calc(110px + env(safe-area-inset-bottom))" }}
+      >
 
         {/* ── Logo ───────────────────────────────────────────────────── */}
         <motion.div
@@ -475,35 +478,42 @@ export function LoginScreen({
           )}
         </div>
 
-        {/* Spacer */}
-        <div style={{ flex: 1, minHeight: "24px" }} />
-
-        {/* ── Hiring link ───────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="flex items-center justify-center pt-5"
-          style={{ borderTop: `1px solid ${C.border}`, width: "100%" }}
-        >
-          <button
-            style={{
-              background: "none", border: "none",
-              cursor: "pointer",
-              fontSize: "13px", fontWeight: 500,
-              color: C.textSecondary,
-              fontFamily: "Inter, sans-serif",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Hiring?{" "}
-            <span style={{ color: "#EA580C", fontWeight: 600 }}>
-              Continue as Employer →
-            </span>
-          </button>
-        </motion.div>
-
       </div>
+      {/* ── Hiring link (pinned to viewport bottom, safe-area aware) ─────────── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="flex items-center justify-center"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderTop: `1px solid ${C.border}`,
+          width: "100%",
+          paddingTop: 14,
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+          background: "rgba(253,251,248,0.96)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <button
+          style={{
+            background: "none", border: "none",
+            cursor: "pointer",
+            fontSize: "13px", fontWeight: 500,
+            color: C.textSecondary,
+            fontFamily: "Inter, sans-serif",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Hiring?{" "}
+          <span style={{ color: "#EA580C", fontWeight: 600 }}>
+            Continue as Employer →
+          </span>
+        </button>
+      </motion.div>
     </div>
   );
 }
