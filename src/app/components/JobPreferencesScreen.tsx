@@ -753,7 +753,14 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
           touchAction: "pan-y",
         }}
       >
-        <div style={{ padding: "20px 20px 32px" }}>
+        <div
+          style={{
+            padding: "20px 20px 32px",
+            minHeight: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <AnimatePresence mode="wait">
 
             {/* ══ STEP 1: Job type ════════════════════════════════════════ */}
@@ -1818,7 +1825,7 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
 
           {/* ── Bottom navigation (in-flow, non-sticky) ───────────────────── */}
           <div style={{
-            marginTop: 20,
+            marginTop: "auto",
             paddingTop: 12,
             paddingBottom: 20,
             borderTop: `1px solid ${C.border}`,
