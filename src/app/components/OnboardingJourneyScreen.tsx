@@ -87,13 +87,13 @@ const CARDS: {
     bg: {
       tint: "#FDF5EE",
       wash:
-        "radial-gradient(ellipse 95% 70% at 50% -5%, rgba(255,120,55,0.5) 0%, rgba(255,163,102,0.22) 42%, transparent 62%), " +
-        "radial-gradient(ellipse 85% 55% at 100% 35%, rgba(253,170,90,0.32) 0%, transparent 54%), " +
-        "radial-gradient(ellipse 75% 50% at -5% 85%, rgba(234,88,12,0.22) 0%, transparent 50%)",
-      orbTopRight: "radial-gradient(circle, rgba(255,120,60,0.55) 0%, rgba(255,200,140,0.35) 38%, transparent 68%)",
-      orbMidLeft:  "radial-gradient(circle, rgba(234,88,12,0.38) 0%, rgba(251,146,60,0.2) 45%, transparent 58%)",
-      orbBottom:   "radial-gradient(circle, rgba(255,140,70,0.42) 0%, rgba(255,210,160,0.22) 42%, transparent 62%)",
-      ringColor:   "rgba(234,88,12,0.32)",
+        "radial-gradient(ellipse 95% 70% at 50% -5%, rgba(255,143,86,0.32) 0%, transparent 58%), " +
+        "radial-gradient(ellipse 85% 55% at 100% 35%, rgba(253,186,116,0.18) 0%, transparent 52%), " +
+        "radial-gradient(ellipse 75% 50% at -5% 85%, rgba(234,88,12,0.1) 0%, transparent 48%)",
+      orbTopRight: "radial-gradient(circle, rgba(255,143,86,0.38) 0%, rgba(255,237,213,0.2) 40%, transparent 72%)",
+      orbMidLeft:  "radial-gradient(circle, rgba(234,88,12,0.22) 0%, transparent 62%)",
+      orbBottom:   "radial-gradient(circle, rgba(255,180,120,0.28) 0%, transparent 65%)",
+      ringColor:   "rgba(234,88,12,0.22)",
     },
   },
   {
@@ -132,13 +132,13 @@ const CARDS: {
     bg: {
       tint: "#FFF8EA",
       wash:
-        "radial-gradient(ellipse 95% 72% at 45% -8%, rgba(245,180,30,0.52) 0%, rgba(253,224,120,0.28) 44%, transparent 58%), " +
-        "radial-gradient(ellipse 88% 58% at 105% 55%, rgba(234,160,20,0.36) 0%, transparent 54%), " +
-        "radial-gradient(ellipse 70% 48% at 10% 90%, rgba(180,110,10,0.2) 0%, transparent 48%)",
-      orbTopRight: "radial-gradient(circle, rgba(250,185,40,0.56) 0%, rgba(254,240,150,0.38) 40%, transparent 66%)",
-      orbMidLeft:  "radial-gradient(circle, rgba(200,130,15,0.4) 0%, rgba(253,200,80,0.26) 48%, transparent 56%)",
-      orbBottom:   "radial-gradient(circle, rgba(250,210,70,0.45) 0%, rgba(253,230,140,0.28) 44%, transparent 60%)",
-      ringColor:   "rgba(217,119,6,0.34)",
+        "radial-gradient(ellipse 95% 72% at 45% -8%, rgba(251,191,36,0.34) 0%, transparent 56%), " +
+        "radial-gradient(ellipse 88% 58% at 105% 55%, rgba(245,158,11,0.22) 0%, transparent 52%), " +
+        "radial-gradient(ellipse 70% 48% at 10% 90%, rgba(217,119,6,0.12) 0%, transparent 45%)",
+      orbTopRight: "radial-gradient(circle, rgba(251,191,36,0.4) 0%, rgba(254,243,199,0.24) 42%, transparent 72%)",
+      orbMidLeft:  "radial-gradient(circle, rgba(217,119,6,0.24) 0%, transparent 62%)",
+      orbBottom:   "radial-gradient(circle, rgba(253,224,71,0.32) 0%, transparent 64%)",
+      ringColor:   "rgba(217,119,6,0.22)",
     },
   },
   {
@@ -177,20 +177,20 @@ const CARDS: {
     bg: {
       tint: "#F2FAF6",
       wash:
-        "radial-gradient(ellipse 95% 70% at 50% 0%, rgba(30,195,140,0.48) 0%, rgba(140,240,200,0.24) 46%, transparent 58%), " +
-        "radial-gradient(ellipse 82% 55% at -5% 40%, rgba(15,170,120,0.36) 0%, transparent 52%), " +
-        "radial-gradient(ellipse 75% 52% at 96% 88%, rgba(80,220,180,0.32) 0%, transparent 50%)",
-      orbTopRight: "radial-gradient(circle, rgba(40,200,150,0.54) 0%, rgba(180,245,220,0.36) 40%, transparent 66%)",
-      orbMidLeft:  "radial-gradient(circle, rgba(5,130,95,0.42) 0%, rgba(90,210,175,0.24) 48%, transparent 56%)",
-      orbBottom:   "radial-gradient(circle, rgba(70,220,185,0.44) 0%, rgba(190,250,230,0.26) 44%, transparent 60%)",
-      ringColor:   "rgba(5,150,105,0.34)",
+        "radial-gradient(ellipse 95% 70% at 50% 0%, rgba(52,211,153,0.3) 0%, transparent 56%), " +
+        "radial-gradient(ellipse 82% 55% at -5% 40%, rgba(16,185,129,0.2) 0%, transparent 50%), " +
+        "radial-gradient(ellipse 75% 52% at 96% 88%, rgba(110,231,183,0.18) 0%, transparent 48%)",
+      orbTopRight: "radial-gradient(circle, rgba(52,211,153,0.38) 0%, rgba(209,250,229,0.22) 42%, transparent 72%)",
+      orbMidLeft:  "radial-gradient(circle, rgba(5,150,105,0.22) 0%, transparent 62%)",
+      orbBottom:   "radial-gradient(circle, rgba(110,231,183,0.32) 0%, transparent 64%)",
+      ringColor:   "rgba(5,150,105,0.22)",
     },
   },
 ];
 
 const ONB_BLOB_STYLE_ID = "zf-onb-card-blob-css";
 
-function buildOnboardingCardBlobCSS(): string {
+function buildOnboardingCardBlobCSS(budget: boolean): string {
   let css = "";
   CARDS.forEach((card, ci) => {
     card.blobs.forEach((blob, bi) => {
@@ -202,25 +202,15 @@ function buildOnboardingCardBlobCSS(): string {
         css += `${pct}%{transform:translate3d(${blob.x[k]}px,${blob.y[k]}px,0) scale(${blob.scale[k]}) rotate(${blob.rotate[k]}deg);}`;
       }
       css += `}`;
-      css += `[data-zf-onb-blob="${ci}-${bi}"]{animation:${name} ${blob.duration}s ease-in-out infinite;will-change:transform;}`;
+      const willChange = budget ? "" : "will-change:transform;";
+      css += `[data-zf-onb-blob="${ci}-${bi}"]{animation:${name} ${blob.duration}s ease-in-out infinite;${willChange}}`;
     });
   });
   css +=
-    "@keyframes zf_onb_mesh_spin{" +
-    "0%{transform:rotate(0deg) scale(1.28);}" +
-    "20%{transform:rotate(72deg) scale(1.52);}" +
-    "40%{transform:rotate(144deg) scale(1.34);}" +
-    "60%{transform:rotate(216deg) scale(1.48);}" +
-    "80%{transform:rotate(288deg) scale(1.36);}" +
-    "100%{transform:rotate(360deg) scale(1.28);}" +
-    "}" +
-    "@keyframes zf_onb_mesh_rev{" +
-    "0%{transform:rotate(0deg) scale(1.22);}" +
-    "25%{transform:rotate(-90deg) scale(1.46);}" +
-    "50%{transform:rotate(-180deg) scale(1.3);}" +
-    "75%{transform:rotate(-270deg) scale(1.42);}" +
-    "100%{transform:rotate(-360deg) scale(1.22);}" +
-    "}";
+    "@keyframes zf_onb_mesh_spin{0%{transform:translate3d(0,0,0) rotate(0deg) scale(1.42);}33%{transform:translate3d(6px,-5px,0) rotate(120deg) scale(1.5);}66%{transform:translate3d(-5px,6px,0) rotate(240deg) scale(1.36);}100%{transform:translate3d(0,0,0) rotate(360deg) scale(1.42);}}" +
+    "@keyframes zf_onb_mesh_rev{0%{transform:translate3d(0,0,0) rotate(0deg) scale(1.28);}33%{transform:translate3d(-8px,4px,0) rotate(-120deg) scale(1.18);}66%{transform:translate3d(7px,-6px,0) rotate(-240deg) scale(1.34);}100%{transform:translate3d(0,0,0) rotate(-360deg) scale(1.28);}}" +
+    "@keyframes zf_onb_mesh_spin_lite{0%{transform:rotate(0deg) scale(1.42);}100%{transform:rotate(360deg) scale(1.42);}}" +
+    "@keyframes zf_onb_mesh_rev_lite{0%{transform:rotate(0deg) scale(1.28);}100%{transform:rotate(-360deg) scale(1.28);}}";
   return css;
 }
 
@@ -238,21 +228,34 @@ export function OnboardingJourneyScreen({
   const containerRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
+  const lowEndAndroid = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroid = ua.includes("android");
+    const memory = "deviceMemory" in navigator
+      ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+      : 8;
+    const cores = navigator.hardwareConcurrency ?? 8;
+    return isAndroid && (memory <= 4 || cores <= 6);
+  }, []);
+
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 250);
     return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
-    if (document.getElementById(ONB_BLOB_STYLE_ID)) return;
-    const el = document.createElement("style");
-    el.id = ONB_BLOB_STYLE_ID;
-    el.textContent = buildOnboardingCardBlobCSS();
-    document.head.appendChild(el);
+    let el = document.getElementById(ONB_BLOB_STYLE_ID) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement("style");
+      el.id = ONB_BLOB_STYLE_ID;
+      document.head.appendChild(el);
+    }
+    el.textContent = buildOnboardingCardBlobCSS(lowEndAndroid);
     return () => {
       document.getElementById(ONB_BLOB_STYLE_ID)?.remove();
     };
-  }, []);
+  }, [lowEndAndroid]);
 
   const handleNext = useCallback(() => {
     if (activeStep < CARDS.length - 1) {
@@ -320,26 +323,20 @@ export function OnboardingJourneyScreen({
     [activeStep, reduceMotion, trackX, translateXForStep],
   );
 
-  const lowEndAndroid = useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    const ua = navigator.userAgent.toLowerCase();
-    const isAndroid = ua.includes("android");
-    const memory = "deviceMemory" in navigator
-      ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
-      : 8;
-    const cores = navigator.hardwareConcurrency ?? 8;
-    return isAndroid && (memory <= 4 || cores <= 6);
-  }, []);
+  /** Cheaper compositing on low-end Android — same palette/motion pacing, fewer layers & filters. */
+  const budgetOnb = lowEndAndroid;
 
   const drift = reduceMotion
     ? { x: 0, y: 0, scale: 1 }
     : lowEndAndroid
-      ? { x: [0, 18, -12, 0], y: [0, -14, 10, 0], scale: [1, 1.12, 0.9, 1] }
-      : { x: [0, 28, -22, 0], y: [0, -22, 17, 0], scale: [1, 1.16, 0.86, 1] };
+      ? { x: [0, 14, -10, 0], y: [0, -12, 8, 0], scale: [1, 1.06, 0.97, 1] }
+      : { x: [0, 24, -18, 0], y: [0, -18, 14, 0], scale: [1, 1.08, 0.92, 1] };
 
   const driftSlow = reduceMotion
     ? { x: 0, y: 0 }
-    : { x: [0, -16, 12, 0], y: [0, 10, -14, 0] };
+    : budgetOnb
+      ? { x: [0, -10, 8, 0], y: [0, 6, -9, 0] }
+      : { x: [0, -16, 12, 0], y: [0, 10, -14, 0] };
 
   return (
     <motion.div
@@ -373,12 +370,12 @@ export function OnboardingJourneyScreen({
               key={i}
               initial={false}
               animate={
-                activeStep === i && !reduceMotion
+                activeStep === i && !reduceMotion && !budgetOnb
                   ? { opacity: 1, backgroundPosition: ["20% 20%", "80% 55%", "50% 85%", "20% 20%"] }
                   : { opacity: activeStep === i ? 1 : 0, backgroundPosition: "50% 50%" }
               }
               transition={
-                activeStep === i && !reduceMotion
+                activeStep === i && !reduceMotion && !budgetOnb
                   ? {
                       opacity: crossfadeTransition,
                       backgroundPosition: { duration: 26, repeat: Infinity, ease: "easeInOut" },
@@ -404,11 +401,10 @@ export function OnboardingJourneyScreen({
             position: "absolute",
             top: "-12%",
             right: "-18%",
-            width: 380,
-            height: 380,
+            width: budgetOnb ? 300 : 340,
+            height: budgetOnb ? 300 : 340,
             borderRadius: "50%",
-            filter: "blur(44px) saturate(1.55)",
-            opacity: 1,
+            filter: budgetOnb ? "blur(34px)" : "blur(48px)",
           }}
         >
           {CARDS.map((c, i) => (
@@ -435,11 +431,10 @@ export function OnboardingJourneyScreen({
             position: "absolute",
             top: "34%",
             left: "-24%",
-            width: 360,
-            height: 360,
+            width: budgetOnb ? 280 : 320,
+            height: budgetOnb ? 280 : 320,
             borderRadius: "50%",
-            filter: "blur(50px) saturate(1.5)",
-            opacity: 1,
+            filter: budgetOnb ? "blur(38px)" : "blur(56px)",
           }}
         >
           {CARDS.map((c, i) => (
@@ -463,22 +458,27 @@ export function OnboardingJourneyScreen({
           animate={
             reduceMotion
               ? {}
-              : {
-                  x: [0, 18, -12, 0],
-                  y: [0, -10, 14, 0],
-                  scale: [1, 1.05, 0.98, 1],
-                }
+              : budgetOnb
+                ? {
+                    x: [0, 12, -8, 0],
+                    y: [0, -8, 10, 0],
+                    scale: [1, 1.03, 0.99, 1],
+                  }
+                : {
+                    x: [0, 18, -12, 0],
+                    y: [0, -10, 14, 0],
+                    scale: [1, 1.05, 0.98, 1],
+                  }
           }
           transition={{ duration: lowEndAndroid ? 17 : 20, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           style={{
             position: "absolute",
             bottom: "-16%",
             right: "4%",
-            width: 336,
-            height: 336,
+            width: budgetOnb ? 260 : 300,
+            height: budgetOnb ? 260 : 300,
             borderRadius: "50%",
-            filter: "blur(46px) saturate(1.52)",
-            opacity: 1,
+            filter: budgetOnb ? "blur(36px)" : "blur(52px)",
           }}
         >
           {CARDS.map((c, i) => (
@@ -497,11 +497,11 @@ export function OnboardingJourneyScreen({
           ))}
         </motion.div>
 
-        {/* Decorative rings — stacked crossfade */}
-        {!reduceMotion && (
+        {/* Decorative rings — stacked crossfade (skipped on budget Android — extra compositing) */}
+        {!reduceMotion && !budgetOnb && (
           <>
             <motion.div
-              animate={{ rotate: [0, 360], opacity: [0.14, 0.28, 0.14] }}
+              animate={{ rotate: [0, 360], opacity: [0.08, 0.16, 0.08] }}
               transition={{ duration: 48, repeat: Infinity, ease: "linear" }}
               style={{
                 position: "absolute",
@@ -529,7 +529,7 @@ export function OnboardingJourneyScreen({
               ))}
             </motion.div>
             <motion.div
-              animate={{ rotate: [360, 0], opacity: [0.11, 0.24, 0.11] }}
+              animate={{ rotate: [360, 0], opacity: [0.06, 0.14, 0.06] }}
               transition={{ duration: 56, repeat: Infinity, ease: "linear" }}
               style={{
                 position: "absolute",
@@ -634,6 +634,8 @@ export function OnboardingJourneyScreen({
           {CARDS.map((card, i) => {
             const isActive = i === activeStep;
             const CardIcon = card.icon;
+            const blobLayers = budgetOnb ? card.blobs.slice(0, 1) : card.blobs;
+            const blobBlur = (px: number) => Math.max(8, Math.round(px * (budgetOnb ? 0.68 : 1)));
 
             return (
               <motion.div
@@ -649,7 +651,7 @@ export function OnboardingJourneyScreen({
                   flexShrink: 0,
                   borderRadius: 30,
                   position: "relative",
-                  overflow: "visible",
+                  overflow: "hidden",
                   isolation: "isolate",
                   boxShadow: isActive
                     ? "0 20px 60px rgba(28,25,23,0.12), 0 4px 20px rgba(28,25,23,0.06)"
@@ -662,58 +664,55 @@ export function OnboardingJourneyScreen({
                   }
                 }}
               >
-                {/* Base fill — clipped; stays inside rounded rect */}
+                {/* Base gradient fill */}
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
-                    borderRadius: 30,
-                    overflow: "hidden",
-                    zIndex: 0,
+                    background: card.gradient,
                   }}
-                >
+                />
+
+                {/* Rotating mesh — full: dual layer + rich blend; budget: single layer, lite keyframes, cheaper blend */}
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    inset: budgetOnb ? "-36%" : "-40%",
+                    background: card.mesh,
+                    opacity: budgetOnb ? (isActive ? 0.62 : 0.3) : isActive ? 0.66 : 0.32,
+                    filter: budgetOnb
+                      ? "blur(20px) saturate(1.26) contrast(1.08)"
+                      : "blur(18px) saturate(1.36) contrast(1.16)",
+                    mixBlendMode: budgetOnb ? "soft-light" : "screen",
+                    pointerEvents: "none",
+                    animation: reduceMotion
+                      ? "none"
+                      : budgetOnb
+                        ? "zf_onb_mesh_spin_lite 22s linear infinite"
+                        : "zf_onb_mesh_spin 22s linear infinite",
+                    animationPlayState: reduceMotion || !isActive ? "paused" : "running",
+                  }}
+                />
+                {!budgetOnb && (
                   <div
+                    aria-hidden
                     style={{
                       position: "absolute",
-                      inset: 0,
-                      background: card.gradient,
+                      inset: "-38%",
+                      background: card.meshAlt,
+                      opacity: isActive ? 0.52 : 0.24,
+                      filter: "blur(22px) saturate(1.3) contrast(1.12)",
+                      mixBlendMode: "color-dodge",
+                      pointerEvents: "none",
+                      animation: reduceMotion ? "none" : "zf_onb_mesh_rev 34s linear infinite",
+                      animationPlayState: reduceMotion || !isActive ? "paused" : "running",
                     }}
                   />
-                </div>
+                )}
 
-                {/* Mesh + blobs — card overflow visible so blur extends past top edge */}
-                <div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: "-40%",
-                    zIndex: 1,
-                    background: card.mesh,
-                    opacity: isActive ? 0.74 : 0.42,
-                    filter: "blur(22px) saturate(1.62)",
-                    mixBlendMode: "soft-light",
-                    pointerEvents: "none",
-                    animation: reduceMotion ? "none" : "zf_onb_mesh_spin 22s linear infinite",
-                    animationPlayState: reduceMotion || !isActive ? "paused" : "running",
-                  }}
-                />
-                <div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: "-38%",
-                    zIndex: 1,
-                    background: card.meshAlt,
-                    opacity: isActive ? 0.58 : 0.34,
-                    filter: "blur(24px) saturate(1.55)",
-                    mixBlendMode: "overlay",
-                    pointerEvents: "none",
-                    animation: reduceMotion ? "none" : "zf_onb_mesh_rev 34s linear infinite",
-                    animationPlayState: reduceMotion || !isActive ? "paused" : "running",
-                  }}
-                />
-
-                {card.blobs.map((blob, bi) => (
+                {/* Drifting blobs — budget: one blob per card, softer blur */}
+                {blobLayers.map((blob, bi) => (
                   <div
                     key={`blob-${bi}`}
                     data-zf-onb-blob={`${i}-${bi}`}
@@ -726,7 +725,6 @@ export function OnboardingJourneyScreen({
                       marginLeft: -blob.size / 2,
                       marginTop: -blob.size / 2,
                       borderRadius: blob.shape ?? "50%",
-                      zIndex: 1,
                       pointerEvents: "none",
                       transform: "translateZ(0)",
                       animation: reduceMotion ? "none" : undefined,
@@ -739,54 +737,50 @@ export function OnboardingJourneyScreen({
                         inset: 0,
                         borderRadius: blob.shape ?? "50%",
                         background: blob.gradient,
-                        filter: `blur(${Math.max(blob.blur - 4, 12)}px) saturate(1.45)`,
-                        transform: "translateZ(0) scale(1.05)",
+                        filter: budgetOnb
+                          ? `blur(${blobBlur(blob.blur)}px) saturate(1.2) contrast(1.05)`
+                          : `blur(${blob.blur}px) saturate(1.34) contrast(1.08)`,
+                        transform: "translateZ(0) scale(1.02)",
                       }}
                     />
                   </div>
                 ))}
 
-                {/* Noise, glass, content — clipped to card */}
+                {/* Fine grain noise — luxury surface */}
                 <div
+                  aria-hidden
                   style={{
                     position: "absolute",
                     inset: 0,
-                    zIndex: 2,
                     borderRadius: 30,
-                    overflow: "hidden",
+                    backgroundImage: CARD_NOISE_DATA_URI,
+                    backgroundSize: "240px 240px",
+                    opacity: budgetOnb ? (isActive ? 0.12 : 0.08) : isActive ? 0.22 : 0.14,
+                    mixBlendMode: "overlay",
                     pointerEvents: "none",
                   }}
-                >
-                  <div
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: 30,
-                      backgroundImage: CARD_NOISE_DATA_URI,
-                      backgroundSize: "240px 240px",
-                      opacity: isActive ? 0.26 : 0.17,
-                      mixBlendMode: "overlay",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: "50%",
-                      background: "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.52) 58%, transparent 100%)",
-                      backdropFilter: "blur(8px)",
-                      WebkitBackdropFilter: "blur(8px)",
-                    }}
-                  />
-                </div>
+                />
+
+                {/* Bottom glass for text readability */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: "44%",
+                    background: budgetOnb
+                      ? "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.45) 55%, transparent 100%)"
+                      : "linear-gradient(to top, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.36) 55%, transparent 100%)",
+                    ...(budgetOnb
+                      ? {}
+                      : { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }),
+                  }}
+                />
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
-                    zIndex: 3,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -805,9 +799,10 @@ export function OnboardingJourneyScreen({
                         width: 44,
                         height: 44,
                         borderRadius: 14,
-                        background: "rgba(255,255,255,0.75)",
-                        backdropFilter: "blur(12px)",
-                        WebkitBackdropFilter: "blur(12px)",
+                        background: budgetOnb ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.75)",
+                        ...(budgetOnb
+                          ? {}
+                          : { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }),
                         border: "1px solid rgba(255,255,255,0.5)",
                         display: "flex",
                         alignItems: "center",
