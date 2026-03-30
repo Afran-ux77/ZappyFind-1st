@@ -230,7 +230,14 @@ export default function App() {
           )}
 
           {screen === "onboardingJourney" && (
-            <motion.div key="onboardingJourney" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
+            <motion.div
+              key="onboardingJourney"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              style={{ width: "100%", overflow: "visible" }}
+            >
               <OnboardingJourneyScreen
                 firstName={firstName}
                 onComplete={() => {

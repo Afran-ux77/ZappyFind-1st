@@ -4,6 +4,9 @@ import { Search, Mic, Briefcase, ChevronRight } from "lucide-react";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const SPRING = { type: "spring" as const, stiffness: 300, damping: 32 };
+/** Snappier, GPU-friendly settle on coarse pointers (mobile) — avoids spring overshoot jank. */
+const TRACK_SNAP_TOUCH = { duration: 0.36, ease: EASE };
+const CARD_SCALE_TOUCH = { duration: 0.32, ease: EASE };
 const BG_CROSSFADE = { duration: 1.15, ease: EASE };
 
 const BG = "#FDFBF8";
@@ -218,6 +221,7 @@ const CARD_W = 300;
 const CARD_H = 396;
 const CARD_GAP = 16;
 const PEEK_GUTTER = 20;
+const CARD_RADIUS = 30;
 
 export function OnboardingJourneyScreen({
   firstName,
@@ -225,8 +229,14 @@ export function OnboardingJourneyScreen({
 }: OnboardingJourneyScreenProps) {
   const [activeStep, setActiveStep] = useState(0);
   const [entered, setEntered] = useState(false);
+  const [carouselDragging, setCarouselDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
+
+  const touchUi = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+  }, []);
 
   const lowEndAndroid = useMemo(() => {
     if (typeof navigator === "undefined") return false;
@@ -287,13 +297,19 @@ export function OnboardingJourneyScreen({
   );
   const trackX = useMotionValue(translateXForStep(0));
 
+  const trackSnapTransition = useMemo(
+    () =>
+      reduceMotion
+        ? { duration: 0.2, ease: "easeOut" as const }
+        : touchUi
+          ? TRACK_SNAP_TOUCH
+          : SPRING,
+    [reduceMotion, touchUi],
+  );
+
   useEffect(() => {
-    animate(
-      trackX,
-      translateXForStep(activeStep),
-      reduceMotion ? { duration: 0.2, ease: "easeOut" } : SPRING,
-    );
-  }, [activeStep, reduceMotion, trackX, translateXForStep]);
+    animate(trackX, translateXForStep(activeStep), trackSnapTransition);
+  }, [activeStep, trackSnapTransition, trackX, translateXForStep]);
 
   const onTrackDragEnd = useCallback(
     (
@@ -314,13 +330,13 @@ export function OnboardingJourneyScreen({
         animate(
           trackX,
           translateXForStep(activeStep),
-          reduceMotion ? { duration: 0.2, ease: "easeOut" } : SPRING,
+          trackSnapTransition,
         );
       } else {
         setActiveStep(next);
       }
     },
-    [activeStep, reduceMotion, trackX, translateXForStep],
+    [activeStep, trackSnapTransition, trackX, translateXForStep],
   );
 
   /** Cheaper compositing on low-end Android — same palette/motion pacing, fewer layers & filters. */
@@ -349,7 +365,9 @@ export function OnboardingJourneyScreen({
         display: "flex",
         flexDirection: "column",
         position: "relative",
-        overflow: "hidden",
+        /* Visible so card radii, shadows, and horizontal peek are not clipped on mobile WebKit. */
+        overflowX: "visible",
+        overflowY: "visible",
         backgroundColor: BG,
       }}
     >
@@ -622,13 +640,19 @@ export function OnboardingJourneyScreen({
             gap: CARD_GAP,
             paddingLeft: 0,
             willChange: "transform",
-            touchAction: reduceMotion ? undefined : "none",
+            /* pan-y: fewer gesture conflicts with the browser; horizontal drag still handled by motion. */
+            touchAction: reduceMotion ? undefined : "pan-y",
             cursor: reduceMotion ? undefined : "grab",
           }}
           drag={reduceMotion ? false : "x"}
-          dragElastic={0.14}
+          dragElastic={touchUi ? 0.08 : 0.14}
           dragMomentum={false}
-          onDragEnd={onTrackDragEnd}
+          dragTransition={{ bounceStiffness: 520, bounceDamping: 28, power: 0.25 }}
+          onDragStart={() => setCarouselDragging(true)}
+          onDragEnd={(_e, info) => {
+            setCarouselDragging(false);
+            onTrackDragEnd(_e, info);
+          }}
           whileDrag={{ cursor: "grabbing" }}
         >
           {CARDS.map((card, i) => {
@@ -637,6 +661,8 @@ export function OnboardingJourneyScreen({
             const blobLayers = budgetOnb ? card.blobs.slice(0, 1) : card.blobs;
             const blobBlur = (px: number) => Math.max(8, Math.round(px * (budgetOnb ? 0.68 : 1)));
 
+            const animPaused = reduceMotion || !isActive || carouselDragging;
+
             return (
               <motion.div
                 key={i}
@@ -644,15 +670,24 @@ export function OnboardingJourneyScreen({
                   scale: isActive ? 1 : 0.88,
                   opacity: isActive ? 1 : 0.5,
                 }}
-                transition={SPRING}
+                transition={
+                  reduceMotion
+                    ? { duration: 0.2, ease: "easeOut" }
+                    : touchUi
+                      ? CARD_SCALE_TOUCH
+                      : SPRING
+                }
                 style={{
                   width: CARD_W,
                   height: CARD_H,
                   flexShrink: 0,
-                  borderRadius: 30,
+                  borderRadius: CARD_RADIUS,
                   position: "relative",
-                  overflow: "hidden",
                   isolation: "isolate",
+                  overflow: "visible",
+                  transform: "translateZ(0)",
+                  WebkitBackfaceVisibility: "hidden",
+                  backfaceVisibility: "hidden",
                   boxShadow: isActive
                     ? "0 20px 60px rgba(28,25,23,0.12), 0 4px 20px rgba(28,25,23,0.06)"
                     : "0 8px 30px rgba(28,25,23,0.06)",
@@ -664,127 +699,142 @@ export function OnboardingJourneyScreen({
                   }
                 }}
               >
-                {/* Base gradient fill */}
+                {/* Inner stack clips art; outer keeps shadow + antialiased radius on mobile WebKit. */}
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
-                    background: card.gradient,
+                    borderRadius: CARD_RADIUS,
+                    overflow: "hidden",
+                    transform: "translateZ(0)",
+                    WebkitBackfaceVisibility: "hidden",
+                    backfaceVisibility: "hidden",
                   }}
-                />
+                >
+                  {/* Base gradient fill */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: card.gradient,
+                    }}
+                  />
 
-                {/* Rotating mesh — full: dual layer + rich blend; budget: single layer, lite keyframes, cheaper blend */}
-                <div
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: budgetOnb ? "-36%" : "-40%",
-                    background: card.mesh,
-                    opacity: budgetOnb ? (isActive ? 0.62 : 0.3) : isActive ? 0.66 : 0.32,
-                    filter: budgetOnb
-                      ? "blur(20px) saturate(1.26) contrast(1.08)"
-                      : "blur(18px) saturate(1.36) contrast(1.16)",
-                    mixBlendMode: budgetOnb ? "soft-light" : "screen",
-                    pointerEvents: "none",
-                    animation: reduceMotion
-                      ? "none"
-                      : budgetOnb
-                        ? "zf_onb_mesh_spin_lite 22s linear infinite"
-                        : "zf_onb_mesh_spin 22s linear infinite",
-                    animationPlayState: reduceMotion || !isActive ? "paused" : "running",
-                  }}
-                />
-                {!budgetOnb && (
+                  {/* Rotating mesh — full: dual layer + rich blend; budget: single layer, lite keyframes, cheaper blend */}
                   <div
                     aria-hidden
                     style={{
                       position: "absolute",
-                      inset: "-38%",
-                      background: card.meshAlt,
-                      opacity: isActive ? 0.52 : 0.24,
-                      filter: "blur(22px) saturate(1.3) contrast(1.12)",
-                      mixBlendMode: "color-dodge",
+                      inset: budgetOnb ? "-36%" : "-40%",
+                      background: card.mesh,
+                      opacity: budgetOnb ? (isActive ? 0.62 : 0.3) : isActive ? 0.66 : 0.32,
+                      filter: budgetOnb
+                        ? "blur(20px) saturate(1.26) contrast(1.08)"
+                        : "blur(18px) saturate(1.36) contrast(1.16)",
+                      mixBlendMode: budgetOnb ? "soft-light" : "screen",
                       pointerEvents: "none",
-                      animation: reduceMotion ? "none" : "zf_onb_mesh_rev 34s linear infinite",
-                      animationPlayState: reduceMotion || !isActive ? "paused" : "running",
+                      animation: reduceMotion
+                        ? "none"
+                        : budgetOnb
+                          ? "zf_onb_mesh_spin_lite 22s linear infinite"
+                          : "zf_onb_mesh_spin 22s linear infinite",
+                      animationPlayState: animPaused ? "paused" : "running",
                     }}
                   />
-                )}
-
-                {/* Drifting blobs — budget: one blob per card, softer blur */}
-                {blobLayers.map((blob, bi) => (
-                  <div
-                    key={`blob-${bi}`}
-                    data-zf-onb-blob={`${i}-${bi}`}
-                    style={{
-                      position: "absolute",
-                      left: blob.left,
-                      top: blob.top,
-                      width: blob.size,
-                      height: blob.size,
-                      marginLeft: -blob.size / 2,
-                      marginTop: -blob.size / 2,
-                      borderRadius: blob.shape ?? "50%",
-                      pointerEvents: "none",
-                      transform: "translateZ(0)",
-                      animation: reduceMotion ? "none" : undefined,
-                      animationPlayState: reduceMotion || !isActive ? "paused" : "running",
-                    }}
-                  >
+                  {!budgetOnb && (
                     <div
+                      aria-hidden
                       style={{
                         position: "absolute",
-                        inset: 0,
-                        borderRadius: blob.shape ?? "50%",
-                        background: blob.gradient,
-                        filter: budgetOnb
-                          ? `blur(${blobBlur(blob.blur)}px) saturate(1.2) contrast(1.05)`
-                          : `blur(${blob.blur}px) saturate(1.34) contrast(1.08)`,
-                        transform: "translateZ(0) scale(1.02)",
+                        inset: "-38%",
+                        background: card.meshAlt,
+                        opacity: isActive ? 0.52 : 0.24,
+                        filter: "blur(22px) saturate(1.3) contrast(1.12)",
+                        mixBlendMode: "color-dodge",
+                        pointerEvents: "none",
+                        animation: reduceMotion ? "none" : "zf_onb_mesh_rev 34s linear infinite",
+                        animationPlayState: animPaused ? "paused" : "running",
                       }}
                     />
-                  </div>
-                ))}
+                  )}
 
-                {/* Fine grain noise — luxury surface */}
+                  {/* Drifting blobs — budget: one blob per card, softer blur */}
+                  {blobLayers.map((blob, bi) => (
+                    <div
+                      key={`blob-${bi}`}
+                      data-zf-onb-blob={`${i}-${bi}`}
+                      style={{
+                        position: "absolute",
+                        left: blob.left,
+                        top: blob.top,
+                        width: blob.size,
+                        height: blob.size,
+                        marginLeft: -blob.size / 2,
+                        marginTop: -blob.size / 2,
+                        borderRadius: blob.shape ?? "50%",
+                        pointerEvents: "none",
+                        transform: "translateZ(0)",
+                        animation: reduceMotion ? "none" : undefined,
+                        animationPlayState: animPaused ? "paused" : "running",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: blob.shape ?? "50%",
+                          background: blob.gradient,
+                          filter: budgetOnb
+                            ? `blur(${blobBlur(blob.blur)}px) saturate(1.2) contrast(1.05)`
+                            : `blur(${blob.blur}px) saturate(1.34) contrast(1.08)`,
+                          transform: "translateZ(0) scale(1.02)",
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Fine grain noise — luxury surface */}
+                  <div
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: CARD_RADIUS,
+                      backgroundImage: CARD_NOISE_DATA_URI,
+                      backgroundSize: "240px 240px",
+                      opacity: budgetOnb ? (isActive ? 0.12 : 0.08) : isActive ? 0.22 : 0.14,
+                      mixBlendMode: "overlay",
+                      pointerEvents: "none",
+                    }}
+                  />
+
+                  {/* Bottom glass for text readability */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: "44%",
+                      background: budgetOnb
+                        ? "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.45) 55%, transparent 100%)"
+                        : "linear-gradient(to top, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.36) 55%, transparent 100%)",
+                      ...(budgetOnb
+                        ? {}
+                        : { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }),
+                  }}
+                  />
+                </div>
                 <div
-                  aria-hidden
                   style={{
                     position: "absolute",
                     inset: 0,
-                    borderRadius: 30,
-                    backgroundImage: CARD_NOISE_DATA_URI,
-                    backgroundSize: "240px 240px",
-                    opacity: budgetOnb ? (isActive ? 0.12 : 0.08) : isActive ? 0.22 : 0.14,
-                    mixBlendMode: "overlay",
-                    pointerEvents: "none",
-                  }}
-                />
-
-                {/* Bottom glass for text readability */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: "44%",
-                    background: budgetOnb
-                      ? "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.45) 55%, transparent 100%)"
-                      : "linear-gradient(to top, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.36) 55%, transparent 100%)",
-                    ...(budgetOnb
-                      ? {}
-                      : { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }),
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
+                    borderRadius: CARD_RADIUS,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     padding: 24,
+                    pointerEvents: "none",
                   }}
                 >
                   <div
