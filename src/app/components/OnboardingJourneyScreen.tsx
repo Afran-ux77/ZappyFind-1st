@@ -211,8 +211,10 @@ function buildOnboardingCardBlobCSS(): string {
   return css;
 }
 
-const CARD_W = 280;
+const CARD_W = 300;
+const CARD_H = 396;
 const CARD_GAP = 16;
+const PEEK_GUTTER = 20;
 
 export function OnboardingJourneyScreen({
   firstName,
@@ -256,9 +258,16 @@ export function OnboardingJourneyScreen({
     ? Math.min(390, window.innerWidth)
     : 390;
   const stepStride = CARD_W + CARD_GAP;
+  const lastStep = CARDS.length - 1;
   const translateXForStep = useCallback(
-    (step: number) => (containerWidth - CARD_W) / 2 - step * stepStride,
-    [containerWidth],
+    (step: number) => {
+      if (step <= 0) return PEEK_GUTTER;
+      if (step >= lastStep) {
+        return containerWidth - PEEK_GUTTER - CARD_W - step * stepStride;
+      }
+      return PEEK_GUTTER - step * stepStride;
+    },
+    [containerWidth, lastStep, stepStride],
   );
   const trackX = useMotionValue(translateXForStep(0));
 
@@ -584,8 +593,10 @@ export function OnboardingJourneyScreen({
           zIndex: 1,
           display: "flex",
           alignItems: "center",
-          overflow: "hidden",
+          overflow: "visible",
           minHeight: 0,
+          paddingTop: 16,
+          paddingBottom: 28,
         }}
       >
         <motion.div
@@ -618,9 +629,9 @@ export function OnboardingJourneyScreen({
                 transition={SPRING}
                 style={{
                   width: CARD_W,
-                  height: 380,
+                  height: CARD_H,
                   flexShrink: 0,
-                  borderRadius: 28,
+                  borderRadius: 30,
                   position: "relative",
                   overflow: "hidden",
                   isolation: "isolate",
@@ -713,7 +724,7 @@ export function OnboardingJourneyScreen({
                   style={{
                     position: "absolute",
                     inset: 0,
-                    borderRadius: 28,
+                    borderRadius: 30,
                     backgroundImage: CARD_NOISE_DATA_URI,
                     backgroundSize: "240px 240px",
                     opacity: isActive ? 0.22 : 0.14,
@@ -729,8 +740,8 @@ export function OnboardingJourneyScreen({
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    height: "55%",
-                    background: "linear-gradient(to top, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.6) 60%, transparent 100%)",
+                    height: "50%",
+                    background: "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.52) 58%, transparent 100%)",
                     backdropFilter: "blur(8px)",
                     WebkitBackdropFilter: "blur(8px)",
                   }}
