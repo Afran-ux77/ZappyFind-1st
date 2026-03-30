@@ -4,9 +4,15 @@ import { Search, Mic, Briefcase, ChevronRight } from "lucide-react";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const SPRING = { type: "spring" as const, stiffness: 300, damping: 32 };
-/** Snappier, GPU-friendly settle on coarse pointers (mobile) — avoids spring overshoot jank. */
-const TRACK_SNAP_TOUCH = { duration: 0.36, ease: EASE };
-const CARD_SCALE_TOUCH = { duration: 0.32, ease: EASE };
+/** Tight spring for phones: Motion passes drag velocity into the value — feels continuous, low overshoot. */
+const TRACK_SPRING_TOUCH = {
+  type: "spring" as const,
+  stiffness: 520,
+  damping: 44,
+  mass: 0.78,
+};
+const CARD_SCALE_TOUCH = { type: "spring" as const, stiffness: 480, damping: 38, mass: 0.85 };
+const DOTS_TOUCH = { duration: 0.22, ease: EASE };
 const BG_CROSSFADE = { duration: 1.15, ease: EASE };
 
 const BG = "#FDFBF8";
@@ -235,6 +241,9 @@ export function OnboardingJourneyScreen({
   const [activeStep, setActiveStep] = useState(0);
   const [entered, setEntered] = useState(false);
   const [carouselDragging, setCarouselDragging] = useState(false);
+  /** Briefly pause card mesh/blob CSS on touch while the carousel moves after step change (frees main thread). */
+  const [stepTransitioning, setStepTransitioning] = useState(false);
+  const skipFirstStepTransition = useRef(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() ?? false;
 
@@ -313,7 +322,7 @@ export function OnboardingJourneyScreen({
       reduceMotion
         ? { duration: 0.2, ease: "easeOut" as const }
         : touchUi
-          ? TRACK_SNAP_TOUCH
+          ? TRACK_SPRING_TOUCH
           : SPRING,
     [reduceMotion, touchUi],
   );
@@ -321,6 +330,17 @@ export function OnboardingJourneyScreen({
   useEffect(() => {
     animate(trackX, translateXForStep(activeStep), trackSnapTransition);
   }, [activeStep, trackSnapTransition, trackX, translateXForStep]);
+
+  useEffect(() => {
+    if (reduceMotion || !touchUi) return;
+    if (skipFirstStepTransition.current) {
+      skipFirstStepTransition.current = false;
+      return;
+    }
+    setStepTransitioning(true);
+    const tid = window.setTimeout(() => setStepTransitioning(false), 280);
+    return () => window.clearTimeout(tid);
+  }, [activeStep, reduceMotion, touchUi]);
 
   const onTrackDragEnd = useCallback(
     (
@@ -656,9 +676,9 @@ export function OnboardingJourneyScreen({
             cursor: reduceMotion ? undefined : "grab",
           }}
           drag={reduceMotion ? false : "x"}
-          dragElastic={touchUi ? 0.08 : 0.14}
+          dragElastic={touchUi ? 0.05 : 0.14}
           dragMomentum={false}
-          dragTransition={{ bounceStiffness: 520, bounceDamping: 28, power: 0.25 }}
+          dragTransition={{ bounceStiffness: 720, bounceDamping: 38, power: 0.18 }}
           onDragStart={() => setCarouselDragging(true)}
           onDragEnd={(_e, info) => {
             setCarouselDragging(false);
@@ -672,7 +692,8 @@ export function OnboardingJourneyScreen({
             const blobLayers = budgetOnb ? card.blobs.slice(0, 1) : card.blobs;
             const blobBlur = (px: number) => Math.max(8, Math.round(px * (budgetOnb ? 0.68 : 1)));
 
-            const animPaused = reduceMotion || !isActive || carouselDragging;
+            const animPaused =
+              reduceMotion || !isActive || carouselDragging || (touchUi && stepTransitioning);
 
             return (
               <motion.div
@@ -960,7 +981,7 @@ export function OnboardingJourneyScreen({
                     : "rgba(234,88,12,0.15)",
                 opacity: i <= activeStep ? 1 : 0.65,
               }}
-              transition={{ duration: 0.35, ease: EASE }}
+              transition={touchUi ? DOTS_TOUCH : { duration: 0.35, ease: EASE }}
               style={{
                 height: 8,
                 borderRadius: 4,
@@ -970,9 +991,8 @@ export function OnboardingJourneyScreen({
         </div>
 
         <motion.button
-          whileTap={{ scale: 0.97 }}
+          whileTap={{ scale: 0.988, transition: { type: "spring", stiffness: 600, damping: 35 } }}
           onClick={handleNext}
-          layout
           style={{
             width: "100%",
             height: 56,
@@ -1008,7 +1028,7 @@ export function OnboardingJourneyScreen({
         </motion.button>
 
         <motion.button
-          whileTap={{ scale: 0.98 }}
+          whileTap={{ scale: 0.99, transition: { type: "spring", stiffness: 650, damping: 38 } }}
           onClick={onComplete}
           style={{
             display: "block",
