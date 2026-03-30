@@ -87,13 +87,13 @@ const CARDS: {
     bg: {
       tint: "#FDF5EE",
       wash:
-        "radial-gradient(ellipse 95% 70% at 50% -5%, rgba(255,143,86,0.32) 0%, transparent 58%), " +
-        "radial-gradient(ellipse 85% 55% at 100% 35%, rgba(253,186,116,0.18) 0%, transparent 52%), " +
-        "radial-gradient(ellipse 75% 50% at -5% 85%, rgba(234,88,12,0.1) 0%, transparent 48%)",
-      orbTopRight: "radial-gradient(circle, rgba(255,143,86,0.38) 0%, rgba(255,237,213,0.2) 40%, transparent 72%)",
-      orbMidLeft:  "radial-gradient(circle, rgba(234,88,12,0.22) 0%, transparent 62%)",
-      orbBottom:   "radial-gradient(circle, rgba(255,180,120,0.28) 0%, transparent 65%)",
-      ringColor:   "rgba(234,88,12,0.22)",
+        "radial-gradient(ellipse 95% 70% at 50% -5%, rgba(255,120,55,0.5) 0%, rgba(255,163,102,0.22) 42%, transparent 62%), " +
+        "radial-gradient(ellipse 85% 55% at 100% 35%, rgba(253,170,90,0.32) 0%, transparent 54%), " +
+        "radial-gradient(ellipse 75% 50% at -5% 85%, rgba(234,88,12,0.22) 0%, transparent 50%)",
+      orbTopRight: "radial-gradient(circle, rgba(255,120,60,0.55) 0%, rgba(255,200,140,0.35) 38%, transparent 68%)",
+      orbMidLeft:  "radial-gradient(circle, rgba(234,88,12,0.38) 0%, rgba(251,146,60,0.2) 45%, transparent 58%)",
+      orbBottom:   "radial-gradient(circle, rgba(255,140,70,0.42) 0%, rgba(255,210,160,0.22) 42%, transparent 62%)",
+      ringColor:   "rgba(234,88,12,0.32)",
     },
   },
   {
@@ -132,13 +132,13 @@ const CARDS: {
     bg: {
       tint: "#FFF8EA",
       wash:
-        "radial-gradient(ellipse 95% 72% at 45% -8%, rgba(251,191,36,0.34) 0%, transparent 56%), " +
-        "radial-gradient(ellipse 88% 58% at 105% 55%, rgba(245,158,11,0.22) 0%, transparent 52%), " +
-        "radial-gradient(ellipse 70% 48% at 10% 90%, rgba(217,119,6,0.12) 0%, transparent 45%)",
-      orbTopRight: "radial-gradient(circle, rgba(251,191,36,0.4) 0%, rgba(254,243,199,0.24) 42%, transparent 72%)",
-      orbMidLeft:  "radial-gradient(circle, rgba(217,119,6,0.24) 0%, transparent 62%)",
-      orbBottom:   "radial-gradient(circle, rgba(253,224,71,0.32) 0%, transparent 64%)",
-      ringColor:   "rgba(217,119,6,0.22)",
+        "radial-gradient(ellipse 95% 72% at 45% -8%, rgba(245,180,30,0.52) 0%, rgba(253,224,120,0.28) 44%, transparent 58%), " +
+        "radial-gradient(ellipse 88% 58% at 105% 55%, rgba(234,160,20,0.36) 0%, transparent 54%), " +
+        "radial-gradient(ellipse 70% 48% at 10% 90%, rgba(180,110,10,0.2) 0%, transparent 48%)",
+      orbTopRight: "radial-gradient(circle, rgba(250,185,40,0.56) 0%, rgba(254,240,150,0.38) 40%, transparent 66%)",
+      orbMidLeft:  "radial-gradient(circle, rgba(200,130,15,0.4) 0%, rgba(253,200,80,0.26) 48%, transparent 56%)",
+      orbBottom:   "radial-gradient(circle, rgba(250,210,70,0.45) 0%, rgba(253,230,140,0.28) 44%, transparent 60%)",
+      ringColor:   "rgba(217,119,6,0.34)",
     },
   },
   {
@@ -177,13 +177,13 @@ const CARDS: {
     bg: {
       tint: "#F2FAF6",
       wash:
-        "radial-gradient(ellipse 95% 70% at 50% 0%, rgba(52,211,153,0.3) 0%, transparent 56%), " +
-        "radial-gradient(ellipse 82% 55% at -5% 40%, rgba(16,185,129,0.2) 0%, transparent 50%), " +
-        "radial-gradient(ellipse 75% 52% at 96% 88%, rgba(110,231,183,0.18) 0%, transparent 48%)",
-      orbTopRight: "radial-gradient(circle, rgba(52,211,153,0.38) 0%, rgba(209,250,229,0.22) 42%, transparent 72%)",
-      orbMidLeft:  "radial-gradient(circle, rgba(5,150,105,0.22) 0%, transparent 62%)",
-      orbBottom:   "radial-gradient(circle, rgba(110,231,183,0.32) 0%, transparent 64%)",
-      ringColor:   "rgba(5,150,105,0.22)",
+        "radial-gradient(ellipse 95% 70% at 50% 0%, rgba(30,195,140,0.48) 0%, rgba(140,240,200,0.24) 46%, transparent 58%), " +
+        "radial-gradient(ellipse 82% 55% at -5% 40%, rgba(15,170,120,0.36) 0%, transparent 52%), " +
+        "radial-gradient(ellipse 75% 52% at 96% 88%, rgba(80,220,180,0.32) 0%, transparent 50%)",
+      orbTopRight: "radial-gradient(circle, rgba(40,200,150,0.54) 0%, rgba(180,245,220,0.36) 40%, transparent 66%)",
+      orbMidLeft:  "radial-gradient(circle, rgba(5,130,95,0.42) 0%, rgba(90,210,175,0.24) 48%, transparent 56%)",
+      orbBottom:   "radial-gradient(circle, rgba(70,220,185,0.44) 0%, rgba(190,250,230,0.26) 44%, transparent 60%)",
+      ringColor:   "rgba(5,150,105,0.34)",
     },
   },
 ];
@@ -206,8 +206,21 @@ function buildOnboardingCardBlobCSS(): string {
     });
   });
   css +=
-    "@keyframes zf_onb_mesh_spin{0%{transform:rotate(0deg) scale(1.42);}100%{transform:rotate(360deg) scale(1.42);}}" +
-    "@keyframes zf_onb_mesh_rev{0%{transform:rotate(0deg) scale(1.28);}100%{transform:rotate(-360deg) scale(1.28);}}";
+    "@keyframes zf_onb_mesh_spin{" +
+    "0%{transform:rotate(0deg) scale(1.28);}" +
+    "20%{transform:rotate(72deg) scale(1.52);}" +
+    "40%{transform:rotate(144deg) scale(1.34);}" +
+    "60%{transform:rotate(216deg) scale(1.48);}" +
+    "80%{transform:rotate(288deg) scale(1.36);}" +
+    "100%{transform:rotate(360deg) scale(1.28);}" +
+    "}" +
+    "@keyframes zf_onb_mesh_rev{" +
+    "0%{transform:rotate(0deg) scale(1.22);}" +
+    "25%{transform:rotate(-90deg) scale(1.46);}" +
+    "50%{transform:rotate(-180deg) scale(1.3);}" +
+    "75%{transform:rotate(-270deg) scale(1.42);}" +
+    "100%{transform:rotate(-360deg) scale(1.22);}" +
+    "}";
   return css;
 }
 
@@ -321,8 +334,8 @@ export function OnboardingJourneyScreen({
   const drift = reduceMotion
     ? { x: 0, y: 0, scale: 1 }
     : lowEndAndroid
-      ? { x: [0, 14, -10, 0], y: [0, -12, 8, 0], scale: [1, 1.06, 0.97, 1] }
-      : { x: [0, 24, -18, 0], y: [0, -18, 14, 0], scale: [1, 1.08, 0.92, 1] };
+      ? { x: [0, 18, -12, 0], y: [0, -14, 10, 0], scale: [1, 1.12, 0.9, 1] }
+      : { x: [0, 28, -22, 0], y: [0, -22, 17, 0], scale: [1, 1.16, 0.86, 1] };
 
   const driftSlow = reduceMotion
     ? { x: 0, y: 0 }
@@ -391,10 +404,11 @@ export function OnboardingJourneyScreen({
             position: "absolute",
             top: "-12%",
             right: "-18%",
-            width: 340,
-            height: 340,
+            width: 380,
+            height: 380,
             borderRadius: "50%",
-            filter: "blur(48px)",
+            filter: "blur(44px) saturate(1.55)",
+            opacity: 1,
           }}
         >
           {CARDS.map((c, i) => (
@@ -421,10 +435,11 @@ export function OnboardingJourneyScreen({
             position: "absolute",
             top: "34%",
             left: "-24%",
-            width: 320,
-            height: 320,
+            width: 360,
+            height: 360,
             borderRadius: "50%",
-            filter: "blur(56px)",
+            filter: "blur(50px) saturate(1.5)",
+            opacity: 1,
           }}
         >
           {CARDS.map((c, i) => (
@@ -459,10 +474,11 @@ export function OnboardingJourneyScreen({
             position: "absolute",
             bottom: "-16%",
             right: "4%",
-            width: 300,
-            height: 300,
+            width: 336,
+            height: 336,
             borderRadius: "50%",
-            filter: "blur(52px)",
+            filter: "blur(46px) saturate(1.52)",
+            opacity: 1,
           }}
         >
           {CARDS.map((c, i) => (
@@ -485,7 +501,7 @@ export function OnboardingJourneyScreen({
         {!reduceMotion && (
           <>
             <motion.div
-              animate={{ rotate: [0, 360], opacity: [0.08, 0.16, 0.08] }}
+              animate={{ rotate: [0, 360], opacity: [0.14, 0.28, 0.14] }}
               transition={{ duration: 48, repeat: Infinity, ease: "linear" }}
               style={{
                 position: "absolute",
@@ -513,7 +529,7 @@ export function OnboardingJourneyScreen({
               ))}
             </motion.div>
             <motion.div
-              animate={{ rotate: [360, 0], opacity: [0.06, 0.14, 0.06] }}
+              animate={{ rotate: [360, 0], opacity: [0.11, 0.24, 0.11] }}
               transition={{ duration: 56, repeat: Infinity, ease: "linear" }}
               style={{
                 position: "absolute",
@@ -633,7 +649,7 @@ export function OnboardingJourneyScreen({
                   flexShrink: 0,
                   borderRadius: 30,
                   position: "relative",
-                  overflow: "hidden",
+                  overflow: "visible",
                   isolation: "isolate",
                   boxShadow: isActive
                     ? "0 20px 60px rgba(28,25,23,0.12), 0 4px 20px rgba(28,25,23,0.06)"
@@ -646,24 +662,35 @@ export function OnboardingJourneyScreen({
                   }
                 }}
               >
-                {/* Base gradient fill */}
+                {/* Base fill — clipped; stays inside rounded rect */}
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
-                    background: card.gradient,
+                    borderRadius: 30,
+                    overflow: "hidden",
+                    zIndex: 0,
                   }}
-                />
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: card.gradient,
+                    }}
+                  />
+                </div>
 
-                {/* Rotating mesh — continuous “Apple Music” colour swirl (CSS; always visible) */}
+                {/* Mesh + blobs — card overflow visible so blur extends past top edge */}
                 <div
                   aria-hidden
                   style={{
                     position: "absolute",
                     inset: "-40%",
+                    zIndex: 1,
                     background: card.mesh,
-                    opacity: isActive ? 0.38 : 0.2,
-                    filter: "blur(26px) saturate(1.08)",
+                    opacity: isActive ? 0.74 : 0.42,
+                    filter: "blur(22px) saturate(1.62)",
                     mixBlendMode: "soft-light",
                     pointerEvents: "none",
                     animation: reduceMotion ? "none" : "zf_onb_mesh_spin 22s linear infinite",
@@ -675,9 +702,10 @@ export function OnboardingJourneyScreen({
                   style={{
                     position: "absolute",
                     inset: "-38%",
+                    zIndex: 1,
                     background: card.meshAlt,
-                    opacity: isActive ? 0.3 : 0.16,
-                    filter: "blur(30px) saturate(1.06)",
+                    opacity: isActive ? 0.58 : 0.34,
+                    filter: "blur(24px) saturate(1.55)",
                     mixBlendMode: "overlay",
                     pointerEvents: "none",
                     animation: reduceMotion ? "none" : "zf_onb_mesh_rev 34s linear infinite",
@@ -685,7 +713,6 @@ export function OnboardingJourneyScreen({
                   }}
                 />
 
-                {/* Drifting blobs — transform animates on outer layer; blur on inner (reliable motion) */}
                 {card.blobs.map((blob, bi) => (
                   <div
                     key={`blob-${bi}`}
@@ -699,6 +726,7 @@ export function OnboardingJourneyScreen({
                       marginLeft: -blob.size / 2,
                       marginTop: -blob.size / 2,
                       borderRadius: blob.shape ?? "50%",
+                      zIndex: 1,
                       pointerEvents: "none",
                       transform: "translateZ(0)",
                       animation: reduceMotion ? "none" : undefined,
@@ -711,45 +739,54 @@ export function OnboardingJourneyScreen({
                         inset: 0,
                         borderRadius: blob.shape ?? "50%",
                         background: blob.gradient,
-                        filter: `blur(${blob.blur}px) saturate(1.12)`,
-                        transform: "translateZ(0) scale(1.02)",
+                        filter: `blur(${Math.max(blob.blur - 4, 12)}px) saturate(1.45)`,
+                        transform: "translateZ(0) scale(1.05)",
                       }}
                     />
                   </div>
                 ))}
 
-                {/* Fine grain noise — luxury surface */}
+                {/* Noise, glass, content — clipped to card */}
                 <div
-                  aria-hidden
                   style={{
                     position: "absolute",
                     inset: 0,
+                    zIndex: 2,
                     borderRadius: 30,
-                    backgroundImage: CARD_NOISE_DATA_URI,
-                    backgroundSize: "240px 240px",
-                    opacity: isActive ? 0.22 : 0.14,
-                    mixBlendMode: "overlay",
+                    overflow: "hidden",
                     pointerEvents: "none",
                   }}
-                />
-
-                {/* Bottom glass for text readability */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: "50%",
-                    background: "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.52) 58%, transparent 100%)",
-                    backdropFilter: "blur(8px)",
-                    WebkitBackdropFilter: "blur(8px)",
-                  }}
-                />
+                >
+                  <div
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 30,
+                      backgroundImage: CARD_NOISE_DATA_URI,
+                      backgroundSize: "240px 240px",
+                      opacity: isActive ? 0.26 : 0.17,
+                      mixBlendMode: "overlay",
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: "50%",
+                      background: "linear-gradient(to top, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.52) 58%, transparent 100%)",
+                      backdropFilter: "blur(8px)",
+                      WebkitBackdropFilter: "blur(8px)",
+                    }}
+                  />
+                </div>
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
+                    zIndex: 3,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",

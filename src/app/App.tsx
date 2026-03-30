@@ -171,8 +171,13 @@ export default function App() {
       style={{ background: "#FDFBF8", fontFamily: "Inter, sans-serif" }}
     >
       <div
-        className="relative overflow-hidden mx-auto"
-        style={{ maxWidth: "390px", minHeight: "100vh" }}
+        className="relative mx-auto"
+        style={{
+          maxWidth: "390px",
+          minHeight: "100vh",
+          overflowX: "clip",
+          overflowY: "visible",
+        }}
       >
         <AnimatePresence mode="wait" initial={false}>
 
