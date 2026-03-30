@@ -673,8 +673,6 @@ export function OnboardingJourneyScreen({
             const blobBlur = (px: number) => Math.max(8, Math.round(px * (budgetOnb ? 0.68 : 1)));
 
             const animPaused = reduceMotion || !isActive || carouselDragging;
-            /* mix-blend + filter leaks past border-radius on iOS/Android WebKit; normal mode is blend-safe. */
-            const blendSafe = touchUi;
 
             return (
               <motion.div
@@ -741,21 +739,17 @@ export function OnboardingJourneyScreen({
                       position: "absolute",
                       inset: budgetOnb ? "-36%" : "-40%",
                       background: card.mesh,
-                      opacity: blendSafe
+                      opacity: budgetOnb
                         ? isActive
-                          ? 0.58
-                          : 0.28
-                        : budgetOnb
-                          ? isActive
-                            ? 0.62
-                            : 0.3
-                          : isActive
-                            ? 0.66
-                            : 0.32,
+                          ? 0.62
+                          : 0.3
+                        : isActive
+                          ? 0.66
+                          : 0.32,
                       filter: budgetOnb
                         ? "blur(20px) saturate(1.26) contrast(1.08)"
                         : "blur(18px) saturate(1.36) contrast(1.16)",
-                      mixBlendMode: blendSafe ? "normal" : budgetOnb ? "soft-light" : "screen",
+                      mixBlendMode: budgetOnb ? "soft-light" : "screen",
                       pointerEvents: "none",
                       animation: reduceMotion
                         ? "none"
@@ -772,9 +766,9 @@ export function OnboardingJourneyScreen({
                         position: "absolute",
                         inset: "-38%",
                         background: card.meshAlt,
-                        opacity: blendSafe ? (isActive ? 0.42 : 0.2) : isActive ? 0.52 : 0.24,
+                        opacity: isActive ? 0.52 : 0.24,
                         filter: "blur(22px) saturate(1.3) contrast(1.12)",
-                        mixBlendMode: blendSafe ? "normal" : "color-dodge",
+                        mixBlendMode: "color-dodge",
                         pointerEvents: "none",
                         animation: reduceMotion ? "none" : "zf_onb_mesh_rev 34s linear infinite",
                         animationPlayState: animPaused ? "paused" : "running",
@@ -827,7 +821,7 @@ export function OnboardingJourneyScreen({
                       backgroundImage: CARD_NOISE_DATA_URI,
                       backgroundSize: "240px 240px",
                       opacity: budgetOnb ? (isActive ? 0.12 : 0.08) : isActive ? 0.22 : 0.14,
-                      mixBlendMode: blendSafe ? "normal" : "overlay",
+                      mixBlendMode: "overlay",
                       pointerEvents: "none",
                     }}
                   />
