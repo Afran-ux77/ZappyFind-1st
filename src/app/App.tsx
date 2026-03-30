@@ -14,10 +14,13 @@ import { DashboardPreviewScreen } from "./components/DashboardPreviewScreen";
 import { JobReviewScreen } from "./components/JobReviewScreen";
 import { JobSeekerProfileScreen } from "./components/JobSeekerProfileScreen";
 import { MatchCelebrationScreen } from "./components/MatchCelebrationScreen";
+import { CallInitiationScreen } from "./components/CallInitiationScreen";
+import { OnboardingJourneyScreen } from "./components/OnboardingJourneyScreen";
 
 type Screen =
   | "login"
   | "otp"
+  | "onboardingJourney"
   | "welcome"
   | "profileReview"
   | "profileEdit"
@@ -25,6 +28,7 @@ type Screen =
   | "profileSummary"
   | "settingUpProfile"
   | "matchCelebration"
+  | "callInitiation"
   | "success"
   | "dashboardPreview"
   | "voiceCall"
@@ -48,6 +52,8 @@ export default function App() {
   const [signupFullName, setSignupFullName] = useState("");
   const [mode,          setMode]          = useState<"signup" | "signin">("signup");
   const [parsedProfile, setParsedProfile] = useState<FullProfile | null>(null);
+  /** Preferences captured in JobPreferencesScreen; kept separately so they survive profile overwrites. */
+  const [pendingPrefs, setPendingPrefs] = useState<JobPreferences | null>(null);
   /** Previous screen for JobPreferences "Back" (and similar flows). */
   const [prefPrev, setPrefPrev] = useState<Screen>("profileReview");
   /** After completing prefs, Welcome is step 6; going back should reopen prefs at step 5. */
@@ -135,6 +141,30 @@ export default function App() {
     ? ((parsedProfile as any).name || (parsedProfile as any).fullName || "").trim().split(/\s+/)[0] || ""
     : signupFullName.trim().split(/\s+/).filter(Boolean)[0] || email.split("@")[0] || "";
 
+  const jobCategoryLabels = useMemo(() => {
+    const labelMap: Record<string, string> = {
+      swe: "Software Engineering",
+      design: "Design",
+      data: "Data",
+      product: "Product Management",
+      marketing: "Marketing",
+      finance: "Finance",
+      sales: "Sales",
+      hr: "Human Resources",
+      consulting: "Consulting",
+      ops: "Operations & Strategy",
+      cs: "Customer Success",
+      legal: "Legal",
+      security: "Security",
+      health: "Healthcare",
+      misc: "Misc. Engineering",
+      other: "Other",
+    };
+    const cats = parsedProfile?.preferences?.categories;
+    if (!cats?.length) return ["your expertise"];
+    return cats.map((id) => labelMap[id] || id);
+  }, [parsedProfile]);
+
   return (
     <div
       className="min-h-screen w-full"
@@ -192,7 +222,18 @@ export default function App() {
                     onboardingComplete: false,
                   });
                   setJobPrefsResumeStep(undefined);
-                  setPrefPrev("otp");
+                  setPrefPrev("onboardingJourney");
+                  goTo("onboardingJourney", "forward");
+                }}
+              />
+            </motion.div>
+          )}
+
+          {screen === "onboardingJourney" && (
+            <motion.div key="onboardingJourney" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
+              <OnboardingJourneyScreen
+                firstName={firstName}
+                onComplete={() => {
                   goTo("jobPreferences", "forward");
                 }}
               />
@@ -203,8 +244,9 @@ export default function App() {
             <motion.div key="welcome" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
               <WelcomeScreen
                 onResumeUploaded={(data) => {
-                  setParsedProfile(data);
-                  writeSession({ profile: data });
+                  const merged = pendingPrefs ? { ...data, preferences: pendingPrefs } : data;
+                  setParsedProfile(merged);
+                  writeSession({ profile: merged });
                   goTo("settingUpProfile", "forward");
                 }}
                 onManual={() => {
@@ -221,8 +263,9 @@ export default function App() {
                 email={email}
                 signupFullName={signupFullName}
                 onComplete={(profile) => {
-                  setParsedProfile(profile);
-                  writeSession({ profile });
+                  const merged = pendingPrefs ? { ...profile, preferences: pendingPrefs } : profile;
+                  setParsedProfile(merged);
+                  writeSession({ profile: merged });
                   setPrefPrev("profileReview");
                   goTo("settingUpProfile", "forward");
                 }}
@@ -256,16 +299,14 @@ export default function App() {
           {screen === "jobPreferences" && (
             <motion.div key="jobPreferences" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
               <JobPreferencesScreen
-                firstName={firstName}
                 resumeAtStep={jobPrefsResumeStep}
                 onComplete={(prefs: JobPreferences) => {
-                  setParsedProfile((prev) =>
-                    prev ? { ...prev, preferences: prefs } : prev
-                  );
-                  writeSession({
-                    profile: parsedProfile
-                      ? { ...parsedProfile, preferences: prefs }
-                      : undefined,
+                  setPendingPrefs(prefs);
+                  setParsedProfile((prev) => {
+                    if (!prev) return prev;
+                    const updated = { ...prev, preferences: prefs };
+                    writeSession({ profile: updated });
+                    return updated;
                   });
                   setJobPrefsResumeStep(5);
                   goTo("welcome", "forward");
@@ -307,7 +348,22 @@ export default function App() {
 
           {screen === "matchCelebration" && (
             <motion.div key="matchCelebration" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
-              <MatchCelebrationScreen onContinue={() => goTo("success", "forward")} />
+              <MatchCelebrationScreen onContinue={() => goTo("callInitiation", "forward")} />
+            </motion.div>
+          )}
+
+          {screen === "callInitiation" && (
+            <motion.div key="callInitiation" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
+              <CallInitiationScreen
+                firstName={firstName}
+                jobCategoryLabels={jobCategoryLabels}
+                onStartCall={() => goTo("voiceCall", "forward")}
+                onSkip={() => {
+                  setHasCompletedInterview(false);
+                  writeSession({ hasCompletedInterview: false, onboardingComplete: true });
+                  goTo("dashboardPreview", "forward");
+                }}
+              />
             </motion.div>
           )}
 
@@ -396,14 +452,23 @@ export default function App() {
           )}
 
           {screen === "voiceCall" && (
-            <VoiceCallScreen
-              firstName={firstName}
-              onEnd={() => {
-                setHasCompletedInterview(true);
-                writeSession({ hasCompletedInterview: true, onboardingComplete: true });
-                goTo("dashboardPreview", "back");
-              }}
-            />
+            <motion.div
+              key="voiceCall"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              style={{ width: "100%" }}
+            >
+              <VoiceCallScreen
+                firstName={firstName}
+                onEnd={() => {
+                  setHasCompletedInterview(true);
+                  writeSession({ hasCompletedInterview: true, onboardingComplete: true });
+                  goTo("dashboardPreview", "back");
+                }}
+              />
+            </motion.div>
           )}
 
           {screen === "jobReview" && (

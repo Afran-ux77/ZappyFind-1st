@@ -31,23 +31,55 @@ const C = {
   trackBg:     "rgba(28,25,23,0.1)",
 };
 
-/* ── Step 1 — Priorities ───────────────────────────────────────────────────── */
+/* ── Step 2 — Priorities questionnaire (choose up to 3 overall) ───────────── */
 const PRIORITIES = [
-  { id: "meaningful",  label: "Meaningful work",       icon: Heart       },
-  { id: "leaders",     label: "Experienced leaders",   icon: Crown       },
-  { id: "investors",   label: "Top investors",         icon: TrendingUp  },
-  { id: "manyhats",    label: "Wear many hats",        icon: Layers      },
-  { id: "smart",       label: "Smart teammates",       icon: Lightbulb   },
-  { id: "challenge",   label: "Challenging work",      icon: Zap         },
-  { id: "growth",      label: "Growing fast",          icon: Rocket      },
-  { id: "startup",     label: "Cool startup",          icon: Flame       },
-  { id: "stable",      label: "Stable company",        icon: Building2   },
-  { id: "tech",        label: "Innovative technology", icon: Cpu         },
-  { id: "flexible",    label: "Flexible hours",        icon: Clock       },
-  { id: "benefits",    label: "Great benefits",        icon: Gift        },
-  { id: "remote",      label: "Remote friendly",       icon: Globe       },
-  { id: "wlb",         label: "Work-life balance",     icon: Scale       },
-];
+  { id: "startup_fast", label: "Startup — fast & evolving", icon: Flame },
+  { id: "growing_company", label: "Growing company", icon: TrendingUp },
+  { id: "established_company", label: "Established company", icon: Building2 },
+  { id: "clear_role", label: "Clear role & responsibilities", icon: Crown },
+  { id: "flexible_scope", label: "Flexible, changing work", icon: Layers },
+  { id: "own_e2e", label: "Own projects end-to-end", icon: Rocket },
+  { id: "fast_paced", label: "Fast-paced, high pressure", icon: Zap },
+  { id: "steady_predictable", label: "Steady and predictable", icon: Scale },
+  { id: "open_ended_problems", label: "Solve open-ended problems", icon: Lightbulb },
+  { id: "close_team", label: "A close team", icon: Users },
+  { id: "mostly_independent", label: "Mostly on my own", icon: UserCheck },
+  { id: "client_facing", label: "Clients or customers", icon: Handshake },
+  { id: "move_up_quickly", label: "Move up quickly", icon: TrendingUp },
+  { id: "go_deep", label: "Go deep in one area", icon: Cpu },
+  { id: "learn_from_managers", label: "Learn from great managers", icon: Heart },
+  { id: "flexible_async", label: "Flexible / async work", icon: Globe },
+  { id: "structured_hours", label: "Structured hours", icon: Clock },
+  { id: "travel_relocation", label: "Open to travel / relocation", icon: Briefcase },
+] as const;
+
+const PRIORITY_QUESTIONS = [
+  {
+    id: "company_fit",
+    question: "1. What kind of company fits you?",
+    optionIds: ["startup_fast", "growing_company", "established_company"],
+  },
+  {
+    id: "role_defined",
+    question: "2. How do you like your role defined?",
+    optionIds: ["clear_role", "flexible_scope", "own_e2e"],
+  },
+  {
+    id: "work_rhythm",
+    question: "3. What's your preferred work rhythm?",
+    optionIds: ["fast_paced", "steady_predictable", "open_ended_problems"],
+  },
+  {
+    id: "team_style",
+    question: "4. Who do you work best with?",
+    optionIds: ["close_team", "mostly_independent", "client_facing"],
+  },
+  {
+    id: "growth_path",
+    question: "5. How do you want to grow?",
+    optionIds: ["move_up_quickly", "go_deep", "learn_from_managers"],
+  },
+] as const;
 
 /* ── Step 2 — Job categories & sub-roles ───────────────────────────────────── */
 const CATEGORIES = [
@@ -116,13 +148,13 @@ function clampSalaryLpa(value: number): number {
   return Math.max(SAL_MIN, Math.min(SAL_MAX, value));
 }
 
-/** Digits only, max 3 (0–100 LPA). */
-function sanitizeLpaDigits(raw: string): string {
-  return raw.replace(/\D/g, "").slice(0, 3);
+/** Digits only for annual amount in the selected currency (slider still uses LPA internally). */
+function sanitizeAnnualDigits(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, 12);
 }
 
-/** Major currencies; slider stays in INR LPA; display converts for non-INR. */
-type SalaryCurrencyCode =
+/** Major currencies; slider is driven in INR LPA; fields show full annual amount in the selected currency. */
+export type SalaryCurrencyCode =
   | "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "CAD" | "AUD";
 
 const SALARY_CURRENCY_OPTIONS: {
@@ -151,47 +183,40 @@ const INR_PER_UNIT: Record<SalaryCurrencyCode, number> = {
   AUD: 55,
 };
 
-/** Convert LPA (lakhs of INR / year) to annual amount in selected currency. */
-function lakhsToAnnualInCurrency(lakhs: number, code: SalaryCurrencyCode): number {
-  if (code === "INR") return lakhs;
+/** Annual salary amount in the selected currency (INR = rupees/year). */
+export function lpaToAnnualAmount(lakhs: number, code: SalaryCurrencyCode): number {
   const annualInr = lakhs * 100_000;
+  if (code === "INR") return annualInr;
   return annualInr / INR_PER_UNIT[code];
 }
 
-/** Format salary display for min/max labels (slider values are always LPA). */
-function formatSalaryStepDisplay(lakhs: number, code: SalaryCurrencyCode): string {
+/** Map typed annual amount back to canonical LPA (0–100) for the slider and persistence. */
+function annualAmountToLpa(annual: number, code: SalaryCurrencyCode): number {
+  if (!Number.isFinite(annual) || annual < 0) return SAL_MIN;
   if (code === "INR") {
-    return `₹${lakhs}LPA`;
+    return clampSalaryLpa(Math.round(annual / 100_000));
   }
-  const annual = lakhsToAnnualInCurrency(lakhs, code);
+  const annualInr = annual * INR_PER_UNIT[code];
+  return clampSalaryLpa(Math.round(annualInr / 100_000));
+}
+
+/** Full annual salary with correct currency symbol (no LPA / compact notation). */
+export function formatSalaryAnnualDisplay(lakhs: number, code: SalaryCurrencyCode): string {
+  const n = Math.round(lpaToAnnualAmount(lakhs, code));
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(code === "INR" ? "en-IN" : "en-US", {
       style: "currency",
       currency: code,
-      notation: annual >= 1000 ? "compact" : "standard",
-      maximumFractionDigits: annual >= 1000 ? 1 : 0,
-    }).format(annual);
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    }).format(n);
   } catch {
-    return `${annual.toFixed(0)} ${code}`;
+    return `${n} ${code}`;
   }
 }
 
-/** Scale endpoints under the slider (0 … max LPA). */
 function formatSalaryScaleEndpoint(lakhs: number, code: SalaryCurrencyCode): string {
-  if (code === "INR") {
-    return lakhs === 0 ? "₹0" : `₹${lakhs}LPA`;
-  }
-  const annual = lakhsToAnnualInCurrency(lakhs, code);
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: code,
-      notation: annual >= 1000 ? "compact" : "standard",
-      maximumFractionDigits: annual >= 1000 ? 1 : 0,
-    }).format(annual);
-  } catch {
-    return `${annual.toFixed(0)}`;
-  }
+  return formatSalaryAnnualDisplay(lakhs, code);
 }
 
 /* ── Shared: small checkmark pill indicator ────────────────────────────────── */
@@ -262,7 +287,6 @@ type Step = 1 | 2 | 3 | 4 | 5;
 interface Props {
   onComplete: (prefs: JobPreferences) => void;
   onBack: () => void;
-  firstName?: string;
   /** When returning from Welcome (step 6), reopen at this preference step (default 1). */
   resumeAtStep?: Step;
 }
@@ -270,7 +294,7 @@ interface Props {
 /* ═════════════════════════════════════════════════════════════════════════════
    Main component
 ══════════════════════════════════════════════════════════════════════════════ */
-export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtStep }: Props) {
+export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props) {
   const [step,       setStep]       = useState<Step>(() => {
     if (resumeAtStep !== undefined && resumeAtStep >= 1 && resumeAtStep <= 5) return resumeAtStep;
     return 1;
@@ -363,19 +387,33 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
 
   const commitSalMinFromDraft = (draft: string) => {
     cancelSalMinAnim();
-    const t = sanitizeLpaDigits(draft).trim();
-    const n = t === "" ? SAL_MIN : parseInt(t, 10);
+    const t = sanitizeAnnualDigits(draft).trim();
+    const n = t === "" ? 0 : parseInt(t, 10);
     if (Number.isNaN(n)) return;
-    setSalMin(n);
+    let lpa = annualAmountToLpa(n, salaryCurrency);
+    lpa = Math.min(lpa, Math.max(SAL_MIN, salMaxRef.current - SAL_GAP));
+    setSalMin(lpa);
   };
 
   const commitSalMaxFromDraft = (draft: string) => {
     cancelSalMaxAnim();
-    const t = sanitizeLpaDigits(draft).trim();
-    const n = t === "" ? SAL_MAX : parseInt(t, 10);
-    if (Number.isNaN(n)) return;
-    setSalMax(n);
+    const t = sanitizeAnnualDigits(draft).trim();
+    let lpa: number;
+    if (t === "") {
+      lpa = SAL_MAX;
+    } else {
+      const n = parseInt(t, 10);
+      if (Number.isNaN(n)) return;
+      lpa = annualAmountToLpa(n, salaryCurrency);
+    }
+    lpa = Math.max(lpa, Math.min(SAL_MAX, salMinRef.current + SAL_GAP));
+    setSalMax(lpa);
   };
+
+  useEffect(() => {
+    setSalMinEditing(false);
+    setSalMaxEditing(false);
+  }, [salaryCurrency]);
 
   useEffect(() => {
     if (step !== 4) {
@@ -465,6 +503,33 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
       .zf-salary-currency-menu [data-slot="dropdown-menu-radio-item"][data-state="checked"]:active {
         background: rgba(234, 88, 12, 0.2);
       }
+      .zf-salary-lpa-field {
+        display: inline-flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0;
+        min-height: 48px;
+        min-width: min(140px, 100%);
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(28, 25, 23, 0.14);
+        background: #FFFFFF;
+        box-shadow: inset 0 1px 2px rgba(28, 25, 23, 0.06);
+        box-sizing: border-box;
+        cursor: text;
+        -webkit-tap-highlight-color: transparent;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .zf-salary-lpa-field--end {
+        justify-content: flex-end;
+        text-align: right;
+      }
+      .zf-salary-lpa-field:focus-within {
+        border-color: rgba(234, 88, 12, 0.5);
+        box-shadow:
+          inset 0 1px 2px rgba(28, 25, 23, 0.05),
+          0 0 0 3px rgba(234, 88, 12, 0.14);
+      }
       input.zf-salary-lpa {
         appearance: textfield;
         -moz-appearance: textfield;
@@ -479,42 +544,6 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
       input.zf-salary-lpa:focus {
         outline: none;
       }
-      @keyframes zf-welcome-drift {
-        0%   { background-position: 0% 0%; }
-        14%  { background-position: 60% 15%; }
-        28%  { background-position: 100% 50%; }
-        42%  { background-position: 70% 90%; }
-        57%  { background-position: 20% 100%; }
-        71%  { background-position: 0% 60%; }
-        85%  { background-position: 30% 20%; }
-        100% { background-position: 0% 0%; }
-      }
-      @keyframes zf-glow-drift {
-        0%   { transform: translate(0%, 0%) scale(1) rotate(0deg); opacity: 0.75; }
-        17%  { transform: translate(-18%, 22%) scale(1.08) rotate(1deg); opacity: 0.9; }
-        33%  { transform: translate(-28%, 10%) scale(1.14) rotate(1.5deg); opacity: 1; }
-        50%  { transform: translate(-8%, -14%) scale(1.08) rotate(0deg); opacity: 0.85; }
-        67%  { transform: translate(16%, -8%) scale(0.96) rotate(-1deg); opacity: 0.92; }
-        83%  { transform: translate(10%, 8%) scale(0.98) rotate(-0.5deg); opacity: 0.82; }
-        100% { transform: translate(0%, 0%) scale(1) rotate(0deg); opacity: 0.75; }
-      }
-      @keyframes zf-glow-drift-2 {
-        0%   { transform: translate(0%, 0%) scale(1) rotate(0deg); opacity: 0.75; }
-        17%  { transform: translate(16%, -14%) scale(1.06) rotate(-1deg); opacity: 0.88; }
-        33%  { transform: translate(8%, -26%) scale(1.12) rotate(-1.5deg); opacity: 1; }
-        50%  { transform: translate(-12%, -8%) scale(1.08) rotate(0deg); opacity: 0.85; }
-        67%  { transform: translate(-22%, 14%) scale(1.0) rotate(1deg); opacity: 0.92; }
-        83%  { transform: translate(-8%, 10%) scale(0.97) rotate(0.5deg); opacity: 0.8; }
-        100% { transform: translate(0%, 0%) scale(1) rotate(0deg); opacity: 0.75; }
-      }
-      @keyframes zf-glow-drift-3 {
-        0%   { transform: translate(0%, 0%) scale(1) rotate(0deg); opacity: 0.7; }
-        20%  { transform: translate(-12%, -18%) scale(1.1) rotate(1deg); opacity: 0.85; }
-        40%  { transform: translate(6%, -24%) scale(1.16) rotate(1.5deg); opacity: 1; }
-        60%  { transform: translate(18%, 4%) scale(1.06) rotate(-0.5deg); opacity: 0.88; }
-        80%  { transform: translate(6%, 16%) scale(0.94) rotate(-1deg); opacity: 0.78; }
-        100% { transform: translate(0%, 0%) scale(1) rotate(0deg); opacity: 0.7; }
-      }
     `;
     document.head.appendChild(el);
     return () => { document.getElementById(id)?.remove(); };
@@ -525,7 +554,7 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
     setPriorities(prev =>
       prev.includes(id)
         ? prev.filter(p => p !== id)
-        : prev.length < 3 ? [...prev, id] : prev
+        : [...prev, id]
     );
 
   useEffect(() => {
@@ -610,19 +639,19 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
   const liveSalMin =
     salMinEditing
       ? (() => {
-          const v = sanitizeLpaDigits(salMinDraft).trim();
+          const v = sanitizeAnnualDigits(salMinDraft).trim();
           if (v === "") return null;
           const n = parseInt(v, 10);
-          return Number.isNaN(n) ? null : n;
+          return Number.isNaN(n) ? null : annualAmountToLpa(n, salaryCurrency);
         })()
       : salMin;
   const liveSalMax =
     salMaxEditing
       ? (() => {
-          const v = sanitizeLpaDigits(salMaxDraft).trim();
+          const v = sanitizeAnnualDigits(salMaxDraft).trim();
           if (v === "") return null;
           const n = parseInt(v, 10);
-          return Number.isNaN(n) ? null : n;
+          return Number.isNaN(n) ? null : annualAmountToLpa(n, salaryCurrency);
         })()
       : salMax;
   const salaryRangeError =
@@ -632,7 +661,7 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
             return "Enter both minimum and maximum salary.";
           }
           if (liveSalMin < SAL_MIN || liveSalMax < SAL_MIN || liveSalMin > SAL_MAX || liveSalMax > SAL_MAX) {
-            return "Salary values must be between 0 and 100 LPA.";
+            return "Salary must stay within the selectable range for your currency.";
           }
           if (liveSalMin > liveSalMax) {
             return "Minimum salary cannot be greater than maximum salary.";
@@ -771,138 +800,6 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
-                {/* ── Welcome banner ─────────────────────────────────────── */}
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  style={{
-                    marginBottom: 24,
-                    borderRadius: 16,
-                    padding: "16px 18px",
-                    position: "relative",
-                    overflow: "hidden",
-                    border: "1px solid rgba(234,88,12,0.12)",
-                    background:
-                      "linear-gradient(135deg, rgba(255, 249, 244, 1) 0%, rgba(255, 237, 217, 1) 15%, rgba(255, 228, 206, 0.8) 30%, rgba(255, 220, 188, 0.5) 48%, rgba(255, 233, 210, 0.7) 60%, rgba(255, 243, 230, 1) 78%, rgba(255, 249, 244, 1) 100%)",
-                    backgroundSize: "400% 400%",
-                    animation: "zf-welcome-drift 14s cubic-bezier(0.33, 0, 0.2, 1) infinite",
-                    boxShadow:
-                      "0 4px 20px rgba(234,88,12,0.08), 0 0 0 0.5px rgba(234,88,12,0.06) inset",
-                  }}
-                >
-                  {/* Peach / brand glow — top-right */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      top: "-40%",
-                      right: "-15%",
-                      width: "85%",
-                      height: "160%",
-                      borderRadius: "50%",
-                      background: "radial-gradient(ellipse, rgba(255,120,60,0.28) 0%, rgba(255,143,86,0.10) 45%, transparent 72%)",
-                      pointerEvents: "none",
-                      animation: "zf-glow-drift 16s cubic-bezier(0.33, 0, 0.2, 1) infinite",
-                    }}
-                  />
-                  {/* Deep amber glow — bottom-left */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      bottom: "-50%",
-                      left: "-15%",
-                      width: "75%",
-                      height: "155%",
-                      borderRadius: "50%",
-                      background: "radial-gradient(ellipse, rgba(180,80,20,0.22) 0%, rgba(194,100,40,0.06) 50%, transparent 72%)",
-                      pointerEvents: "none",
-                      animation: "zf-glow-drift-2 20s cubic-bezier(0.33, 0, 0.2, 1) infinite",
-                    }}
-                  />
-                  {/* Light peach glow — center-left */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      top: "-10%",
-                      left: "10%",
-                      width: "65%",
-                      height: "120%",
-                      borderRadius: "50%",
-                      background: "radial-gradient(ellipse, rgba(255,180,120,0.20) 0%, rgba(255,160,100,0.05) 50%, transparent 70%)",
-                      pointerEvents: "none",
-                      animation: "zf-glow-drift-3 24s cubic-bezier(0.33, 0, 0.2, 1) infinite",
-                    }}
-                  />
-                  {/* Burnt sienna accent — bottom-right */}
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      bottom: "-35%",
-                      right: "-10%",
-                      width: "60%",
-                      height: "130%",
-                      borderRadius: "50%",
-                      background: "radial-gradient(ellipse, rgba(210,100,40,0.18) 0%, rgba(194,80,30,0.04) 50%, transparent 72%)",
-                      pointerEvents: "none",
-                      animation: "zf-glow-drift 22s cubic-bezier(0.33, 0, 0.2, 1) infinite reverse",
-                    }}
-                  />
-                  {/* Noise texture overlay */}
-                  <svg
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      width: "100%",
-                      height: "100%",
-                      opacity: 0.12,
-                      pointerEvents: "none",
-                      borderRadius: "inherit",
-                      mixBlendMode: "multiply",
-                    }}
-                  >
-                    <filter id="zf-noise">
-                      <feTurbulence
-                        type="fractalNoise"
-                        baseFrequency="0.6"
-                        numOctaves="5"
-                        stitchTiles="stitch"
-                      />
-                    </filter>
-                    <rect
-                      width="100%"
-                      height="100%"
-                      filter="url(#zf-noise)"
-                    />
-                  </svg>
-                  <p style={{
-                    position: "relative",
-                    fontSize: "13px", fontWeight: 700,
-                    color: C.textPrimary,
-                    letterSpacing: "-0.02em",
-                    marginBottom: 4, lineHeight: 1.3,
-                  }}>
-                    {firstName
-                      ? `Welcome, ${firstName.charAt(0).toUpperCase() + firstName.slice(1)}! 👋`
-                      : "Welcome aboard! 👋"}
-                  </p>
-                  <p style={{
-                    position: "relative",
-                    fontSize: "12px", fontWeight: 400,
-                    color: C.textMuted,
-                    letterSpacing: "-0.01em",
-                    lineHeight: 1.5,
-                  }}>
-                    Let's set up your preferences, takes about{" "}
-                    <span style={{ fontWeight: 600, color: C.brand }}>2 minutes</span>
-                    {" "}and helps us match you with the right roles.
-                  </p>
-                </motion.div>
-
                 {/* Heading */}
                 <div style={{ marginBottom: 24 }}>
                   <h2 style={{
@@ -1439,24 +1336,44 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                     color: C.textPrimary, letterSpacing: "-0.04em",
                     lineHeight: 1.25, marginBottom: 8,
                   }}>
-                    What is the most important thing in your next job?
+                    Tell us how you work best
                   </h2>
                   <p style={{ fontSize: "13px", color: C.textMuted, letterSpacing: "-0.01em" }}>
-                    Choose up to 3 things that matter most to you
+                    Choose all answers that match you
                   </p>
                 </div>
 
-                {/* Pills */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {PRIORITIES.map(p => (
-                    <Pill
-                      key={p.id}
-                      label={p.label}
-                      icon={p.icon}
-                      selected={priorities.includes(p.id)}
-                      disabled={priorities.length >= 3 && !priorities.includes(p.id)}
-                      onClick={() => togglePriority(p.id)}
-                    />
+                {/* Question groups */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  {PRIORITY_QUESTIONS.map((group) => (
+                    <div key={group.id}>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: C.textPrimary,
+                          letterSpacing: "-0.02em",
+                          margin: "0 0 8px",
+                        }}
+                      >
+                        {group.question}
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {group.optionIds.map((optId) => {
+                          const p = PRIORITIES.find((item) => item.id === optId);
+                          if (!p) return null;
+                          return (
+                            <Pill
+                              key={p.id}
+                              label={p.label}
+                              icon={p.icon}
+                              selected={priorities.includes(p.id)}
+                              onClick={() => togglePriority(p.id)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
 
@@ -1510,22 +1427,22 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 {/* Heading */}
-                <div style={{ marginBottom: 32 }}>
+                <div style={{ marginBottom: 10 }}>
                   <h2 style={{
                     fontSize: "clamp(19px, 5.5vw, 22px)", fontWeight: 800,
                     color: C.textPrimary, letterSpacing: "-0.04em",
-                    lineHeight: 1.25, marginBottom: 8,
+                    lineHeight: 1.25, marginBottom: 0,
                   }}>
                     Expected salary range?
                   </h2>
                 </div>
 
-                {/* Currency — compact trigger; list in menu */}
+                {/* Currency — compact trigger; list in menu (left-aligned with heading) */}
                 <div style={{
-                  marginBottom: 16,
+                  marginBottom: 8,
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "flex-end",
+                  justifyContent: "flex-start",
                 }}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1558,7 +1475,7 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                      align="end"
+                      align="start"
                       sideOffset={8}
                       collisionPadding={16}
                       className="zf-salary-currency-menu z-[120]"
@@ -1589,53 +1506,48 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                   </DropdownMenu>
                 </div>
 
-                {/* Min / Max — same typography as before; subtle underline hints tappable LPA edit */}
+                {/* Min / Max — inset field affordance + label wraps full tap target for typing */}
                 <div style={{
                   display: "flex", justifyContent: "space-between",
-                  alignItems: "flex-end", marginBottom: 28,
+                  alignItems: "flex-end", gap: 12, marginBottom: 18,
                 }}>
-                  <div>
-                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 4, letterSpacing: "0.02em" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 6, letterSpacing: "0.02em" }}>
                       Minimum
                     </p>
-                    <div
+                    <label
+                      htmlFor="zf-salary-min-input"
+                      className="zf-salary-lpa-field"
                       style={{
-                        display: "inline-flex",
-                        alignItems: "baseline",
-                        flexWrap: "wrap",
-                        gap: 0,
-                        fontSize: "26px",
+                        fontSize: "clamp(15px, 4.2vw, 19px)",
                         fontWeight: 800,
                         color: C.textPrimary,
-                        letterSpacing: "-0.05em",
-                        cursor: "text",
-                        minHeight: "44px",
-                        boxSizing: "border-box",
-                        paddingBottom: 2,
-                        borderBottom: "1px solid rgba(28, 25, 23, 0.1)",
+                        letterSpacing: "-0.04em",
+                        width: "100%",
+                        maxWidth: "100%",
                       }}
                     >
-                      {salaryCurrency === "INR" ? <span>₹</span> : null}
                       <input
+                        id="zf-salary-min-input"
                         className="zf-salary-lpa"
                         type="text"
                         inputMode="numeric"
                         autoComplete="off"
                         spellCheck={false}
-                        value={salMinEditing ? salMinDraft : String(salMin)}
-                        aria-label="Minimum salary, lakhs per annum (INR)"
+                        value={
+                          salMinEditing
+                            ? salMinDraft
+                            : formatSalaryAnnualDisplay(salMin, salaryCurrency)
+                        }
+                        aria-label={`Minimum annual salary, ${salaryCurrency}`}
                         onFocus={() => {
                           setSalMinEditing(true);
-                          setSalMinDraft(String(salMin));
+                          setSalMinDraft(
+                            String(Math.round(lpaToAnnualAmount(salMin, salaryCurrency)))
+                          );
                         }}
                         onChange={(e) => {
-                          const next = sanitizeLpaDigits(e.target.value);
-                          setSalMinDraft(next);
-                          const n = next === "" ? SAL_MIN : parseInt(next, 10);
-                          if (!Number.isNaN(n)) {
-                            cancelSalMinAnim();
-                            setSalMin(n);
-                          }
+                          setSalMinDraft(sanitizeAnnualDigits(e.target.value));
                         }}
                         onBlur={() => {
                           commitSalMinFromDraft(salMinDraft);
@@ -1650,70 +1562,58 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                           }
                         }}
                         style={{
-                          width: `${Math.max(1, (salMinEditing ? salMinDraft.length || 1 : String(salMin).length)) + 0.35}ch`,
+                          width: "100%",
                           minWidth: 0,
                           padding: 0,
                           margin: 0,
                           border: "none",
                           background: "transparent",
                           font: "inherit",
+                          fontWeight: 600,
                           color: "inherit",
                           letterSpacing: "inherit",
                           fontVariantNumeric: "tabular-nums",
                         }}
                       />
-                      {salaryCurrency === "INR" ? <span>LPA</span> : null}
-                      {salaryCurrency !== "INR" ? (
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: C.textSec, letterSpacing: "-0.02em", marginLeft: "0.35em" }}>
-                          ({formatSalaryStepDisplay(salMin, salaryCurrency)})
-                        </span>
-                      ) : null}
-                    </div>
+                    </label>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 4, letterSpacing: "0.02em" }}>
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 6, letterSpacing: "0.02em", width: "100%", textAlign: "right" }}>
                       Maximum
                     </p>
-                    <div
+                    <label
+                      htmlFor="zf-salary-max-input"
+                      className="zf-salary-lpa-field zf-salary-lpa-field--end"
                       style={{
-                        display: "inline-flex",
-                        alignItems: "baseline",
-                        flexWrap: "wrap",
-                        gap: 0,
-                        justifyContent: "flex-end",
-                        fontSize: "26px",
+                        fontSize: "clamp(15px, 4.2vw, 19px)",
                         fontWeight: 800,
                         color: C.textPrimary,
-                        letterSpacing: "-0.05em",
-                        cursor: "text",
-                        minHeight: "44px",
-                        boxSizing: "border-box",
-                        paddingBottom: 2,
-                        marginLeft: "auto",
-                        borderBottom: "1px solid rgba(28, 25, 23, 0.1)",
+                        letterSpacing: "-0.04em",
+                        width: "100%",
+                        maxWidth: "100%",
                       }}
                     >
-                      {salaryCurrency === "INR" ? <span>₹</span> : null}
                       <input
+                        id="zf-salary-max-input"
                         className="zf-salary-lpa"
                         type="text"
                         inputMode="numeric"
                         autoComplete="off"
                         spellCheck={false}
-                        value={salMaxEditing ? salMaxDraft : String(salMax)}
-                        aria-label="Maximum salary, lakhs per annum (INR)"
+                        value={
+                          salMaxEditing
+                            ? salMaxDraft
+                            : formatSalaryAnnualDisplay(salMax, salaryCurrency)
+                        }
+                        aria-label={`Maximum annual salary, ${salaryCurrency}`}
                         onFocus={() => {
                           setSalMaxEditing(true);
-                          setSalMaxDraft(String(salMax));
+                          setSalMaxDraft(
+                            String(Math.round(lpaToAnnualAmount(salMax, salaryCurrency)))
+                          );
                         }}
                         onChange={(e) => {
-                          const next = sanitizeLpaDigits(e.target.value);
-                          setSalMaxDraft(next);
-                          const n = next === "" ? SAL_MAX : parseInt(next, 10);
-                          if (!Number.isNaN(n)) {
-                            cancelSalMaxAnim();
-                            setSalMax(n);
-                          }
+                          setSalMaxDraft(sanitizeAnnualDigits(e.target.value));
                         }}
                         onBlur={() => {
                           commitSalMaxFromDraft(salMaxDraft);
@@ -1728,25 +1628,21 @@ export function JobPreferencesScreen({ onComplete, onBack, firstName, resumeAtSt
                           }
                         }}
                         style={{
-                          width: `${Math.max(1, (salMaxEditing ? salMaxDraft.length || 1 : String(salMax).length)) + 0.35}ch`,
+                          width: "100%",
                           minWidth: 0,
                           padding: 0,
                           margin: 0,
                           border: "none",
                           background: "transparent",
                           font: "inherit",
+                          fontWeight: 600,
                           color: "inherit",
                           letterSpacing: "inherit",
                           fontVariantNumeric: "tabular-nums",
+                          textAlign: "right",
                         }}
                       />
-                      {salaryCurrency === "INR" ? <span>LPA</span> : null}
-                      {salaryCurrency !== "INR" ? (
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: C.textSec, letterSpacing: "-0.02em", marginLeft: "0.35em" }}>
-                          ({formatSalaryStepDisplay(salMax, salaryCurrency)})
-                        </span>
-                      ) : null}
-                    </div>
+                    </label>
                   </div>
                 </div>
 

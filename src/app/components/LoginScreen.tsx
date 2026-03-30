@@ -99,7 +99,7 @@ export function LoginScreen({
 
   return (
     <div
-      className="relative flex flex-col min-h-screen overflow-hidden"
+      className="relative flex flex-col min-h-screen overflow-x-hidden"
       style={{ background: C.bg, fontFamily: "Inter, sans-serif" }}
     >
       {/* Ambient orbs */}
@@ -163,7 +163,8 @@ export function LoginScreen({
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-6 w-full"
+          className="mb-6 w-full overflow-visible"
+          style={{ paddingBottom: 2 }}
         >
           <h1
             style={{
@@ -171,24 +172,30 @@ export function LoginScreen({
               fontSize: "clamp(29px, 8.3vw, 40px)",
               fontWeight: 400,
               color: "#111827",
-              lineHeight: 1.06,
+              lineHeight: 1.22,
               letterSpacing: "-0.035em",
               marginBottom: "16px",
+              paddingBottom: "0.08em",
               textAlign: "center",
               maxWidth: "340px",
               marginInline: "auto",
+              overflow: "visible",
             }}
           >
             {mode === "signup" ? (
               <>
-                <span style={{ display: "block" }}>Stop applying.</span>
+                <span style={{ display: "block", lineHeight: 1.22, paddingBottom: "0.06em" }}>Stop applying.</span>
                 <span
                   style={{
                     display: "block",
+                    lineHeight: 1.22,
+                    paddingBottom: "0.06em",
                     backgroundImage: "linear-gradient(90deg, #F97316 0%, #EA580C 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
+                    WebkitBoxDecorationBreak: "clone",
+                    boxDecorationBreak: "clone",
                   }}
                 >
                   Start getting discovered.
@@ -196,14 +203,18 @@ export function LoginScreen({
               </>
             ) : (
               <>
-                <span style={{ display: "block" }}>Welcome back.</span>
+                <span style={{ display: "block", lineHeight: 1.22, paddingBottom: "0.06em" }}>Welcome back.</span>
                 <span
                   style={{
                     display: "block",
+                    lineHeight: 1.22,
+                    paddingBottom: "0.06em",
                     backgroundImage: "linear-gradient(90deg, #F97316 0%, #EA580C 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
+                    WebkitBoxDecorationBreak: "clone",
+                    boxDecorationBreak: "clone",
                   }}
                 >
                   Sign in to continue.
@@ -437,7 +448,6 @@ export function LoginScreen({
               onClick={() => {
                 setMode("signin");
                 setFullName("");
-                setIsFullNameFocused(false);
               }}
               style={{
                 border: "none",

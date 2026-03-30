@@ -111,6 +111,20 @@ const MOCK_FULL: FullProfile = {
       grade: "8.4 CGPA",
     },
   ],
+  preferences: {
+    categories: ["design", "product"],
+    rolesByCategory: {
+      design: ["Product Designer", "UI Designer"],
+      product: ["Product Manager"],
+    },
+    workSetups: ["hybrid", "remote"],
+    locations: ["Bangalore", "Mumbai", "Remote"],
+    priorities: ["meaningful", "smart", "wlb"],
+    salaryMin: 25,
+    salaryMax: 45,
+    salaryCurrency: "INR",
+    switchTimeline: "1month",
+  },
 };
 
 // Note: resume extracting/progress UI intentionally removed.

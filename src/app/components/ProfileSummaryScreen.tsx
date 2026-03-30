@@ -1,10 +1,25 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  isValidElement,
+  cloneElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles, Briefcase, GraduationCap, Wrench,
   Clock, IndianRupee, Building2, Target, ChevronRight, Heart,
 } from "lucide-react";
 import type { FullProfile } from "./WelcomeScreen";
+import {
+  formatSalaryAnnualDisplay,
+  type SalaryCurrencyCode,
+} from "./JobPreferencesScreen";
+
+const SALARY_CURR_SET = new Set<SalaryCurrencyCode>([
+  "INR", "USD", "EUR", "GBP", "AED", "SGD", "CAD", "AUD",
+]);
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -77,12 +92,14 @@ export function ProfileSummaryScreen({
   const timeline = TIMELINE_LABELS[prefs.switchTimeline] || prefs.switchTimeline || "";
   const salMin = prefs.salaryMin;
   const salMax = prefs.salaryMax;
-  const salCurrency = prefs.salaryCurrency || "INR";
-  const salaryText = salMin != null && salMax != null
-    ? salCurrency === "INR"
-      ? `₹${salMin}–${salMax} LPA`
-      : `${salMin}–${salMax} (${salCurrency})`
-    : "";
+  const salCurrencyRaw = prefs.salaryCurrency || "INR";
+  const salCurrency: SalaryCurrencyCode = SALARY_CURR_SET.has(salCurrencyRaw as SalaryCurrencyCode)
+    ? (salCurrencyRaw as SalaryCurrencyCode)
+    : "INR";
+  const salaryText =
+    salMin != null && salMax != null
+      ? `${formatSalaryAnnualDisplay(salMin, salCurrency)} – ${formatSalaryAnnualDisplay(salMax, salCurrency)}`
+      : "";
 
   const aiSummary = p.summary || buildAiSummary(firstName, headline, totalYears, skills, categoryLabels, workSetups);
 
@@ -567,13 +584,11 @@ export function ProfileSummaryScreen({
                       {/* Priorities */}
                       {priorities.length > 0 && (
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                            <div style={prefIconStyle}>
-                              <Heart size={13} color="#EA580C" strokeWidth={2} />
-                            </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                            <Heart size={12} color="#A8A29E" strokeWidth={1.75} aria-hidden />
                             <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E" }}>What matters most</span>
                           </div>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 32 }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {priorities.map((pr) => (
                               <span
                                 key={pr}
@@ -672,16 +687,13 @@ export function ProfileSummaryScreen({
 
 /* ── Shared styles / helpers ──────────────────────────────────────────────── */
 
-const prefIconStyle: React.CSSProperties = {
-  width: 26,
-  height: 26,
-  borderRadius: 8,
-  background: "rgba(234,88,12,0.07)",
-  border: "1px solid rgba(234,88,12,0.1)",
+/** Inline muted icon only (no fill) — matches “What matters most” heart treatment */
+const prefRowIconInline: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   flexShrink: 0,
+  marginTop: 2,
 };
 
 function Section({
@@ -730,11 +742,18 @@ function Section({
   );
 }
 
-function PrefItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function PrefItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  const iconMuted = isValidElement(icon)
+    ? cloneElement(icon as ReactElement<{ size?: number; color?: string; strokeWidth?: number }>, {
+        size: 12,
+        color: "#A8A29E",
+        strokeWidth: 1.75,
+      })
+    : icon;
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-      <div style={prefIconStyle}>
-        <span style={{ color: "#EA580C" }}>{icon}</span>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
+      <div style={prefRowIconInline} aria-hidden>
+        {iconMuted}
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <p style={{ fontSize: 11, color: "#A8A29E", margin: 0, fontWeight: 500 }}>{label}</p>
