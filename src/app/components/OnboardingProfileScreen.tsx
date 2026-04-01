@@ -4,14 +4,12 @@ import type { FullProfile, WorkExp, Edu } from "./WelcomeScreen";
 import { FloatingLabelInput } from "./ui/FloatingLabelInput";
 
 const C = {
-  bg: "#FDFBF8",
   brand: "#C2410C",
   textPrimary: "#1C1917",
   textMuted: "#78716C",
   textSecondary: "#A8A29E",
   border: "rgba(28,25,23,0.09)",
   inputBg: "#FFFFFF",
-  orbA: "rgba(194,65,12,0.07)",
   orbB: "rgba(146,64,14,0.04)",
   success: "#059669",
 };
@@ -449,7 +447,7 @@ function ExperienceDurationPicker({
   const sanitizeMonths = (value: string) => value.replace(/\D/g, "").slice(0, 2);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
       {/* Years */}
       <div>
         <Input
@@ -961,17 +959,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
     onComplete(profile);
   };
 
+  /** Narrow readable column inside the desktop glass card; outer chrome width unchanged. */
+  const formColumnClass = "w-full max-w-xl mx-auto";
+
   return (
     <div
       className="relative flex flex-col min-h-screen overflow-hidden"
-      style={{ background: C.bg, fontFamily: "Inter, sans-serif" }}
+      style={{ fontFamily: "Inter, sans-serif" }}
     >
-      {/* Ambient orbs */}
-      <div className="absolute top-0 right-0 pointer-events-none" style={{
-        width: 260, height: 260, borderRadius: "50%",
-        background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
-        transform: "translate(35%, -35%)",
-      }} />
+      {/* Ambient orb (bottom-left only — avoid a second “layer” in the top-right on desktop glass) */}
       <div className="absolute pointer-events-none" style={{
         bottom: "8%", left: "-12%",
         width: 200, height: 200, borderRadius: "50%",
@@ -982,12 +978,12 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
       <div
         className="sticky top-0 z-20 px-4 pt-10 pb-3"
         style={{
-          background: "rgba(253,251,248,0.94)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
           borderBottom: "1px solid rgba(28,25,23,0.05)",
         }}
       >
+        <div className={formColumnClass}>
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1026,14 +1022,16 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
             Tell us about yourself
           </h1>
         </motion.div>
+        </div>
       </div>
 
       {/* ── Scrollable body ─────────────────────────────────────────── */}
       <div
         ref={formScrollRef}
-        className="flex flex-col flex-1 px-4 py-5 gap-7 overflow-y-auto"
+        className="flex flex-col flex-1 overflow-y-auto px-4 py-5 lg:px-6"
         style={{ paddingBottom: 24 }}
       >
+        <div className={`${formColumnClass} flex flex-col gap-7 lg:gap-9`}>
 
         {showRequiredErrors && submitError && (
           <div style={{
@@ -1071,7 +1069,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
             boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
           }}>
             <div className="flex flex-col gap-3">
-              <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input label="Full Name" value={name} onChange={setName}
                   placeholder="Your full name" required
                   error={showRequiredErrors && missingFullName}
@@ -1082,7 +1080,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   errorText="Location is required." />
               </div>
 
-              <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {isPhoneLogin ? (
                   <>
                     <Input label="Email" value={userEmail} onChange={setUserEmail}
@@ -1265,7 +1263,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
             Are you a fresher or experienced?
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
+          <div className="grid grid-cols-2 gap-3">
             {(["fresher", "experienced"] as const).map((t) => {
               const sel = profileType === t;
               const other = profileType !== null && !sel;
@@ -1285,7 +1283,8 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   }}
                   transition={{ duration: 0.2 }}
                   style={{
-                    flex: 1,
+                    minWidth: 0,
+                    width: "100%",
                     padding: "11px 10px",
                     borderRadius: 12,
                     border: "1.5px solid",
@@ -1389,7 +1388,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       placeholder="e.g. IIT Delhi" required
                       error={showRequiredErrors && missingInstitution}
                       errorText="Institution is required." />
-                    <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <SelectField
                         label="Course"
                         value={course}
@@ -1463,7 +1462,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           Remove
                         </button>
                       </div>
-                      <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <Input label="Institution" value={edu.institution}
                           onChange={(v) => { const n = [...moreEdu]; n[idx] = { ...n[idx], institution: v }; setMoreEdu(n); }}
                           placeholder="Institution" />
@@ -1532,7 +1531,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                     />
                   </div>
                   <div className="flex flex-col gap-3">
-                    <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <Input label="Company" value={company} onChange={setCompany}
                         placeholder="e.g. Google" required
                         error={showRequiredErrors && missingCompany}
@@ -1542,7 +1541,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         error={showRequiredErrors && missingJobTitle}
                         errorText="Job Title is required." />
                     </div>
-                    <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <Input label="From" value={startYear}
                         onChange={(v) => setStartYear(v.replace(/\D/g, "").slice(0, 4))}
                         placeholder="2022" inputMode="numeric" />
@@ -1590,7 +1589,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           Remove
                         </button>
                       </div>
-                      <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <Input label="Company" value={exp.company}
                           onChange={(v) => { const n = [...moreExp]; n[idx] = { ...n[idx], company: v }; setMoreExp(n); }}
                           placeholder="Company" />
@@ -1598,7 +1597,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           onChange={(v) => { const n = [...moreExp]; n[idx] = { ...n[idx], title: v }; setMoreExp(n); }}
                           placeholder="Role" />
                       </div>
-                      <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <Input
                           label="From"
                           value={exp.start}
@@ -2113,7 +2112,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           )}
                         </div>
                         <div className="flex flex-col gap-3">
-                          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <Input label="Company" value={int.company}
                               onChange={(v) => { const n = [...internships]; n[idx] = { ...n[idx], company: v }; setInternships(n); }}
                               placeholder="Company" />
@@ -2224,63 +2223,127 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
 
-      {/* ── CTA at form end ─────────────────────────────────────── */}
+      {/* ── CTA footer (matches WelcomeScreen sticky bar: Previous | Continue) ─ */}
       <div
-        className="px-4 pb-8 pt-3"
+        className={`px-0 ${formColumnClass}`}
         style={{
-          width: "100%",
+          flexShrink: 0,
+          position: "sticky",
+          bottom: 0,
+          zIndex: 20,
+          paddingTop: 12,
+          paddingBottom: 20,
+          background: "transparent",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
         }}
       >
         <motion.button
+          type="button"
+          whileTap={submitting ? {} : { scale: 0.95 }}
+          onClick={onBack}
+          disabled={submitting}
+          aria-label="Go back"
+          style={{
+            minHeight: 44,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            padding: "10px 10px",
+            borderRadius: 10,
+            border: "none",
+            background: "transparent",
+            color: C.textMuted,
+            fontSize: 14,
+            fontWeight: 500,
+            cursor: submitting ? "not-allowed" : "pointer",
+            opacity: submitting ? 0.45 : 1,
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path
+              d="M9 2L4 7l5 5"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span style={{ letterSpacing: "-0.01em" }}>Previous</span>
+        </motion.button>
+
+        <motion.button
           onClick={handleComplete}
           disabled={submitting}
-          whileTap={!submitting ? { scale: 0.975 } : {}}
+          whileTap={!submitting ? { scale: 0.97 } : {}}
           style={{
-            width: "100%", padding: 17,
-            borderRadius: 16, border: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "13px 28px",
+            borderRadius: 14,
+            border: "none",
             background: submitting
-              ? "#EAE6E1"
-              : "linear-gradient(90deg, #FF8F56 0%, #FF6B35 100%)",
-            color: submitting ? "#8F8A84" : "white",
-            fontSize: 15, fontWeight: 600,
+              ? "rgba(28,25,23,0.2)"
+              : "#EA580C",
+            color: submitting ? "rgba(255,255,255,0.55)" : "white",
+            fontSize: 14,
+            fontWeight: 600,
             letterSpacing: "-0.01em",
             cursor: submitting ? "not-allowed" : "pointer",
-            boxShadow: submitting
-              ? "none"
-              : "0 4px 20px rgba(255,107,53,0.35), 0 1px 4px rgba(255,107,53,0.2)",
-            transition: "background 0.22s, color 0.22s, box-shadow 0.22s",
+            transition: "background 0.2s, box-shadow 0.2s",
             fontFamily: "Inter, sans-serif",
-            display: "flex", alignItems: "center",
-            justifyContent: "center", gap: 10,
+            boxShadow: submitting ? "none" : "0 4px 16px rgba(234,88,12,0.35)",
           }}
         >
           <AnimatePresence mode="wait">
             {submitting ? (
-              <motion.span key="loading"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ display: "flex", alignItems: "center", gap: 10 }}
+              <motion.span
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ display: "flex", alignItems: "center", gap: 8 }}
               >
-                <span style={{
-                  width: 17, height: 17,
-                  border: "2px solid rgba(255,255,255,0.25)",
-                  borderTopColor: "white", borderRadius: "50%",
-                  animation: "onb-spin 0.65s linear infinite",
-                  display: "inline-block",
-                }} />
+                <span
+                  style={{
+                    width: 14,
+                    height: 14,
+                    border: "2px solid rgba(255,255,255,0.25)",
+                    borderTopColor: "white",
+                    borderRadius: "50%",
+                    animation: "onb-spin 0.65s linear infinite",
+                    display: "inline-block",
+                  }}
+                />
                 Setting up…
               </motion.span>
             ) : (
-              <motion.span key="cta"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              <motion.span
+                key="cta"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 style={{ display: "flex", alignItems: "center", gap: 8 }}
               >
                 Continue
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8H13M9 4l4 4-4 4"
-                    stroke={submitting ? "#8F8A84" : "white"}
-                    strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M5 2l5 5-5 5"
+                    stroke="white"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </motion.span>
             )}

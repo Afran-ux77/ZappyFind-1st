@@ -289,12 +289,16 @@ interface Props {
   onBack: () => void;
   /** When returning from Welcome (step 6), reopen at this preference step (default 1). */
   resumeAtStep?: Step;
+  /** Use transparent background when embedded in desktop onboarding chrome. */
+  transparentSurface?: boolean;
 }
 
 /* ═════════════════════════════════════════════════════════════════════════════
    Main component
 ══════════════════════════════════════════════════════════════════════════════ */
-export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props) {
+export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transparentSurface = false }: Props) {
+  /** Desktop onboarding: tighter, non-stretched controls inside glass chrome. */
+  const isDesktopLayout = transparentSurface;
   const [step,       setStep]       = useState<Step>(() => {
     if (resumeAtStep !== undefined && resumeAtStep >= 1 && resumeAtStep <= 5) return resumeAtStep;
     return 1;
@@ -524,6 +528,10 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
         justify-content: flex-end;
         text-align: right;
       }
+      .zf-salary-lpa-field--compact {
+        max-width: 188px;
+        width: 100%;
+      }
       .zf-salary-lpa-field:focus-within {
         border-color: rgba(234, 88, 12, 0.5);
         box-shadow:
@@ -743,15 +751,17 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
   ════════════════════════════════════════════════════════════════════════ */
   return (
     <div style={{
-      height: "100svh" as CSSProperties["height"],
-      minHeight: "100dvh" as CSSProperties["minHeight"],
-      background: C.bg, fontFamily: "Inter, sans-serif",
+      height: (transparentSurface ? "100%" : "100svh") as CSSProperties["height"],
+      minHeight: (transparentSurface ? 0 : "100dvh") as CSSProperties["minHeight"],
+      flex: transparentSurface ? "1 1 0%" : undefined,
+      minWidth: transparentSurface ? 0 : undefined,
+      background: transparentSurface ? "transparent" : C.bg, fontFamily: "Inter, sans-serif",
       display: "flex", flexDirection: "column",
-      paddingBottom: "env(safe-area-inset-bottom)",
+      paddingBottom: transparentSurface ? 0 : "env(safe-area-inset-bottom)",
     }}>
 
       {/* ── Progress bar ──────────────────────────────────────────────────── */}
-      <div style={{ padding: "20px 20px 0", flexShrink: 0 }}>
+      <div style={{ padding: isDesktopLayout ? "0 0 10px" : "20px 20px 0", flexShrink: 0 }}>
         <div style={{ display: "flex", gap: 6 }}>
           {[1, 2, 3, 4, 5, 6].map(n => (
             <motion.div
@@ -785,7 +795,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
       >
         <div
           style={{
-            padding: "20px 20px 32px",
+            padding: isDesktopLayout ? "0" : "20px 20px",
             minHeight: "100%",
             display: "flex",
             flexDirection: "column",
@@ -1110,64 +1120,148 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
                   </h2>
                 </div>
 
-                {/* Options */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 14 }}>
-                  {WORK_SETUPS.map(o => {
+                {/* Options — mobile: full-width stack; desktop: 3-column choice cards */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isDesktopLayout ? "repeat(3, minmax(0, 1fr))" : "1fr",
+                    gap: isDesktopLayout ? 16 : 10,
+                    marginBottom: 14,
+                    width: "100%",
+                  }}
+                >
+                  {WORK_SETUPS.map((o) => {
                     const selected = workSetups.includes(o.id);
+                    const SetupIcon = o.id === "onsite" ? Building2 : o.id === "hybrid" ? Layers : Globe;
+                    const blurb =
+                      o.id === "remote"
+                        ? "Work from anywhere"
+                        : o.id === "hybrid"
+                          ? "Split between office and home"
+                          : "Work primarily from the office";
+                    const check = (
+                      <div
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: 6,
+                          border: `1.5px solid ${selected ? "#EA580C" : "rgba(28,25,23,0.22)"}`,
+                          background: selected ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "background 0.18s, border-color 0.18s",
+                        }}
+                      >
+                        {selected && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path
+                              d="M2 5.2l2 2.1L8.3 2.8"
+                              stroke="white"
+                              strokeWidth="1.7"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    );
                     return (
                       <motion.button
                         key={o.id}
-                        whileTap={{ scale: 0.97 }}
+                        type="button"
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => toggleWorkSetup(o.id)}
+                        aria-pressed={selected}
                         style={{
                           width: "100%",
                           textAlign: "left",
-                          padding: "14px 14px",
-                          borderRadius: 16,
+                          padding: isDesktopLayout ? "20px 20px 22px" : "14px 14px",
+                          borderRadius: isDesktopLayout ? 18 : 16,
                           border: `1.5px solid ${selected ? C.brandBorder : C.border}`,
                           background: selected ? C.brandBg : "white",
                           cursor: "pointer",
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 12,
+                          flexDirection: isDesktopLayout ? "column" : "row",
+                          alignItems: isDesktopLayout ? "stretch" : "center",
+                          justifyContent: isDesktopLayout ? "flex-start" : "space-between",
+                          gap: isDesktopLayout ? 0 : 12,
+                          minHeight: isDesktopLayout ? 148 : undefined,
                           transition: "border-color 0.18s, background 0.18s",
                           fontFamily: "Inter, sans-serif",
+                          boxShadow: isDesktopLayout ? "0 1px 0 rgba(28,25,23,0.04)" : undefined,
                         }}
                       >
-                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                          <div style={{
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: C.textPrimary,
-                            letterSpacing: "-0.02em",
-                          }}>
-                            {o.label}
-                          </div>
-                          <div style={{ fontSize: 12, color: C.textMuted, letterSpacing: "-0.01em" }}>
-                            {o.id === "remote"
-                              ? "Work from anywhere"
-                              : o.id === "hybrid"
-                              ? "Split between office and home"
-                              : "Work primarily from the office"}
-                          </div>
-                        </div>
-
-                        <div style={{
-                          width: 18, height: 18, borderRadius: 6,
-                          border: `1.5px solid ${selected ? "#EA580C" : "rgba(28,25,23,0.22)"}`,
-                          background: selected ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "transparent",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          flexShrink: 0,
-                          transition: "background 0.18s, border-color 0.18s",
-                        }}>
-                          {selected && (
-                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                              <path d="M2 5.2l2 2.1L8.3 2.8" stroke="white" strokeWidth="1.7"
-                                strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </div>
+                        {isDesktopLayout ? (
+                          <>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                marginBottom: 14,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 46,
+                                  height: 46,
+                                  borderRadius: 14,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: selected ? "rgba(234,88,12,0.12)" : "rgba(28,25,23,0.04)",
+                                  color: selected ? "#C2410C" : "#78716C",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <SetupIcon size={22} strokeWidth={1.75} aria-hidden />
+                              </div>
+                              {check}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 17,
+                                fontWeight: 700,
+                                color: C.textPrimary,
+                                letterSpacing: "-0.03em",
+                                lineHeight: 1.25,
+                              }}
+                            >
+                              {o.label}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                color: C.textMuted,
+                                letterSpacing: "-0.01em",
+                                lineHeight: 1.5,
+                                marginTop: 8,
+                              }}
+                            >
+                              {blurb}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              <div
+                                style={{
+                                  fontSize: 15,
+                                  fontWeight: 700,
+                                  color: C.textPrimary,
+                                  letterSpacing: "-0.02em",
+                                }}
+                              >
+                                {o.label}
+                              </div>
+                              <div style={{ fontSize: 12, color: C.textMuted, letterSpacing: "-0.01em" }}>{blurb}</div>
+                            </div>
+                            {check}
+                          </>
+                        )}
                       </motion.button>
                     );
                   })}
@@ -1507,24 +1601,49 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
                 </div>
 
                 {/* Min / Max — inset field affordance + label wraps full tap target for typing */}
-                <div style={{
-                  display: "flex", justifyContent: "space-between",
-                  alignItems: "flex-end", gap: 12, marginBottom: 18,
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 6, letterSpacing: "0.02em" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    gap: 12,
+                    marginBottom: 18,
+                    flexWrap: "nowrap",
+                    width: "100%",
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: isDesktopLayout ? "0 0 auto" : 1,
+                      minWidth: 0,
+                      maxWidth: isDesktopLayout ? 200 : 320,
+                      width: isDesktopLayout ? "auto" : undefined,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: isDesktopLayout ? "flex-start" : undefined,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "11px",
+                        color: C.textSec,
+                        marginBottom: 6,
+                        letterSpacing: "0.02em",
+                        textAlign: "left",
+                      }}
+                    >
                       Minimum
                     </p>
                     <label
                       htmlFor="zf-salary-min-input"
-                      className="zf-salary-lpa-field"
+                      className={`zf-salary-lpa-field${isDesktopLayout ? " zf-salary-lpa-field--compact" : ""}`}
                       style={{
                         fontSize: "clamp(15px, 4.2vw, 19px)",
                         fontWeight: 800,
                         color: C.textPrimary,
                         letterSpacing: "-0.04em",
                         width: "100%",
-                        maxWidth: "100%",
+                        maxWidth: isDesktopLayout ? 188 : "100%",
                       }}
                     >
                       <input
@@ -1577,20 +1696,39 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
                       />
                     </label>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 6, letterSpacing: "0.02em", width: "100%", textAlign: "right" }}>
+                  <div
+                    style={{
+                      flex: isDesktopLayout ? "0 0 auto" : 1,
+                      minWidth: 0,
+                      maxWidth: isDesktopLayout ? 200 : 320,
+                      width: isDesktopLayout ? "auto" : undefined,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "11px",
+                        color: C.textSec,
+                        marginBottom: 6,
+                        letterSpacing: "0.02em",
+                        width: "100%",
+                        textAlign: "right",
+                      }}
+                    >
                       Maximum
                     </p>
                     <label
                       htmlFor="zf-salary-max-input"
-                      className="zf-salary-lpa-field zf-salary-lpa-field--end"
+                      className={`zf-salary-lpa-field zf-salary-lpa-field--end${isDesktopLayout ? " zf-salary-lpa-field--compact" : ""}`}
                       style={{
                         fontSize: "clamp(15px, 4.2vw, 19px)",
                         fontWeight: 800,
                         color: C.textPrimary,
                         letterSpacing: "-0.04em",
                         width: "100%",
-                        maxWidth: "100%",
+                        maxWidth: isDesktopLayout ? 188 : "100%",
                       }}
                     >
                       <input
@@ -1720,59 +1858,65 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep }: Props
 
           </AnimatePresence>
 
-          {/* ── Bottom navigation (in-flow, non-sticky) ───────────────────── */}
-          <div style={{
-            marginTop: "auto",
-            paddingTop: 12,
-            paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
-            borderTop: `1px solid ${C.border}`,
-            display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-          }}>
-            {/* Previous */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleBack}
-              aria-label="Go back"
-              style={{
-                minHeight: "44px",
-                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-                padding: "10px 10px", borderRadius: 10,
-                border: "none", background: "transparent",
-                color: C.textMuted, fontSize: "14px", fontWeight: 500,
-                cursor: "pointer", fontFamily: "Inter, sans-serif",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6"
-                  strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span style={{ letterSpacing: "-0.01em" }}>Previous</span>
-            </motion.button>
-
-            {/* Continue */}
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={handleNext}
-              disabled={!canContinue}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "13px 28px", borderRadius: 14, border: "none",
-                background: canContinue ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.2)",
-                color: "white", fontSize: "14px", fontWeight: 600,
-                letterSpacing: "-0.01em", cursor: canContinue ? "pointer" : "not-allowed",
-                transition: "background 0.2s, box-shadow 0.2s",
-                fontFamily: "Inter, sans-serif",
-                boxShadow: canContinue ? "0 4px 16px rgba(234,88,12,0.35)" : "none",
-              }}
-            >
-              Continue
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5 2l5 5-5 5" stroke="white" strokeWidth="1.6"
-                  strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </motion.button>
-          </div>
         </div>
+      </div>
+
+      {/* ── Bottom navigation footer ──────────────────────────────────────── */}
+      <div style={{
+        marginTop: "auto",
+        padding: isDesktopLayout
+          ? "16px 0 calc(12px + env(safe-area-inset-bottom))"
+          : "24px 20px calc(20px + env(safe-area-inset-bottom))",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        flexShrink: 0,
+      }}>
+        {/* Previous */}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleBack}
+          aria-label="Go back"
+          style={{
+            minHeight: "44px",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            padding: "10px 10px", borderRadius: 10,
+            border: "none", background: "transparent",
+            color: C.textMuted, fontSize: "14px", fontWeight: 500,
+            cursor: "pointer", fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span style={{ letterSpacing: "-0.01em" }}>Previous</span>
+        </motion.button>
+
+        {/* Continue */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleNext}
+          disabled={!canContinue}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "13px 28px", borderRadius: 14, border: "none",
+            background: canContinue ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)" : "rgba(28,25,23,0.2)",
+            color: "white", fontSize: "14px", fontWeight: 600,
+            letterSpacing: "-0.01em", cursor: canContinue ? "pointer" : "not-allowed",
+            transition: "background 0.2s, box-shadow 0.2s",
+            fontFamily: "Inter, sans-serif",
+            boxShadow:
+              canContinue && !isDesktopLayout ? "0 4px 16px rgba(234,88,12,0.35)" : "none",
+          }}
+        >
+          Continue
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M5 2l5 5-5 5" stroke="white" strokeWidth="1.6"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </motion.button>
       </div>
     </div>
   );

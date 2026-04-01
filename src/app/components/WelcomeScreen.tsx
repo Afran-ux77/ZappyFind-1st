@@ -348,6 +348,8 @@ interface WelcomeScreenProps {
   onResumeUploaded: (data: FullProfile) => void;
   onManual: () => void;
   onBack: () => void;
+  /** Use transparent surface when embedded in desktop onboarding chrome. */
+  transparentSurface?: boolean;
 }
 
 function formatResumeFileSize(bytes: number): string {
@@ -356,7 +358,26 @@ function formatResumeFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScreenProps) {
+const MAX_RESUME_BYTES = 10 * 1024 * 1024;
+
+function getResumeValidationError(file: File): string | null {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (!["pdf", "doc", "docx"].includes(ext)) {
+    return "Use a PDF, Word (.doc), or .docx file.";
+  }
+  if (file.size > MAX_RESUME_BYTES) {
+    return "File must be 10 MB or smaller.";
+  }
+  return null;
+}
+
+function dataTransferHasFiles(e: React.DragEvent): boolean {
+  const types = e.dataTransfer.types;
+  if (!types || types.length === 0) return false;
+  return [...types].includes("Files");
+}
+
+export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentSurface = false }: WelcomeScreenProps) {
   const [stage,           setStage]          = useState<Stage>("choice");
   const [isDragging,      setIsDragging]      = useState(false);
   const [isUploadHovered, setIsUploadHovered] = useState(false);
@@ -367,6 +388,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
   const [showQuickReplies,setShowQuickReplies]= useState(false);
   const [userReply,       setUserReply]       = useState<string | null>(null);
   const [resumeFile,      setResumeFile]      = useState<File | null>(null);
+  const [resumeDropError, setResumeDropError] = useState<string | null>(null);
   const fileRef   = useRef<HTMLInputElement>(null);
   const resumePreviewUrlRef = useRef<string | null>(null);
 
@@ -407,6 +429,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
   const handleReplaceResume = useCallback(() => {
     revokeResumePreview();
     setResumeFile(null);
+    setResumeDropError(null);
     const input = fileRef.current;
     if (input) input.value = "";
     setTimeout(() => input?.click(), 0);
@@ -414,14 +437,67 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setResumeFromFile(f);
+    if (f) {
+      const err = getResumeValidationError(f);
+      if (err) {
+        setResumeDropError(err);
+        window.setTimeout(() => setResumeDropError(null), 4500);
+      } else {
+        setResumeDropError(null);
+        setResumeFromFile(f);
+      }
+    }
     e.target.value = "";
   };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) setResumeFromFile(f);
-  };
+
+  const handleResumeDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (resumeFile) return;
+      if (dataTransferHasFiles(e)) setIsDragging(true);
+    },
+    [resumeFile],
+  );
+
+  const handleResumeDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const related = e.relatedTarget as Node | null;
+    if (related && (e.currentTarget as HTMLElement).contains(related)) return;
+    setIsDragging(false);
+  }, []);
+
+  const handleResumeDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (resumeFile) return;
+      e.dataTransfer.dropEffect = "copy";
+      /* Some browsers only expose file types after dragOver, not dragEnter. */
+      if (dataTransferHasFiles(e)) setIsDragging(true);
+    },
+    [resumeFile],
+  );
+
+  const handleResumeDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      if (resumeFile) return;
+      const f = e.dataTransfer.files?.[0];
+      if (!f) return;
+      const err = getResumeValidationError(f);
+      if (err) {
+        setResumeDropError(err);
+        window.setTimeout(() => setResumeDropError(null), 4500);
+        return;
+      }
+      setResumeDropError(null);
+      setResumeFromFile(f);
+    },
+    [resumeFile, setResumeFromFile],
+  );
 
   // ── Delayed AI onboarding conversation ──────────────────────────────────────
   useEffect(() => {
@@ -489,39 +565,44 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
   return (
     <div className="relative flex flex-col min-h-screen overflow-hidden"
       style={{
-        background: C.bg,
+        background: transparentSurface ? "transparent" : C.bg,
         fontFamily: "Inter, sans-serif",
-        minHeight: "100svh",
-        height: "100svh",
+        minHeight: transparentSurface ? "100%" : "100svh",
+        height: transparentSurface ? "100%" : "100svh",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}>
 
-      {/* Ambient orbs */}
-      <div className="absolute top-0 right-0 pointer-events-none" style={{
-        width: "280px", height: "280px", borderRadius: "50%",
-        background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
-        transform: "translate(35%, -35%)",
-      }} />
-      <div className="absolute pointer-events-none" style={{
-        bottom: "12%", left: "-12%",
-        width: "240px", height: "240px", borderRadius: "50%",
-        background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
-      }} />
+      {/* Ambient orbs — mobile only; desktop uses glass chrome behind this view */}
+      {!transparentSurface && (
+        <>
+          <div className="absolute top-0 right-0 pointer-events-none" style={{
+            width: "280px", height: "280px", borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
+            transform: "translate(35%, -35%)",
+          }} />
+          <div className="absolute pointer-events-none" style={{
+            bottom: "12%", left: "-12%",
+            width: "240px", height: "240px", borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
+          }} />
+        </>
+      )}
 
       <input ref={fileRef} type="file" accept=".pdf,.doc,.docx"
         style={{ display: "none" }} onChange={handleFileChange} />
 
-      <div className="flex flex-col flex-1 px-5 pt-10" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
-        <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait">
 
-          {/* ── CHOICE ─────────────────────────────────────────────────────── */}
-          {stage === "choice" && (
-            <motion.div key="choice"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, y: -16, scale: 0.97 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col flex-1">
+        {/* ── CHOICE ─────────────────────────────────────────────────────── */}
+        {stage === "choice" && (
+          <motion.div
+            key="choice"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.97 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-1 flex-col px-0"
+          >
 
               {/* ── Step indicator (step 6 of 6; steps 1–5 = JobPreferencesScreen) ── */}
               <div className="mb-7">
@@ -537,7 +618,9 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                           background:
                             n < 6
                               ? "rgba(234,88,12,0.55)"
-                              : "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+                              : transparentSurface
+                                ? "#EA580C"
+                                : "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
                         }}
                       />
                     ))}
@@ -586,10 +669,13 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                 transition={{ duration: 0.5, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
                 style={{ marginBottom: 10 }}>
                 <motion.div
+                  role="group"
+                  aria-label="Upload resume: choose a file or drag and drop"
                   onClick={resumeFile ? undefined : () => fileRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
+                  onDragEnter={handleResumeDragEnter}
+                  onDragLeave={handleResumeDragLeave}
+                  onDragOver={handleResumeDragOver}
+                  onDrop={handleResumeDrop}
                   onHoverStart={() => !resumeFile && setIsUploadHovered(true)}
                   onHoverEnd={() => setIsUploadHovered(false)}
                   whileHover={resumeFile ? undefined : { y: -4 }}
@@ -597,23 +683,31 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                   transition={{ type: "spring", stiffness: 340, damping: 26 }}
                   style={{
                     borderRadius: 22,
-                    background: isDragging ? "rgba(234,88,12,0.025)" : C.cardBg,
+                    background: isDragging
+                      ? "rgba(234,88,12,0.025)"
+                      : transparentSurface
+                        ? "#FFFFFF"
+                        : C.cardBg,
                     border: isDragging
                       ? "2px dashed rgba(234,88,12,0.45)"
                       : resumeFile
                         ? "1.5px solid rgba(234,88,12,0.22)"
-                        : "1.5px solid rgba(28,25,23,0.06)",
-                    boxShadow: resumeFile
-                      ? "0 4px 24px rgba(234,88,12,0.08)"
-                      : "0 4px 24px rgba(28,25,23,0.06)",
+                        : transparentSurface
+                          ? "1.5px dashed rgba(28,25,23,0.12)"
+                          : "1.5px solid rgba(28,25,23,0.06)",
+                    boxShadow: transparentSurface
+                      ? "none"
+                      : resumeFile
+                        ? "0 4px 24px rgba(234,88,12,0.08)"
+                        : "0 4px 24px rgba(28,25,23,0.06)",
                     cursor: resumeFile ? "default" : "pointer",
-                    padding: "28px 20px 22px",
+                    padding: transparentSurface ? "32px 28px 28px" : "28px 20px 22px",
                     position: "relative",
                     overflow: "hidden",
                     transition: "border 0.25s, box-shadow 0.3s, background 0.25s",
                   }}>
 
-                  {!resumeFile && (
+                  {!resumeFile && !transparentSurface && (
                     <>
                       {/* Floating ambient particles */}
                       <motion.div
@@ -651,7 +745,9 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
                         <div style={{
                           width: 44, height: 44, borderRadius: 12,
-                          background: "linear-gradient(135deg, rgba(255,143,86,0.12) 0%, rgba(234,88,12,0.07) 100%)",
+                          background: transparentSurface
+                            ? "rgba(234,88,12,0.08)"
+                            : "linear-gradient(135deg, rgba(255,143,86,0.12) 0%, rgba(234,88,12,0.07) 100%)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}>
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -752,21 +848,32 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                           color: C.textPrimary, letterSpacing: "-0.03em",
                           marginBottom: 14,
                         }}>
-                          {isDragging ? "Drop your resume" : "Upload your resume"}
+                          {isDragging
+                            ? "Drop your resume"
+                            : transparentSurface
+                              ? "Drag and drop or upload your resume"
+                              : "Upload your resume"}
                         </div>
                         {/* CTA button with breathing arrow */}
                         <motion.div
-                          animate={{
-                            background: isUploadHovered || isDragging
-                              ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)"
-                              : "linear-gradient(90deg, rgba(234,88,12,0.08), rgba(234,88,12,0.04))",
-                          }}
+                          animate={
+                            transparentSurface
+                              ? {
+                                  background: isUploadHovered || isDragging ? "#EA580C" : "rgba(234,88,12,0.08)",
+                                }
+                              : {
+                                  background: isUploadHovered || isDragging
+                                    ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)"
+                                    : "linear-gradient(90deg, rgba(234,88,12,0.08), rgba(234,88,12,0.04))",
+                                }
+                          }
                           transition={{ duration: 0.25 }}
                           style={{
                             display: "inline-flex", alignItems: "center",
                             gap: 7, borderRadius: 12,
                             padding: "10px 22px",
-                          }}>
+                          }}
+                        >
                           <motion.div
                             animate={{ y: [0, -2, 0] }}
                             transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity }}>
@@ -793,6 +900,20 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                         }}>
                           {"PDF · DOC · DOCX  ·  up to 10 MB"}
                         </div>
+                        {resumeDropError && (
+                          <div
+                            role="alert"
+                            style={{
+                              fontSize: 12,
+                              color: "#B91C1C",
+                              marginTop: 10,
+                              fontWeight: 600,
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {resumeDropError}
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -824,14 +945,14 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
               >
                 <motion.button
                   onClick={onManual}
-                  whileHover={{ backgroundColor: "#eeebe7", y: -1 }}
+                  whileHover={{ backgroundColor: transparentSurface ? "#F0EEEA" : "#eeebe7", y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   style={{
                     width: "100%",
                     display: "flex", alignItems: "center", gap: 12,
                     padding: "14px 16px", borderRadius: 16,
-                    background: "#f5f3f0",
-                    border: "none",
+                    background: transparentSurface ? "rgba(255, 255, 255, 0.3)" : "#f5f3f0",
+                    border: transparentSurface ? `1px solid ${C.border}` : "none",
                     boxShadow: "none",
                     cursor: "pointer", textAlign: "left" as const,
                     fontFamily: "Inter, sans-serif",
@@ -1032,23 +1153,23 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
                 )}
               </AnimatePresence>
 
-            </motion.div>
-          )}
+          </motion.div>
+        )}
 
-          {/* Extracting/progress UI removed. After upload, App shows "Setting up your profile". */}
+        {/* Extracting/progress UI removed. After upload, App shows "Setting up your profile". */}
 
-        </AnimatePresence>
-      </div>
+      </AnimatePresence>
 
       <div style={{
         flexShrink: 0,
         position: "sticky",
         bottom: 0,
         zIndex: 20,
-        padding: "12px 20px calc(20px + env(safe-area-inset-bottom))",
-        background: "rgba(253,251,248,0.96)",
-        backdropFilter: "blur(12px)",
-        borderTop: `1px solid ${C.border}`,
+        padding: transparentSurface
+          ? "32px 0 8px"
+          : "12px 20px calc(20px + env(safe-area-inset-bottom))",
+        background: transparentSurface ? "transparent" : "rgba(253,251,248,0.96)",
+        backdropFilter: transparentSurface ? "none" : "blur(12px)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -1083,14 +1204,16 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack }: WelcomeScr
             display: "flex", alignItems: "center", gap: 8,
             padding: "13px 28px", borderRadius: 14, border: "none",
             background: resumeFile
-              ? "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)"
+              ? transparentSurface
+                ? "#EA580C"
+                : "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)"
               : "rgba(28,25,23,0.2)",
             color: resumeFile ? "white" : "rgba(255,255,255,0.55)", fontSize: "14px", fontWeight: 600,
             letterSpacing: "-0.01em",
             cursor: resumeFile ? "pointer" : "not-allowed",
             transition: "background 0.2s, box-shadow 0.2s",
             fontFamily: "Inter, sans-serif",
-            boxShadow: resumeFile ? "0 4px 16px rgba(234,88,12,0.35)" : "none",
+            boxShadow: resumeFile && !transparentSurface ? "0 4px 16px rgba(234,88,12,0.35)" : "none",
           }}
         >
           Continue

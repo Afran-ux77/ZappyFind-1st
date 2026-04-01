@@ -21,9 +21,11 @@ interface OTPScreenProps {
   email: string;
   onBack: () => void;
   onVerified?: () => void;
+  layout?: "mobile" | "desktop";
 }
 
-export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
+export function OTPScreen({ email, onBack, onVerified, layout = "mobile" }: OTPScreenProps) {
+  const isDesktop = layout === "desktop";
   const CORRECT_OTP = "1111";
   const OTP_LENGTH = 4;
   const ERROR_CLEAR_CODE_DELAY_MS = 320;
@@ -139,54 +141,62 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
 
   return (
     <div
-      className="relative flex flex-col min-h-screen overflow-hidden"
+      className={`relative flex flex-col overflow-hidden ${isDesktop ? "min-h-0" : "min-h-screen"}`}
       style={{ background: C.bg, fontFamily: "Inter, sans-serif" }}
     >
       {/* Ambient orbs */}
-      <div className="absolute top-0 right-0 pointer-events-none" style={{
-        width: "240px", height: "240px", borderRadius: "50%",
-        background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
-        transform: "translate(30%, -30%)",
-      }} />
-      <div className="absolute pointer-events-none" style={{
-        bottom: "20%", left: "-8%",
-        width: "180px", height: "180px", borderRadius: "50%",
-        background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
-      }} />
+      {!isDesktop && (
+        <>
+          <div className="absolute top-0 right-0 pointer-events-none" style={{
+            width: "240px", height: "240px", borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
+            transform: "translate(30%, -30%)",
+          }} />
+          <div className="absolute pointer-events-none" style={{
+            bottom: "20%", left: "-8%",
+            width: "180px", height: "180px", borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
+          }} />
+        </>
+      )}
 
-      <div className="flex flex-col flex-1 px-4 pt-12 pb-8 items-center text-center">
+      <div
+        className={`relative flex flex-col px-4 pb-8 ${isDesktop ? "items-center justify-center pt-0 text-center" : "flex-1 items-center pt-12 text-center"}`}
+      >
 
         {/* ── Back button ───────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full flex justify-start mb-8"
-        >
-          <button
-            onClick={onBack}
-            aria-label="Go back"
-            style={{
-              width: "44px",
-              height: "44px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "transparent",
-              border: "none",
-              borderRadius: "10px",
-              cursor: "pointer",
-              color: C.textMuted,
-              fontFamily: "Inter, sans-serif",
-            }}
+        {!isDesktop && (
+          <motion.div
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-8 flex w-full justify-start"
           >
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <path d="M9 11.5L5 7.5l4-4"
-                stroke="currentColor" strokeWidth="1.6"
-                strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </motion.div>
+            <button
+              onClick={onBack}
+              aria-label="Go back"
+              style={{
+                width: "44px",
+                height: "44px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "transparent",
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+                color: C.textMuted,
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <path d="M9 11.5L5 7.5l4-4"
+                  stroke="currentColor" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </motion.div>
+        )}
 
         {/* ── Email icon ────────────────────────────────────────────── */}
         <motion.div
@@ -213,7 +223,7 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-10 w-full"
+          className="mb-10 w-full max-w-[360px]"
         >
           <h1
             style={{
@@ -252,7 +262,7 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full mb-8"
+          className="mb-8 w-full max-w-[360px]"
         >
           <motion.div
             animate={showError ? { x: [0, -6, 6, -5, 5, -3, 3, 0] } : { x: 0 }}
@@ -340,7 +350,7 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.24 }}
-          className="flex items-center justify-center mb-10"
+          className="mb-10 flex w-full max-w-[360px] items-center justify-center"
         >
           <AnimatePresence mode="wait">
             {!canResend ? (
@@ -422,14 +432,14 @@ export function OTPScreen({ email, onBack, onVerified }: OTPScreenProps) {
         </motion.div>
 
         {/* Spacer */}
-        <div style={{ flex: 1 }} />
+        {!isDesktop && <div style={{ flex: 1 }} />}
 
         {/* ── Auto verification status ──────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full"
+          className="w-full max-w-[360px]"
         >
           <AnimatePresence mode="wait">
             {verified ? (

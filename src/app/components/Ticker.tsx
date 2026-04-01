@@ -9,20 +9,30 @@ const TICKER_ITEMS = [
   { icon: "◈", text: "Talk to an AI job agent" },
 ];
 
-export function Ticker() {
+type TickerProps = {
+  fadeColor?: string;
+  chipBackground?: string;
+  className?: string;
+};
+
+export function Ticker({
+  fadeColor = "#FDFBF8",
+  chipBackground = "rgba(28,25,23,0.055)",
+  className,
+}: TickerProps = {}) {
   const items = [...TICKER_ITEMS, ...TICKER_ITEMS];
 
   return (
-    <div className="relative overflow-hidden py-3">
+    <div className={`relative overflow-hidden py-3 ${className ?? ""}`}>
       {/* Left fade */}
       <div
         className="absolute left-0 top-0 h-full w-12 z-10 pointer-events-none"
-        style={{ background: "linear-gradient(to right, #FDFBF8, transparent)" }}
+        style={{ background: `linear-gradient(to right, ${fadeColor}, transparent)` }}
       />
       {/* Right fade */}
       <div
         className="absolute right-0 top-0 h-full w-12 z-10 pointer-events-none"
-        style={{ background: "linear-gradient(to left, #FDFBF8, transparent)" }}
+        style={{ background: `linear-gradient(to left, ${fadeColor}, transparent)` }}
       />
 
       <div className="ticker-track flex items-center gap-2.5 whitespace-nowrap">
@@ -33,7 +43,7 @@ export function Ticker() {
             style={{
               padding: "6px 14px",
               borderRadius: "100px",
-              background: "rgba(28,25,23,0.055)",
+              background: chipBackground,
               fontFamily: "Inter, sans-serif",
               fontSize: "12px",
               fontWeight: 500,

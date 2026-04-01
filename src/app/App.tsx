@@ -16,6 +16,8 @@ import { JobSeekerProfileScreen } from "./components/JobSeekerProfileScreen";
 import { MatchCelebrationScreen } from "./components/MatchCelebrationScreen";
 import { CallInitiationScreen } from "./components/CallInitiationScreen";
 import { OnboardingJourneyScreen } from "./components/OnboardingJourneyScreen";
+import { useIsDesktop } from "./hooks/use-desktop";
+import { DesktopAppRoot } from "./desktop/DesktopAppRoot";
 
 type Screen =
   | "login"
@@ -141,6 +143,8 @@ export default function App() {
     ? ((parsedProfile as any).name || (parsedProfile as any).fullName || "").trim().split(/\s+/)[0] || ""
     : signupFullName.trim().split(/\s+/).filter(Boolean)[0] || email.split("@")[0] || "";
 
+  const isDesktop = useIsDesktop();
+
   const jobCategoryLabels = useMemo(() => {
     const labelMap: Record<string, string> = {
       swe: "Software Engineering",
@@ -165,13 +169,49 @@ export default function App() {
     return cats.map((id) => labelMap[id] || id);
   }, [parsedProfile]);
 
+  if (isDesktop) {
+    return (
+      <DesktopAppRoot
+        screen={screen}
+        direction={direction}
+        email={email}
+        setEmail={setEmail}
+        signupFullName={signupFullName}
+        setSignupFullName={setSignupFullName}
+        mode={mode}
+        setMode={setMode}
+        parsedProfile={parsedProfile}
+        setParsedProfile={setParsedProfile}
+        pendingPrefs={pendingPrefs}
+        setPendingPrefs={setPendingPrefs}
+        prefPrev={prefPrev}
+        setPrefPrev={setPrefPrev}
+        jobPrefsResumeStep={jobPrefsResumeStep}
+        setJobPrefsResumeStep={setJobPrefsResumeStep}
+        profileReturnScreen={profileReturnScreen}
+        setProfileReturnScreen={setProfileReturnScreen}
+        profileForEdit={profileForEdit}
+        hasCompletedInterview={hasCompletedInterview}
+        setHasCompletedInterview={setHasCompletedInterview}
+        jobReviewInitialTab={jobReviewInitialTab}
+        setJobReviewInitialTab={setJobReviewInitialTab}
+        firstName={firstName}
+        jobCategoryLabels={jobCategoryLabels}
+        goTo={goTo}
+        writeSession={writeSession}
+        renderSettingUp={(onDone) => <SettingUpProfileScreen onDone={onDone} />}
+        renderZappyHome={(props) => <ZappyHomeScreen {...props} />}
+      />
+    );
+  }
+
   return (
     <div
       className="min-h-screen w-full"
       style={{ background: "#FDFBF8", fontFamily: "Inter, sans-serif" }}
     >
       <div
-        className={`relative mx-auto ${screen === "onboardingJourney" ? "overflow-visible" : "overflow-hidden"}`}
+        className="relative mx-auto overflow-hidden"
         style={{ maxWidth: "390px", minHeight: "100vh" }}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -327,7 +367,15 @@ export default function App() {
           )}
 
           {screen === "settingUpProfile" && (
-            <motion.div key="settingUpProfile" initial={enterFrom(direction)} animate={slide.center} exit={exitTo(direction)} transition={SPRING} style={{ width: "100%" }}>
+            <motion.div
+              key="settingUpProfile"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              className="flex min-h-screen w-full flex-1 flex-col"
+              style={{ width: "100%" }}
+            >
               <SettingUpProfileScreen onDone={() => goTo("profileSummary", "forward")} />
             </motion.div>
           )}
@@ -557,8 +605,11 @@ function SettingUpProfileScreen({ onDone }: { onDone: () => void }) {
   return (
     <div
       style={{
-        height: "100vh",
-        background: "#FDFBF8",
+        flex: 1,
+        minHeight: 0,
+        width: "100%",
+        alignSelf: "stretch",
+        background: "transparent",
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",

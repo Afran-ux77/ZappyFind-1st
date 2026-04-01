@@ -26,6 +26,8 @@ interface LoginScreenProps {
   fullName: string;
   setFullName: (name: string) => void;
   onContinue: () => void;
+  /** Desktop auth column: tighter layout, no hero ticker, form-first. */
+  layout?: "mobile" | "desktop";
 }
 
 export function LoginScreen({
@@ -36,7 +38,9 @@ export function LoginScreen({
   fullName,
   setFullName,
   onContinue,
+  layout = "mobile",
 }: LoginScreenProps) {
+  const isDesktop = layout === "desktop";
   const [contact, setContact] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -99,39 +103,48 @@ export function LoginScreen({
 
   return (
     <div
-      className="relative flex flex-col min-h-screen overflow-x-hidden"
+      className={`relative flex flex-col overflow-x-hidden ${isDesktop ? "min-h-0" : "min-h-screen"}`}
       style={{ background: C.bg, fontFamily: "Inter, sans-serif" }}
     >
-      {/* Ambient orbs */}
-      <div
-        className="absolute top-0 right-0 pointer-events-none"
-        style={{
-          width: "300px", height: "300px", borderRadius: "50%",
-          background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
-          transform: "translate(35%, -35%)",
-        }}
-      />
-      <div
-        className="absolute top-0 left-0 pointer-events-none"
-        style={{
-          width: "200px", height: "200px", borderRadius: "50%",
-          background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
-          transform: "translate(-35%, -25%)",
-        }}
-      />
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          bottom: "18%", right: "-8%",
-          width: "200px", height: "200px", borderRadius: "50%",
-          background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
-        }}
-      />
+      {/* Ambient orbs (mobile only) */}
+      {!isDesktop && (
+        <>
+          <div
+            className="absolute top-0 right-0 pointer-events-none"
+            style={{
+              width: "300px", height: "300px", borderRadius: "50%",
+              background: `radial-gradient(circle, ${C.orbA} 0%, transparent 70%)`,
+              transform: "translate(35%, -35%)",
+            }}
+          />
+          <div
+            className="absolute top-0 left-0 pointer-events-none"
+            style={{
+              width: "200px", height: "200px", borderRadius: "50%",
+              background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
+              transform: "translate(-35%, -25%)",
+            }}
+          />
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              bottom: "18%", right: "-8%",
+              width: "200px", height: "200px", borderRadius: "50%",
+              background: `radial-gradient(circle, ${C.orbB} 0%, transparent 70%)`,
+            }}
+          />
+        </>
+      )}
 
       {/* Main content */}
       <div
-        className="flex flex-col flex-1 px-4 pt-12 items-center text-center"
-        style={{ paddingBottom: "calc(110px + env(safe-area-inset-bottom))" }}
+        className={`flex flex-col px-4 ${isDesktop ? "items-center justify-center pt-2 text-center" : "flex-1 items-center pt-12 text-center"}`}
+        style={{
+          paddingBottom: isDesktop ? 24 : "calc(110px + env(safe-area-inset-bottom))",
+          maxWidth: isDesktop ? 380 : undefined,
+          marginInline: isDesktop ? "auto" : undefined,
+          width: "100%",
+        }}
       >
 
         {/* ── Logo ───────────────────────────────────────────────────── */}
@@ -139,7 +152,7 @@ export function LoginScreen({
           initial={{ opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center gap-0 mb-8"
+          className={`flex flex-col gap-0 ${isDesktop ? "mb-6 items-center" : "mb-8 items-center"}`}
         >
           <div className="flex items-center gap-2.5">
             <span
@@ -147,10 +160,14 @@ export function LoginScreen({
                 fontSize: "26px",
                 fontWeight: 800,
                 letterSpacing: "-0.045em",
-                backgroundImage: "linear-gradient(135deg, #FF6B35 0%, #E65122 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
+                ...(isDesktop
+                  ? { color: "#1C1917" }
+                  : {
+                      backgroundImage: "linear-gradient(135deg, #FF6B35 0%, #E65122 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }),
               }}
             >
               ZappyFind
@@ -159,6 +176,7 @@ export function LoginScreen({
         </motion.div>
 
         {/* ── Hero Text ──────────────────────────────────────────────── */}
+        {!isDesktop && (
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -223,8 +241,10 @@ export function LoginScreen({
             )}
           </h1>
         </motion.div>
+        )}
 
         {/* ── Ticker (full bleed) ────────────────────────────────────── */}
+        {!isDesktop && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -234,6 +254,7 @@ export function LoginScreen({
         >
           <Ticker />
         </motion.div>
+        )}
 
         {/* ── Form fields ─────────────────────────────────────────────── */}
         <motion.div
@@ -490,6 +511,7 @@ export function LoginScreen({
 
       </div>
       {/* ── Hiring link (pinned to viewport bottom, safe-area aware) ─────────── */}
+      {!isDesktop && (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -500,7 +522,6 @@ export function LoginScreen({
           left: 0,
           right: 0,
           bottom: 0,
-          borderTop: `1px solid ${C.border}`,
           width: "100%",
           paddingTop: 14,
           paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
@@ -524,6 +545,30 @@ export function LoginScreen({
           </span>
         </button>
       </motion.div>
+      )}
+      {isDesktop && (
+        <div
+          className="mt-auto flex justify-center border-t pt-4"
+          style={{ borderColor: C.border }}
+        >
+          <button
+            type="button"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: C.textSecondary,
+              fontFamily: "Inter, sans-serif",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Hiring?{" "}
+            <span style={{ color: "#EA580C", fontWeight: 600 }}>Continue as Employer →</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -53,6 +53,8 @@ interface ProfileSummaryScreenProps {
   email: string;
   onEditProfile: () => void;
   onContinue: () => void;
+  /** When true (e.g. desktop onboarding chrome), no cream fill — content uses the parent glass surface. */
+  transparentSurface?: boolean;
 }
 
 export function ProfileSummaryScreen({
@@ -60,6 +62,7 @@ export function ProfileSummaryScreen({
   email,
   onEditProfile,
   onContinue,
+  transparentSurface = false,
 }: ProfileSummaryScreenProps) {
   const p = (profile || {}) as any;
   const name: string = p.name || p.fullName || "";
@@ -112,16 +115,17 @@ export function ProfileSummaryScreen({
   return (
     <div
       style={{
-        minHeight: "100dvh",
+        minHeight: transparentSurface ? "auto" : "100dvh",
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",
         position: "relative",
-        overflow: "hidden",
-        background: "#FDFBF8",
+        overflow: transparentSurface ? "visible" : "hidden",
+        background: transparentSurface ? "transparent" : "#FDFBF8",
       }}
     >
-      {/* ── Noisy gradient header blob ──────────────────────────────── */}
+      {/* ── Noisy gradient header blob (mobile / standalone only) ─── */}
+      {!transparentSurface && (
       <div
         style={{
           position: "absolute",
@@ -185,18 +189,24 @@ export function ProfileSummaryScreen({
           }}
         />
       </div>
+      )}
 
-      {/* ── Scrollable content ─────────────────────────────────────── */}
+      {/* ── Main content (inner scroll on mobile only; desktop glass uses page scroll) ─ */}
       <div
         style={{
-          flex: 1,
-          overflowY: "auto",
-          overscrollBehavior: "contain",
+          flex: transparentSurface ? undefined : 1,
+          overflowY: transparentSurface ? "visible" : "auto",
+          overscrollBehavior: transparentSurface ? undefined : "contain",
           position: "relative",
           zIndex: 1,
         }}
       >
-        <div style={{ padding: "44px 20px 120px" }}>
+        <div
+          style={{
+            padding: transparentSurface ? "20px 20px 24px" : "44px 20px 120px",
+            background: transparentSurface ? "transparent" : undefined,
+          }}
+        >
           {/* Screen heading */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -205,7 +215,7 @@ export function ProfileSummaryScreen({
             style={{ marginBottom: 30 }}
           >
             <h1 style={{ fontSize: 26, fontWeight: 800, color: "#1C1917", letterSpacing: "-0.05em", lineHeight: 1.15, margin: "0 0 10px" }}>
-              Does think look like you, Alex?
+              Does this look like you, {firstName}?
             </h1>
 
           </motion.div>
@@ -623,15 +633,16 @@ export function ProfileSummaryScreen({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.45, ease: EASE }}
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
+          position: transparentSurface ? "relative" : "absolute",
+          bottom: transparentSurface ? undefined : 0,
+          left: transparentSurface ? undefined : 0,
+          right: transparentSurface ? undefined : 0,
+          marginTop: transparentSurface ? 0 : undefined,
           padding: "14px 20px calc(14px + env(safe-area-inset-bottom))",
-          borderTop: "1px solid rgba(28,25,23,0.06)",
-          background: "rgba(253,251,248,0.92)",
-          backdropFilter: "blur(16px)",
+          background: "transparent",
           display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
           gap: 12,
           zIndex: 10,
         }}
@@ -640,8 +651,9 @@ export function ProfileSummaryScreen({
           whileTap={{ scale: 0.96 }}
           onClick={onEditProfile}
           style={{
-            flex: 1,
+            flex: "0 0 auto",
             height: 50,
+            padding: "0 22px",
             borderRadius: 14,
             border: "1.5px solid rgba(28,25,23,0.1)",
             background: "transparent",
@@ -659,8 +671,9 @@ export function ProfileSummaryScreen({
           whileTap={{ scale: 0.97 }}
           onClick={onContinue}
           style={{
-            flex: 1,
+            flex: "0 0 auto",
             height: 50,
+            padding: "0 22px",
             borderRadius: 14,
             border: "none",
             background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
@@ -670,7 +683,7 @@ export function ProfileSummaryScreen({
             letterSpacing: "-0.01em",
             cursor: "pointer",
             fontFamily: "Inter, sans-serif",
-            boxShadow: "0 6px 24px rgba(234,88,12,0.3)",
+            boxShadow: transparentSurface ? "none" : "0 6px 24px rgba(234,88,12,0.3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

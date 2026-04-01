@@ -32,9 +32,13 @@ const COMPANY_PALETTES = [
 
 interface MatchCelebrationScreenProps {
   onContinue: () => void;
+  transparentSurface?: boolean;
 }
 
-export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenProps) {
+export function MatchCelebrationScreen({
+  onContinue,
+  transparentSurface = false,
+}: MatchCelebrationScreenProps) {
   const [phase, setPhase] = useState<"counting" | "reveal">("counting");
   const [count, setCount] = useState(0);
   const targetCount = 74;
@@ -84,13 +88,16 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
   return (
     <div
       style={{
-        height: "100dvh",
+        height: transparentSurface ? "100%" : "100dvh",
+        minHeight: transparentSurface ? 0 : undefined,
+        maxHeight: transparentSurface ? "100%" : undefined,
+        flex: transparentSurface ? 1 : undefined,
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",
         position: "relative",
         overflow: "hidden",
-        background: "#FAF9F7",
+        background: transparentSurface ? "transparent" : "#FAF9F7",
         isolation: "isolate",
         contain: "layout paint style",
       }}
@@ -103,14 +110,14 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background:
-            "radial-gradient(ellipse 70% 50% at 50% 35%, rgba(255,165,90,0.14) 0%, transparent 55%), " +
-            "radial-gradient(ellipse 50% 40% at 25% 55%, rgba(28,25,23,0.04) 0%, transparent 50%), " +
-            "radial-gradient(ellipse 55% 45% at 75% 50%, rgba(253,186,116,0.12) 0%, transparent 50%)",
+          background: transparentSurface
+            ? "radial-gradient(ellipse 70% 50% at 50% 35%, rgba(255,165,90,0.08) 0%, transparent 58%), radial-gradient(ellipse 55% 45% at 75% 50%, rgba(253,186,116,0.08) 0%, transparent 52%)"
+            : "radial-gradient(ellipse 70% 50% at 50% 35%, rgba(255,165,90,0.14) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 25% 55%, rgba(28,25,23,0.04) 0%, transparent 50%), radial-gradient(ellipse 55% 45% at 75% 50%, rgba(253,186,116,0.12) 0%, transparent 50%)",
         }}
       />
 
-      {/* Subtle dark vignette for luxury depth */}
+      {/* Subtle dark vignette for luxury depth (disabled on transparent desktop surface) */}
+      {!transparentSurface && (
       <div
         style={{
           position: "absolute",
@@ -120,6 +127,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
             "radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(28,25,23,0.04) 100%)",
         }}
       />
+      )}
 
       {/* Slow-breathing center glow */}
       <motion.div
@@ -245,6 +253,9 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
       <div
         style={{
           flex: 1,
+          width: "100%",
+          maxWidth: transparentSurface ? 980 : undefined,
+          margin: "0 auto",
           display: "flex",
           flexDirection: "column",
           position: "relative",
@@ -252,7 +263,13 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
         }}
       >
         {/* Counter + headline */}
-        <div style={{ textAlign: "center", paddingTop: 60 }}>
+        <div
+          style={{
+            textAlign: "center",
+            paddingTop: transparentSurface ? 28 : 60,
+            paddingBottom: transparentSurface ? 48 : 0,
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -379,7 +396,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
               transition={{ duration: 0.5, delay: 0.35, ease: EASE }}
               style={{
                 fontSize: 13,
-                color: "#A8A29E",
+                color: "#908A84",
                 letterSpacing: "-0.01em",
                 lineHeight: 1.5,
                 width: "100%",
@@ -399,8 +416,10 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            padding: "0",
-            gap: 10,
+            padding: transparentSurface ? "0 8px" : "0",
+            marginTop: transparentSurface ? 16 : 0,
+            marginBottom: transparentSurface ? 40 : 0,
+            gap: transparentSurface ? 14 : 10,
             position: "relative",
             boxSizing: "content-box",
           }}
@@ -442,7 +461,7 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, ease: EASE }}
-                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                style={{ display: "flex", flexDirection: "column", gap: transparentSurface ? 16 : 10 }}
               >
                 <ScrollRow direction="right" speed={0.3} jobs={MOCK_JOBS.slice(0, 6)} rowIndex={0} />
                 <ScrollRow direction="left" speed={0.25} jobs={MOCK_JOBS.slice(6, 12)} rowIndex={1} />
@@ -460,17 +479,24 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
           }}
           transition={{ duration: 0.5, delay: 0.25, ease: EASE }}
           style={{
-            padding: "12px 20px calc(18px + env(safe-area-inset-bottom))",
+            padding: transparentSurface
+              ? "8px 20px 0"
+              : "12px 20px calc(18px + env(safe-area-inset-bottom))",
             position: "relative",
             zIndex: 3,
+            display: "flex",
+            justifyContent: transparentSurface ? "flex-end" : "stretch",
+            marginTop: transparentSurface ? 8 : 0,
           }}
         >
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={onContinue}
             style={{
-              width: "100%",
-              height: 54,
+              width: transparentSurface ? "auto" : "100%",
+              minWidth: transparentSurface ? 220 : undefined,
+              padding: transparentSurface ? "0 28px" : undefined,
+              height: transparentSurface ? 50 : 54,
               borderRadius: 16,
               border: "none",
               background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
@@ -480,8 +506,9 @@ export function MatchCelebrationScreen({ onContinue }: MatchCelebrationScreenPro
               letterSpacing: "-0.02em",
               cursor: "pointer",
               fontFamily: "Inter, sans-serif",
-              boxShadow:
-                "0 8px 32px rgba(234,88,12,0.35), 0 0 0 1px rgba(255,143,86,0.15)",
+              boxShadow: transparentSurface
+                ? "none"
+                : "0 8px 32px rgba(234,88,12,0.35), 0 0 0 1px rgba(255,143,86,0.15)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

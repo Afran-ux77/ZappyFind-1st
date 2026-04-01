@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { AnimatePresence, motion, useMotionValue, useTransform } from "motion/react";
 import { Bookmark, Briefcase, Check, Eye, CalendarClock, ExternalLink, ChevronDown, Bell, Search, X, MapPin, Sparkles, Globe } from "lucide-react";
 
-type Job = {
+export type Job = {
   id: string;
   title: string;
   company: string;
@@ -20,7 +20,7 @@ type Job = {
   externalUrl?: string;
 };
 
-const JOBS: Job[] = [
+export const JOBS: Job[] = [
   {
     id: "1",
     title: "Senior UX Designer",

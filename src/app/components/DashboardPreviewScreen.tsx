@@ -2057,7 +2057,6 @@ function AssessmentCard() {
         transition={{ duration: 0.4, delay: 1.2 }}
         style={{
           padding: "12px 22px 16px",
-          borderTop: `1px solid ${T.border}`,
           display: "flex",
           alignItems: "center",
           gap: 8,
@@ -2402,7 +2401,6 @@ function ZappyUnderstandingCard({
         <div
           style={{
             padding: "14px 20px 16px",
-            borderTop: `1px solid ${T.border}`,
             background: "rgba(28,25,23,0.015)",
           }}
         >
@@ -3078,7 +3076,6 @@ function CompetitiveEdgeCard({
       <div
         style={{
           padding: "12px 22px 16px",
-          borderTop: `1px solid ${T.border}`,
           display: "flex",
           alignItems: "center",
           gap: 6,
@@ -3618,7 +3615,6 @@ function BelowAverageDashboard({
         <div
           style={{
             padding: "12px 20px 14px",
-            borderTop: `1px solid ${T.border}`,
             background: "rgba(5,150,105,0.02)",
             display: "flex",
             alignItems: "center",
@@ -3794,7 +3790,6 @@ function BelowAverageDashboard({
         <div
           style={{
             padding: "14px 20px 16px",
-            borderTop: `1px solid ${T.border}`,
             background: "rgba(234,88,12,0.02)",
           }}
         >

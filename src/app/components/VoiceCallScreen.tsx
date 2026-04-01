@@ -9,6 +9,8 @@ export type ZappyCallState = "listening" | "thinking" | "speaking";
 interface Props {
   firstName: string;
   onEnd: () => void;
+  /** Wide shell embed: not fixed full-viewport / not 390px column. */
+  layout?: "mobile" | "desktop";
 }
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
@@ -243,7 +245,8 @@ function VoiceWaveform({ isActive }: { isActive: boolean }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export function VoiceCallScreen({ firstName, onEnd }: Props) {
+export function VoiceCallScreen({ firstName, onEnd, layout = "mobile" }: Props) {
+  const isDesktop = layout === "desktop";
   const [callState, setCallState] = useState<ZappyCallState>("listening");
   const [isMuted, setIsMuted] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -293,26 +296,30 @@ export function VoiceCallScreen({ firstName, onEnd }: Props) {
       exit={{ opacity: 0, y: 16 }}
       transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
       style={{
-        position: "fixed", inset: 0, zIndex: 200,
+        position: isDesktop ? "relative" : "fixed",
+        inset: isDesktop ? undefined : 0,
+        zIndex: isDesktop ? undefined : 200,
         background: C.bg,
-        display: "flex", flexDirection: "column",
+        display: "flex",
+        flexDirection: "column",
         fontFamily: "Inter, sans-serif",
-        maxWidth: 390, margin: "0 auto",
+        maxWidth: isDesktop ? "100%" : 390,
+        margin: isDesktop ? undefined : "0 auto",
+        minHeight: isDesktop ? "min(520px, 70vh)" : undefined,
+        height: isDesktop ? "100%" : undefined,
       }}
     >
-      {/* ── Top bar ─────────────────────────────────────────────────────────── */}
+      {/* ── Top bar (timer) ─────────────────────────────────────────────────── */}
       <div style={{
         padding: "20px 20px 0",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center", justifyContent: "flex-start",
         flexShrink: 0,
       }}>
-        {/* Timer */}
         <div style={{
           display: "flex", alignItems: "center", gap: 7,
           padding: "5px 12px", borderRadius: 100,
           background: "rgba(28,25,23,0.05)",
         }}>
-          {/* Green live dot */}
           <motion.div
             animate={{ opacity: [1, 0.3, 1] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
@@ -325,14 +332,6 @@ export function VoiceCallScreen({ firstName, onEnd }: Props) {
             {formatTime(elapsed)}
           </span>
         </div>
-
-        {/* Caller label */}
-        <div style={{ textAlign: "center" }}>
-          
-        </div>
-
-        {/* Close button */}
-        
       </div>
 
       {/* ── Centre animation area ────────────────────────────────────────────── */}
