@@ -276,6 +276,7 @@ export function ProfileSummaryScreen({
     <div
       style={{
         minHeight: transparentSurface ? "auto" : "100dvh",
+        height: transparentSurface ? "auto" : "100dvh",
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",
@@ -356,7 +357,10 @@ export function ProfileSummaryScreen({
         style={{
           flex: transparentSurface ? undefined : 1,
           overflowY: transparentSurface ? "visible" : "auto",
+          overflowX: "hidden",
+          minHeight: 0,
           overscrollBehavior: transparentSurface ? undefined : "contain",
+          WebkitOverflowScrolling: transparentSurface ? undefined : "touch",
           position: "relative",
           zIndex: 1,
         }}
@@ -977,7 +981,7 @@ export function ProfileSummaryScreen({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.45, ease: EASE }}
         style={{
-          position: transparentSurface ? "relative" : "absolute",
+          position: transparentSurface ? "relative" : "fixed",
           bottom: transparentSurface ? undefined : 0,
           left: transparentSurface ? undefined : 0,
           right: transparentSurface ? undefined : 0,

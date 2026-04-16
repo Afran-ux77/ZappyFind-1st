@@ -40,7 +40,6 @@ export const JOBS: Job[] = [
       "Compensation and specific team growth opportunities need to be clarified.",
     jobDescription:
       "At Arctic Wolf, you won't just watch the cybersecurity industry evolve — you'll help lead the change. Our global Pack is made up of people who thrive on pushing boundaries, solving problems, and building things that matter. As a Senior UX Designer, you'll own the end-to-end design of key product surfaces, collaborate cross-functionally with product managers and engineers, and shape the experience of security practitioners worldwide.",
-    externalUrl: "https://example.com/jobs/arctic-wolf/senior-ux-designer",
   },
   {
     id: "2",
@@ -593,6 +592,7 @@ export function JobReviewScreen({
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSavedIds, setSearchSavedIds] = useState<Set<string>>(new Set());
+  const [quickApplyToast, setQuickApplyToast] = useState<{ id: string; title: string } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isAnimating = useRef(false);
   const switcherRef = useRef<HTMLDivElement | null>(null);
@@ -714,6 +714,12 @@ export function JobReviewScreen({
       document.removeEventListener("mousedown", handlePointerDown);
     };
   }, [switcherOpen]);
+
+  useEffect(() => {
+    if (!quickApplyToast) return;
+    const t = window.setTimeout(() => setQuickApplyToast(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [quickApplyToast]);
 
   return (
     <div
@@ -901,6 +907,65 @@ export function JobReviewScreen({
         </div>
       </header>
 
+      <AnimatePresence>
+        {quickApplyToast && (
+          <motion.div
+            initial={{ y: -42, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -28, opacity: 0, scale: 0.985 }}
+            transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              position: "fixed",
+              top: "calc(62px + env(safe-area-inset-top))",
+              left: 0,
+              right: 0,
+              marginInline: "auto",
+              width: "min(92vw, 360px)",
+              zIndex: 80,
+              pointerEvents: "none",
+              borderRadius: 14,
+              border: "1px solid rgba(4,120,87,0.55)",
+              background: "linear-gradient(135deg, #16A34A 0%, #059669 55%, #047857 100%)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              boxShadow: "0 16px 36px rgba(5,150,105,0.34), 0 4px 12px rgba(0,0,0,0.16)",
+              padding: "11px 13px",
+              display: "flex",
+              alignItems: "center",
+              gap: 9,
+            }}
+          >
+            <div
+              style={{
+                width: 19,
+                height: 19,
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.22)",
+                color: "#FFFFFF",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Check size={12} strokeWidth={3} />
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: "#FFFFFF",
+                letterSpacing: "-0.01em",
+                lineHeight: 1.35,
+              }}
+            >
+              Quick Applied to <span style={{ color: "rgba(255,255,255,0.96)", fontWeight: 700 }}>{quickApplyToast.title}</span>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Search bar */}
       <div style={{ padding: "10px 16px 0" }}>
         <div
@@ -1044,6 +1109,10 @@ export function JobReviewScreen({
           flexDirection: "column",
           alignItems: "center",
           padding: "4px 12px 16px",
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {searchMode ? (
@@ -1295,12 +1364,18 @@ export function JobReviewScreen({
         {hasMoreJobs && activeTab !== "applied" && (
           <div
             style={{
+              position: "sticky",
+              bottom: 0,
+              zIndex: 12,
               paddingTop: 14,
+              paddingBottom: "calc(10px + env(safe-area-inset-bottom))",
               width: "100%",
               maxWidth: 380,
               display: "flex",
               alignItems: "center",
               gap: 10,
+              background:
+                "linear-gradient(to top, rgba(250,250,249,0.98) 62%, rgba(250,250,249,0.84) 84%, rgba(250,250,249,0))",
             }}
           >
             {/* Skip – icon-only tertiary */}
@@ -1371,6 +1446,8 @@ export function JobReviewScreen({
                   } catch {
                     // ignore
                   }
+                } else if (currentJob) {
+                  setQuickApplyToast({ id: currentJob.id, title: currentJob.title });
                 }
                 handleAdvance("right");
               }}
