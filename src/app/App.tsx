@@ -1969,7 +1969,7 @@ function ZappyHomeScreen({
                   onClick={() => {
                     const userId = nextMessageIdRef.current++;
                     const displayName = firstName ? firstName.split(" ")[0] : "Alex";
-                    const followUp = `Great ${displayName}, so what is the tech stack you have been using mostly at Amazon?`;
+                    const followUp = `Great ${displayName}, so what is the tech stack you have been using mostly at Zappyhire?`;
                     setMessages((prev) => {
                       const next = [...prev, { id: userId, role: "user", text: "Yes, let's start" }];
                       const userCount = next.filter((m) => m.role === "user").length;

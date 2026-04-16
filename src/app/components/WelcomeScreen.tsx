@@ -85,20 +85,20 @@ export function normalizeToFullProfile(p: FullProfile | null): FullProfile {
 // ── Mock full profile ─────────────────────────────────────────────────────────
 const MOCK_FULL: FullProfile = {
   name: "Alex Johnson",
-  email: "alex.johnson@gmail.com",
-  phone: "+91 98765 43210",
-  location: "Bangalore, India",
+  email: "deepu.zappyhire@gmail.com",
+  phone: "+918714977735",
+  location: "Kochi, India",
   headline: "Senior Product Designer · 4+ years crafting digital products",
   skills: ["Figma", "React", "UI/UX Design", "Prototyping", "User Research", "Design Systems"],
   experiences: [
     {
-      id: "e1", company: "Razorpay",
+      id: "e1", company: "Zappyhire",
       role: "Senior Product Designer",
       duration: "Jan 2022 – Present",
       description: "Led end-to-end design for Payment Gateway 3.0, increasing conversion by 22%. Built and maintained the design system across 3 product teams.",
     },
     {
-      id: "e2", company: "Swiggy",
+      id: "e2", company: "ZappyVue",
       role: "Product Designer",
       duration: "Mar 2020 – Dec 2021",
       description: "Redesigned the merchant dashboard and checkout flow. Improved order completion rate by 18% through user research and rapid prototyping.",

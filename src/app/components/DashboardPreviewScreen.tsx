@@ -71,7 +71,7 @@ const MOCK_JOBS = [
   {
     id: "1",
     title: "Senior Product Designer",
-    company: "Razorpay",
+    company: "Zappyhire",
     logoLetter: "R",
     logoBg: "#E8F0FF",
     logoColor: "#2D6AFF",
@@ -87,7 +87,7 @@ const MOCK_JOBS = [
   {
     id: "2",
     title: "Product Designer II",
-    company: "Swiggy",
+    company: "ZappyVue",
     logoLetter: "S",
     logoBg: "#FFF3E8",
     logoColor: "#FC8019",
@@ -103,7 +103,7 @@ const MOCK_JOBS = [
   {
     id: "3",
     title: "UX Design Lead",
-    company: "PhonePe",
+    company: "ZappyCore",
     logoLetter: "P",
     logoBg: "#F3ECFF",
     logoColor: "#5F259F",
@@ -365,7 +365,7 @@ const LOW_PERF_JOBS = [
   {
     id: "lp1",
     title: "Junior Product Designer",
-    company: "Cred",
+    company: "ZappyOrbit",
     logoLetter: "C",
     logoBg: "#EEF2FF",
     logoColor: "#4F46E5",
@@ -381,7 +381,7 @@ const LOW_PERF_JOBS = [
   {
     id: "lp2",
     title: "UI Designer",
-    company: "Freshworks",
+    company: "ZappyNest",
     logoLetter: "F",
     logoBg: "#E8F5E9",
     logoColor: "#2E7D32",

@@ -5,18 +5,18 @@ import { ChevronRight, Lock, MapPin } from "lucide-react";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const MOCK_JOBS = [
-  { company: "Stripe", role: "Senior Software Engineer", location: "Remote", logo: "https://logo.clearbit.com/stripe.com" },
-  { company: "Razorpay", role: "Full Stack Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/razorpay.com" },
-  { company: "Zerodha", role: "Backend Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zerodha.com" },
-  { company: "Notion", role: "Product Engineer", location: "Remote", logo: "https://logo.clearbit.com/notion.so" },
-  { company: "Figma", role: "Frontend Engineer", location: "Remote", logo: "https://logo.clearbit.com/figma.com" },
-  { company: "Coinbase", role: "Platform Engineer", location: "Remote", logo: "https://logo.clearbit.com/coinbase.com" },
-  { company: "Swiggy", role: "Senior Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/swiggy.com" },
-  { company: "CRED", role: "Mobile Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/cred.club" },
-  { company: "Meesho", role: "Data Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/meesho.com" },
-  { company: "Jupiter", role: "Backend Engineer", location: "Remote", logo: "https://logo.clearbit.com/jupiter.money" },
-  { company: "Atlassian", role: "Senior Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/atlassian.com" },
-  { company: "Postman", role: "Full Stack Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/postman.com" },
+  { company: "Zappyhire", role: "Senior Software Engineer", location: "Remote", logo: "https://logo.clearbit.com/zappyhire.dev" },
+  { company: "ZappyVue", role: "Full Stack Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappyvue.dev" },
+  { company: "ZappyCore", role: "Backend Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappycore.dev" },
+  { company: "ZappyLabs", role: "Product Engineer", location: "Remote", logo: "https://logo.clearbit.com/zappylabs.dev" },
+  { company: "ZappyForge", role: "Frontend Engineer", location: "Remote", logo: "https://logo.clearbit.com/zappyforge.dev" },
+  { company: "ZappyStack", role: "Platform Engineer", location: "Remote", logo: "https://logo.clearbit.com/zappystack.dev" },
+  { company: "ZappyNest", role: "Senior Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappynest.dev" },
+  { company: "ZappyOrbit", role: "Mobile Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappyorbit.dev" },
+  { company: "ZappyGrid", role: "Data Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappygrid.dev" },
+  { company: "ZappyFlow", role: "Backend Engineer", location: "Remote", logo: "https://logo.clearbit.com/zappyflow.dev" },
+  { company: "ZappyWave", role: "Senior Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappywave.dev" },
+  { company: "ZappyDock", role: "Full Stack Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zappydock.dev" },
 ];
 
 const COMPANY_PALETTES = [

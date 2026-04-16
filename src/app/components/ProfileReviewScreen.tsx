@@ -246,7 +246,7 @@ function ExpEntry({
         {/* Company | Duration */}
         <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
           <EditField label="Company" value={exp.company} onChange={set("company")}
-            placeholder="e.g. Razorpay" required />
+            placeholder="e.g. Zappyhire" required />
           <EditField label="Duration" value={exp.duration} onChange={set("duration")}
             placeholder="Jan 2022 – Present" />
         </div>
