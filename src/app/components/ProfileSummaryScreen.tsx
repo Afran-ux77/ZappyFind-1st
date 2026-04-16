@@ -379,7 +379,7 @@ export function ProfileSummaryScreen({
             className="mb-[18px]"
           >
             <h2
-              className="m-0 text-[clamp(1.45rem,5.4vw,1.9rem)] font-normal leading-[1.12] tracking-[-0.02em] text-stone-900"
+              className="m-0 text-center text-[clamp(1.45rem,5.4vw,1.9rem)] font-normal leading-[1.12] tracking-[-0.02em] text-stone-900"
               style={{ fontFamily: "'DM Serif Display', Georgia, 'Times New Roman', serif" }}
             >
               Does this look like you?
@@ -972,72 +972,68 @@ export function ProfileSummaryScreen({
               </motion.div>
             )}
           </AnimatePresence>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.45, ease: EASE }}
+            style={{
+              marginTop: 14,
+              padding: transparentSurface
+                ? "0 0 6px"
+                : "14px 0 calc(14px + env(safe-area-inset-bottom))",
+              background: "transparent",
+              display: "flex",
+              justifyContent: "stretch",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              type="button"
+              onClick={() => {
+                if (canContinue) {
+                  setContinueGateHint(null);
+                  onContinue();
+                  return;
+                }
+                setContinueGateHint(
+                  !isLikelyValidPhone(phoneDisplay)
+                    ? "Add a valid phone number in your profile, then send the code and verify before continuing."
+                    : "Please verify your phone number before continuing.",
+                );
+                requestAnimationFrame(() => {
+                  phoneVerificationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                });
+              }}
+              style={{
+                width: "100%",
+                height: 50,
+                minWidth: 0,
+                padding: "0 16px",
+                borderRadius: 14,
+                border: "none",
+                background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
+                color: "white",
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+                boxShadow: transparentSurface ? "none" : "0 6px 24px rgba(234,88,12,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              Continue
+              <ChevronRight size={16} strokeWidth={2.2} />
+            </motion.button>
+          </motion.div>
         </div>
       </div>
-
-      {/* ── Footer CTAs ────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.45, ease: EASE }}
-        style={{
-          position: transparentSurface ? "relative" : "fixed",
-          bottom: transparentSurface ? undefined : 0,
-          left: transparentSurface ? undefined : 0,
-          right: transparentSurface ? undefined : 0,
-          marginTop: transparentSurface ? 0 : undefined,
-          padding: "14px 20px calc(14px + env(safe-area-inset-bottom))",
-          background: "transparent",
-          display: "flex",
-          justifyContent: "stretch",
-          alignItems: "center",
-          gap: 12,
-          zIndex: 10,
-        }}
-      >
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          type="button"
-          onClick={() => {
-            if (canContinue) {
-              setContinueGateHint(null);
-              onContinue();
-              return;
-            }
-            setContinueGateHint(
-              !isLikelyValidPhone(phoneDisplay)
-                ? "Add a valid phone number in your profile, then send the code and verify before continuing."
-                : "Please verify your phone number before continuing.",
-            );
-            requestAnimationFrame(() => {
-              phoneVerificationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-            });
-          }}
-          style={{
-            width: "100%",
-            height: 50,
-            minWidth: 0,
-            padding: "0 16px",
-            borderRadius: 14,
-            border: "none",
-            background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
-            color: "white",
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            boxShadow: transparentSurface ? "none" : "0 6px 24px rgba(234,88,12,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          Continue
-          <ChevronRight size={16} strokeWidth={2.2} />
-        </motion.button>
-      </motion.div>
     </div>
   );
 }
