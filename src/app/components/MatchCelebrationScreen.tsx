@@ -1,22 +1,22 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, Lock, MapPin } from "lucide-react";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const MOCK_JOBS = [
-  { company: "Stripe", role: "Senior Software Engineer", location: "Remote", tag: "Top Match", salary: "₹45–55 LPA" },
-  { company: "Razorpay", role: "Full Stack Engineer", location: "Bangalore", tag: "Fast Growing", salary: "₹35–50 LPA" },
-  { company: "Zerodha", role: "Backend Engineer", location: "Bangalore", tag: "Profitable", salary: "₹40–55 LPA" },
-  { company: "Notion", role: "Product Engineer", location: "Remote", tag: "Top Match", salary: "₹50–65 LPA" },
-  { company: "Figma", role: "Frontend Engineer", location: "Remote", tag: "Design-Led", salary: "₹48–60 LPA" },
-  { company: "Coinbase", role: "Platform Engineer", location: "Remote", tag: "Web3", salary: "₹55–70 LPA" },
-  { company: "Swiggy", role: "Senior Engineer", location: "Bangalore", tag: "Scale", salary: "₹38–50 LPA" },
-  { company: "Cred", role: "Mobile Engineer", location: "Bangalore", tag: "Fintech", salary: "₹42–55 LPA" },
-  { company: "Meesho", role: "Data Engineer", location: "Bangalore", tag: "Growing", salary: "₹35–48 LPA" },
-  { company: "Jupiter", role: "Backend Engineer", location: "Remote", tag: "Fintech", salary: "₹38–52 LPA" },
-  { company: "Atlassian", role: "Senior Engineer", location: "Bangalore", tag: "Enterprise", salary: "₹50–65 LPA" },
-  { company: "Postman", role: "Full Stack Engineer", location: "Bangalore", tag: "Developer Tools", salary: "₹40–55 LPA" },
+  { company: "Stripe", role: "Senior Software Engineer", location: "Remote", logo: "https://logo.clearbit.com/stripe.com" },
+  { company: "Razorpay", role: "Full Stack Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/razorpay.com" },
+  { company: "Zerodha", role: "Backend Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/zerodha.com" },
+  { company: "Notion", role: "Product Engineer", location: "Remote", logo: "https://logo.clearbit.com/notion.so" },
+  { company: "Figma", role: "Frontend Engineer", location: "Remote", logo: "https://logo.clearbit.com/figma.com" },
+  { company: "Coinbase", role: "Platform Engineer", location: "Remote", logo: "https://logo.clearbit.com/coinbase.com" },
+  { company: "Swiggy", role: "Senior Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/swiggy.com" },
+  { company: "CRED", role: "Mobile Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/cred.club" },
+  { company: "Meesho", role: "Data Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/meesho.com" },
+  { company: "Jupiter", role: "Backend Engineer", location: "Remote", logo: "https://logo.clearbit.com/jupiter.money" },
+  { company: "Atlassian", role: "Senior Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/atlassian.com" },
+  { company: "Postman", role: "Full Stack Engineer", location: "Bangalore", logo: "https://logo.clearbit.com/postman.com" },
 ];
 
 const COMPANY_PALETTES = [
@@ -99,7 +99,6 @@ export function MatchCelebrationScreen({
         overflow: "hidden",
         background: transparentSurface ? "transparent" : "#FAF9F7",
         isolation: "isolate",
-        contain: "layout paint style",
       }}
     >
       {/* ── Atmosphere ────────────────────────────────────────────── */}
@@ -253,6 +252,7 @@ export function MatchCelebrationScreen({
       <div
         style={{
           flex: 1,
+          minHeight: 0,
           width: "100%",
           maxWidth: transparentSurface ? 980 : undefined,
           margin: "0 auto",
@@ -404,7 +404,11 @@ export function MatchCelebrationScreen({
                 margin: "0 auto",
               }}
             >
-              Share a few more details to get presented directly to relevant recruiters.
+              <span style={{ color: "#57534E", fontWeight: 700 }}>Next and last step:</span>{" "}
+              take a short <span style={{ color: "#44403C", fontWeight: 600 }}>AI call</span>{" "}
+              so we understand you beyond your resume,{" "}
+              then directly introduce you to relevant recruiters{" "}
+              before you apply.
             </motion.p>
           </motion.div>
         </div>
@@ -413,6 +417,7 @@ export function MatchCelebrationScreen({
         <div
           style={{
             flex: 1,
+            minHeight: 0,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
@@ -422,6 +427,7 @@ export function MatchCelebrationScreen({
             gap: transparentSurface ? 14 : 10,
             position: "relative",
             boxSizing: "content-box",
+            overflow: "hidden",
           }}
         >
           {/* Top fade — tall and soft for seamless blend from headline area */}
@@ -479,45 +485,49 @@ export function MatchCelebrationScreen({
           }}
           transition={{ duration: 0.5, delay: 0.25, ease: EASE }}
           style={{
+            flexShrink: 0,
             padding: transparentSurface
               ? "8px 20px 0"
               : "12px 20px calc(18px + env(safe-area-inset-bottom))",
             position: "relative",
-            zIndex: 3,
+            zIndex: 20,
             display: "flex",
             justifyContent: transparentSurface ? "flex-end" : "stretch",
             marginTop: transparentSurface ? 8 : 0,
+            pointerEvents: phase === "reveal" ? "auto" : "none",
           }}
         >
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={onContinue}
-            style={{
-              width: transparentSurface ? "auto" : "100%",
-              minWidth: transparentSurface ? 220 : undefined,
-              padding: transparentSurface ? "0 28px" : undefined,
-              height: transparentSurface ? 50 : 54,
-              borderRadius: 16,
-              border: "none",
-              background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
-              color: "white",
-              fontSize: 15,
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              cursor: "pointer",
-              fontFamily: "Inter, sans-serif",
-              boxShadow: transparentSurface
-                ? "none"
-                : "0 8px 32px rgba(234,88,12,0.35), 0 0 0 1px rgba(255,143,86,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-            }}
-          >
-            Continue
-            <ChevronRight size={18} strokeWidth={2.2} />
-          </motion.button>
+          <motion.div whileTap={{ scale: 0.97 }} style={{ width: transparentSurface ? "auto" : "100%" }}>
+            <button
+              type="button"
+              onClick={() => onContinue()}
+              style={{
+                width: transparentSurface ? "auto" : "100%",
+                minWidth: transparentSurface ? 220 : undefined,
+                padding: transparentSurface ? "0 28px" : undefined,
+                height: transparentSurface ? 50 : 54,
+                borderRadius: 16,
+                border: "none",
+                background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
+                color: "white",
+                fontSize: 15,
+                fontWeight: 600,
+                letterSpacing: "-0.02em",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+                boxShadow: transparentSurface
+                  ? "none"
+                  : "0 8px 32px rgba(234,88,12,0.35), 0 0 0 1px rgba(255,143,86,0.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              Continue
+              <ChevronRight size={18} strokeWidth={2.2} />
+            </button>
+          </motion.div>
         </motion.div>
       </div>
     </div>
@@ -663,17 +673,15 @@ function JobCard({ job, index }: { job: (typeof MOCK_JOBS)[0]; index: number }) 
             style={{
               display: "inline-block",
               marginTop: 2,
-              padding: "1px 6px",
-              borderRadius: 4,
-              background: `${palette.fg}0D`,
-              border: `1px solid ${palette.fg}18`,
-              fontSize: 9,
-              fontWeight: 600,
-              color: palette.fg,
-              letterSpacing: "0.02em",
+              fontSize: 11,
+              color: "#78716C",
+              letterSpacing: "-0.01em",
             }}
           >
-            {job.tag}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <MapPin size={10} color="#A8A29E" strokeWidth={2} />
+              {job.location}
+            </span>
           </span>
         </div>
       </div>
@@ -692,13 +700,15 @@ function JobCard({ job, index }: { job: (typeof MOCK_JOBS)[0]; index: number }) 
         {job.role}
       </p>
 
-      {/* Blurred details — builds curiosity */}
+      {/* Blurred details strip */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 6,
           position: "relative",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
         }}
       >
         <div
@@ -709,11 +719,14 @@ function JobCard({ job, index }: { job: (typeof MOCK_JOBS)[0]; index: number }) 
             filter: "blur(4px)",
             userSelect: "none",
             pointerEvents: "none",
+            whiteSpace: "nowrap",
+            flexWrap: "nowrap",
+            minWidth: 0,
           }}
         >
-          <span style={{ fontSize: 11, color: "#78716C" }}>{job.location}</span>
+          <span style={{ fontSize: 11, color: "#78716C" }}>Compensation Details</span>
           <span style={{ fontSize: 11, color: "#D6D3D1" }}>·</span>
-          <span style={{ fontSize: 11, color: "#78716C" }}>{job.salary}</span>
+          <span style={{ fontSize: 11, color: "#78716C" }}>Hiring Priority</span>
         </div>
         <Lock
           size={10}
@@ -722,6 +735,7 @@ function JobCard({ job, index }: { job: (typeof MOCK_JOBS)[0]; index: number }) 
           style={{ marginLeft: "auto", flexShrink: 0, opacity: 0.5 }}
         />
       </div>
+
     </div>
   );
 }

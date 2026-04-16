@@ -53,6 +53,11 @@ const PRIORITIES = [
   { id: "travel_relocation", label: "Open to travel / relocation", icon: Briefcase },
 ] as const;
 
+/** Labels for preference IDs stored on the profile (used in summary & review screens). */
+export const JOB_PRIORITY_LABEL_BY_ID: Record<string, string> = Object.fromEntries(
+  PRIORITIES.map((p) => [p.id, p.label]),
+) as Record<string, string>;
+
 const PRIORITY_QUESTIONS = [
   {
     id: "company_fit",
@@ -121,6 +126,18 @@ const SUB_ROLES: Record<string, string[]> = {
 
 const MAX_JOB_CATEGORIES = 3;
 const MAX_ROLES_PER_CATEGORY = 3;
+const EXPERIENCE_LEVELS = [
+  { id: "entry", label: "Associate", subLabel: "0-2 years", emoji: "🌱" },
+  { id: "mid", label: "Mid-level", subLabel: "3-5 years", emoji: "📈" },
+  { id: "senior", label: "Senior", subLabel: "6-9 years", emoji: "🚀" },
+  { id: "lead", label: "Lead", subLabel: "10+ years", emoji: "🏆" },
+] as const;
+const EXPERIENCE_BADGE: Record<(typeof EXPERIENCE_LEVELS)[number]["id"], string> = {
+  entry: "0-2y",
+  mid: "3-5y",
+  senior: "6-9y",
+  lead: "10+y",
+};
 
 function getCategoryMeta(id: string) {
   return CATEGORIES.find((c) => c.id === id);
@@ -215,10 +232,6 @@ export function formatSalaryAnnualDisplay(lakhs: number, code: SalaryCurrencyCod
   }
 }
 
-function formatSalaryScaleEndpoint(lakhs: number, code: SalaryCurrencyCode): string {
-  return formatSalaryAnnualDisplay(lakhs, code);
-}
-
 /* ── Shared: small checkmark pill indicator ────────────────────────────────── */
 function CheckMark() {
   return (
@@ -282,12 +295,12 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3;
 
 interface Props {
   onComplete: (prefs: JobPreferences) => void;
   onBack: () => void;
-  /** When returning from Welcome (step 6), reopen at this preference step (default 1). */
+  /** When returning from Welcome (final step), reopen at this preference step (default 1). */
   resumeAtStep?: Step;
   /** Use transparent background when embedded in desktop onboarding chrome. */
   transparentSurface?: boolean;
@@ -300,12 +313,16 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   /** Desktop onboarding: tighter, non-stretched controls inside glass chrome. */
   const isDesktopLayout = transparentSurface;
   const [step,       setStep]       = useState<Step>(() => {
-    if (resumeAtStep !== undefined && resumeAtStep >= 1 && resumeAtStep <= 5) return resumeAtStep;
+    if (resumeAtStep !== undefined && resumeAtStep >= 1 && resumeAtStep <= 3) return resumeAtStep;
     return 1;
   });
   const [priorities, setPriorities] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [rolesByCategory, setRolesByCategory] = useState<Record<string, string[]>>({});
+  const [experienceLevelByCategory, setExperienceLevelByCategory] = useState<
+    Record<string, "entry" | "mid" | "senior" | "lead">
+  >({});
+  const [expandedExperienceCategory, setExpandedExperienceCategory] = useState<string | null>(null);
   const [customRoleByCategory, setCustomRoleByCategory] = useState<Record<string, string>>({});
   const [expandedRoleInputCategory, setExpandedRoleInputCategory] = useState<string | null>(null);
   const roleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -320,87 +337,17 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   const [salMaxEditing, setSalMaxEditing] = useState(false);
   const [salMinDraft, setSalMinDraft] = useState("");
   const [salMaxDraft, setSalMaxDraft] = useState("");
-  const salMinRef = useRef(salMin);
-  const salMaxRef = useRef(salMax);
-  const salMinAnimRaf = useRef<number | null>(null);
-  const salMaxAnimRaf = useRef<number | null>(null);
-
-  useEffect(() => {
-    salMinRef.current = salMin;
-  }, [salMin]);
-  useEffect(() => {
-    salMaxRef.current = salMax;
-  }, [salMax]);
-
-  const cancelSalMinAnim = () => {
-    if (salMinAnimRaf.current != null) {
-      cancelAnimationFrame(salMinAnimRaf.current);
-      salMinAnimRaf.current = null;
-    }
-  };
-  const cancelSalMaxAnim = () => {
-    if (salMaxAnimRaf.current != null) {
-      cancelAnimationFrame(salMaxAnimRaf.current);
-      salMaxAnimRaf.current = null;
-    }
-  };
-
-  const animateSalMinTo = (rawTarget: number) => {
-    const to = Math.round(Math.max(SAL_MIN, Math.min(rawTarget, salMaxRef.current - SAL_GAP)));
-    const from = Math.round(salMinRef.current);
-    if (from === to) return;
-    cancelSalMinAnim();
-    const duration = Math.min(400, Math.max(160, Math.abs(to - from) * 20));
-    const t0 = performance.now();
-    const tickFrame = (now: number) => {
-      const u = Math.min(1, (now - t0) / duration);
-      const eased = 1 - (1 - u) ** 3;
-      const v = Math.round(from + (to - from) * eased);
-      setSalMin(v);
-      if (u < 1) {
-        salMinAnimRaf.current = requestAnimationFrame(tickFrame);
-      } else {
-        setSalMin(to);
-        salMinAnimRaf.current = null;
-      }
-    };
-    salMinAnimRaf.current = requestAnimationFrame(tickFrame);
-  };
-
-  const animateSalMaxTo = (rawTarget: number) => {
-    const to = Math.round(Math.min(SAL_MAX, Math.max(rawTarget, salMinRef.current + SAL_GAP)));
-    const from = Math.round(salMaxRef.current);
-    if (from === to) return;
-    cancelSalMaxAnim();
-    const duration = Math.min(400, Math.max(160, Math.abs(to - from) * 20));
-    const t0 = performance.now();
-    const tickFrame = (now: number) => {
-      const u = Math.min(1, (now - t0) / duration);
-      const eased = 1 - (1 - u) ** 3;
-      const v = Math.round(from + (to - from) * eased);
-      setSalMax(v);
-      if (u < 1) {
-        salMaxAnimRaf.current = requestAnimationFrame(tickFrame);
-      } else {
-        setSalMax(to);
-        salMaxAnimRaf.current = null;
-      }
-    };
-    salMaxAnimRaf.current = requestAnimationFrame(tickFrame);
-  };
 
   const commitSalMinFromDraft = (draft: string) => {
-    cancelSalMinAnim();
     const t = sanitizeAnnualDigits(draft).trim();
     const n = t === "" ? 0 : parseInt(t, 10);
     if (Number.isNaN(n)) return;
     let lpa = annualAmountToLpa(n, salaryCurrency);
-    lpa = Math.min(lpa, Math.max(SAL_MIN, salMaxRef.current - SAL_GAP));
+    lpa = Math.min(lpa, Math.max(SAL_MIN, salMax - SAL_GAP));
     setSalMin(lpa);
   };
 
   const commitSalMaxFromDraft = (draft: string) => {
-    cancelSalMaxAnim();
     const t = sanitizeAnnualDigits(draft).trim();
     let lpa: number;
     if (t === "") {
@@ -410,7 +357,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
       if (Number.isNaN(n)) return;
       lpa = annualAmountToLpa(n, salaryCurrency);
     }
-    lpa = Math.max(lpa, Math.min(SAL_MAX, salMinRef.current + SAL_GAP));
+    lpa = Math.max(lpa, Math.min(SAL_MAX, salMin + SAL_GAP));
     setSalMax(lpa);
   };
 
@@ -420,20 +367,11 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   }, [salaryCurrency]);
 
   useEffect(() => {
-    if (step !== 4) {
-      if (salMinAnimRaf.current != null) cancelAnimationFrame(salMinAnimRaf.current);
-      salMinAnimRaf.current = null;
-      if (salMaxAnimRaf.current != null) cancelAnimationFrame(salMaxAnimRaf.current);
-      salMaxAnimRaf.current = null;
+    if (step !== 3) {
       setSalMinEditing(false);
       setSalMaxEditing(false);
     }
   }, [step]);
-
-  useEffect(() => () => {
-    if (salMinAnimRaf.current != null) cancelAnimationFrame(salMinAnimRaf.current);
-    if (salMaxAnimRaf.current != null) cancelAnimationFrame(salMaxAnimRaf.current);
-  }, []);
 
   /* ── Inject dual-range CSS ──────────────────────────────────────────────── */
   useEffect(() => {
@@ -577,6 +515,17 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
       });
       return changed ? next : prev;
     });
+    setExperienceLevelByCategory((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      Object.keys(next).forEach((k) => {
+        if (!selectedCategories.includes(k)) {
+          delete next[k];
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
   }, [selectedCategories]);
 
   useEffect(() => {
@@ -589,12 +538,33 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
     return () => clearTimeout(t);
   }, [expandedRoleInputCategory, selectedCategories]);
 
+  useEffect(() => {
+    if (!expandedExperienceCategory) return;
+    if (!selectedCategories.includes(expandedExperienceCategory)) {
+      setExpandedExperienceCategory(null);
+    }
+  }, [expandedExperienceCategory, selectedCategories]);
+
   const toggleCategory = (id: string) => {
     setSelectedCategories((prev) => {
       if (prev.includes(id)) {
-        return prev.filter((x) => x !== id);
+        if (id === "other") {
+          setExpandedExperienceCategory(null);
+          return prev.filter((x) => x !== id);
+        }
+        if (expandedExperienceCategory === id) {
+          setExpandedExperienceCategory(null);
+          return prev.filter((x) => x !== id);
+        }
+        setExpandedExperienceCategory(id);
+        return prev;
       }
       if (prev.length >= MAX_JOB_CATEGORIES) return prev;
+      if (id === "other") {
+        setExpandedExperienceCategory(null);
+      } else {
+        setExpandedExperienceCategory(id);
+      }
       return [...prev, id];
     });
   };
@@ -603,7 +573,16 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
     setRolesByCategory((prev) => {
       const cur = prev[catId] ?? [];
       if (cur.includes(role)) {
-        return { ...prev, [catId]: cur.filter((x) => x !== role) };
+        const next = cur.filter((x) => x !== role);
+        if (catId === "other" && next.length === 0) {
+          setExperienceLevelByCategory((e) => {
+            if (!e.other) return e;
+            const nextExp = { ...e };
+            delete nextExp.other;
+            return nextExp;
+          });
+        }
+        return { ...prev, [catId]: next };
       }
       if (cur.length >= MAX_ROLES_PER_CATEGORY) return prev;
       return { ...prev, [catId]: [...cur, role] };
@@ -644,6 +623,9 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   const hasAtLeastOneRole = selectedCategories.some(
     (cid) => (rolesByCategory[cid] ?? []).length > 0
   );
+  const hasExperienceLevelForAllSelected = selectedCategories.every(
+    (cid) => !!experienceLevelByCategory[cid]
+  );
   const liveSalMin =
     salMinEditing
       ? (() => {
@@ -663,7 +645,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
         })()
       : salMax;
   const salaryRangeError =
-    step === 4
+    step === 3
       ? (() => {
           if (liveSalMin == null || liveSalMax == null) {
             return "Enter both minimum and maximum salary.";
@@ -691,32 +673,34 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   }, [remoteOnly, showLocationPicker]);
 
   const canContinue =
-    (step === 1 && hasAtLeastOneRole) ||
+    (step === 1 && hasAtLeastOneRole && hasExperienceLevelForAllSelected) ||
     (step === 2 && priorities.length > 0) ||
-    (step === 3 && switchTimeline !== null) ||
-    (step === 4 && salaryRangeError === null) ||
-    (step === 5 && workSetups.length > 0 && (!showLocationPicker || locations.length > 0));
+    (step === 3 &&
+      switchTimeline !== null &&
+      salaryRangeError === null &&
+      workSetups.length > 0 &&
+      (!showLocationPicker || locations.length > 0));
 
   const handleNext = () => {
     if (step === 1) setStep(2);
     else if (step === 2) setStep(3);
-    else if (step === 3) setStep(4);
-    else if (step === 4) {
+    else if (step === 3) {
       if (salaryRangeError) return;
-      setStep(5);
-    }
-    else if (step === 5) {
       const cats = [...selectedCategories];
       const rbc: Record<string, string[]> = {};
+      const expByCat: Record<string, "entry" | "mid" | "senior" | "lead"> = {};
       cats.forEach((cid) => {
         const rs = rolesByCategory[cid];
         if (rs && rs.length) rbc[cid] = [...rs];
+        const exp = experienceLevelByCategory[cid];
+        if (exp) expByCat[cid] = exp;
       });
       const flatRoles = cats.flatMap((cid) => rolesByCategory[cid] ?? []);
       const firstCat = cats[0];
       onComplete({
         categories: cats.length ? cats : undefined,
         rolesByCategory: Object.keys(rbc).length ? rbc : undefined,
+        experienceLevelByCategory: Object.keys(expByCat).length ? expByCat : undefined,
         category: firstCat,
         roles: flatRoles.length ? flatRoles : undefined,
         workSetups: workSetups.length ? workSetups : undefined,
@@ -734,20 +718,10 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
     if (step === 1) onBack();
     else if (step === 2) setStep(1);
     else if (step === 3) setStep(2);
-    else if (step === 4) setStep(3);
-    else if (step === 5) setStep(4);
   };
 
-  /* ── Salary percentages ─────────────────────────────────────────────────── */
-  const salMinForSlider = clampSalaryLpa(salMin);
-  const salMaxForSlider = clampSalaryLpa(salMax);
-  const salMinPct = ((salMinForSlider - SAL_MIN) / (SAL_MAX - SAL_MIN)) * 100;
-  const salMaxPct = ((salMaxForSlider - SAL_MIN) / (SAL_MAX - SAL_MIN)) * 100;
-  const salTrackStartPct = Math.min(salMinPct, salMaxPct);
-  const salTrackEndPct = Math.max(salMinPct, salMaxPct);
-
   /* ════════════════════════════════════════════════════════════════════════
-    Main preference screen (steps 1–5 of 6; step 6 = upload resume in WelcomeScreen)
+    Main preference screen (steps 1–3; final step is upload resume in WelcomeScreen)
   ════════════════════════════════════════════════════════════════════════ */
   return (
     <div style={{
@@ -763,7 +737,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
       {/* ── Progress bar ──────────────────────────────────────────────────── */}
       <div style={{ padding: isDesktopLayout ? "0 0 10px" : "20px 20px 0", flexShrink: 0 }}>
         <div style={{ display: "flex", gap: 6 }}>
-          {[1, 2, 3, 4, 5, 6].map(n => (
+          {[1, 2, 3, 4].map(n => (
             <motion.div
               key={n}
               animate={{
@@ -777,7 +751,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
           <span style={{ fontSize: "11px", color: C.textSec, letterSpacing: "0.02em" }}>
-            Step {step} of 6
+            Step {step} of 4
           </span>
         </div>
       </div>
@@ -821,20 +795,141 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   </h2>
                 </div>
 
-                <SectionLabel>Job categories</SectionLabel>
+                <SectionLabel>Departments</SectionLabel>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
                   {CATEGORIES.map((cat) => {
                     const selected = selectedCategories.includes(cat.id);
                     const atCap = selectedCategories.length >= MAX_JOB_CATEGORIES && !selected;
+                    const exp = experienceLevelByCategory[cat.id];
+                    const Icon = cat.icon;
+                    const showInlineExperience =
+                      expandedExperienceCategory === cat.id && selected && cat.id !== "other";
                     return (
-                      <Pill
-                        key={cat.id}
-                        label={cat.label}
-                        icon={cat.icon}
-                        selected={selected}
-                        disabled={atCap}
-                        onClick={() => toggleCategory(cat.id)}
-                      />
+                      <motion.div key={cat.id} layout style={{ display: "contents" }}>
+                        <motion.button
+                          layout
+                          type="button"
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => toggleCategory(cat.id)}
+                          disabled={atCap}
+                          style={{
+                            position: "relative",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "9px 14px",
+                            borderRadius: 100,
+                            border: `1.5px solid ${selected ? C.brandBorder : C.border}`,
+                            background: selected ? C.brandBg : "white",
+                            color: selected ? C.brand : C.textPrimary,
+                            fontSize: "13px",
+                            fontWeight: selected ? 600 : 500,
+                            letterSpacing: "-0.01em",
+                            cursor: atCap ? "not-allowed" : "pointer",
+                            opacity: atCap ? 0.38 : 1,
+                            transition: "border-color 0.18s, background 0.18s, color 0.18s",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          <Icon size={13} strokeWidth={selected ? 2.1 : 1.8} style={{ flexShrink: 0, opacity: selected ? 1 : 0.7 }} />
+                          {cat.label}
+                          {exp && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: -7,
+                                right: -6,
+                              fontSize: 10,
+                                fontWeight: 700,
+                                lineHeight: 1,
+                              padding: "4px 6px",
+                                borderRadius: 999,
+                              background: "rgba(194,65,12,0.72)",
+                              color: "rgba(255,255,255,0.98)",
+                              border: "1px solid rgba(154,52,18,0.42)",
+                                letterSpacing: "0.01em",
+                              }}
+                            >
+                              {EXPERIENCE_BADGE[exp]}
+                            </span>
+                          )}
+                        </motion.button>
+                        <AnimatePresence initial={false}>
+                          {showInlineExperience && (
+                            <motion.div
+                              key={`exp-inline-after-${cat.id}`}
+                              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                              style={{
+                                flexBasis: "100%",
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 8,
+                                marginTop: -4,
+                                marginBottom: 2,
+                                padding: "2px 0 2px 6px",
+                                borderLeft: "2px solid rgba(234,88,12,0.22)",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  flexBasis: "100%",
+                                  fontSize: 10.5,
+                                  fontWeight: 600,
+                                  color: "#78716C",
+                                  letterSpacing: "0.03em",
+                                  textTransform: "uppercase",
+                                  marginBottom: 2,
+                                }}
+                              >
+                                Target level for {cat.label}
+                              </div>
+                              {EXPERIENCE_LEVELS.map((level) => {
+                                const selectedLevel = experienceLevelByCategory[cat.id] === level.id;
+                                return (
+                                  <motion.button
+                                    key={`${cat.id}-${level.id}`}
+                                    type="button"
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => {
+                                      setExperienceLevelByCategory((prev) => ({
+                                        ...prev,
+                                        [cat.id]: level.id,
+                                      }));
+                                      setExpandedExperienceCategory(null);
+                                    }}
+                                    style={{
+                                      minHeight: 34,
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: 6,
+                                      padding: "7px 10px",
+                                      borderRadius: 999,
+                                      border: "none",
+                                      background: selectedLevel ? "rgba(234,88,12,0.14)" : "rgba(28,25,23,0.04)",
+                                      color: selectedLevel ? "#C2410C" : "#57534E",
+                                      fontSize: 11.5,
+                                      fontWeight: selectedLevel ? 700 : 600,
+                                      letterSpacing: "-0.01em",
+                                      cursor: "pointer",
+                                      transition: "border-color 0.18s, background 0.18s, color 0.18s",
+                                      fontFamily: "Inter, sans-serif",
+                                      whiteSpace: "nowrap",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <span style={{ fontSize: 15, lineHeight: 1 }}>{level.emoji}</span>
+                                    {level.label} ({level.subLabel})
+                                  </motion.button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -849,12 +944,12 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                       transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <div style={{ height: 1, background: C.border, marginBottom: 20 }} />
-                      <SectionLabel>Roles by category</SectionLabel>
+                      <SectionLabel>Roles by department</SectionLabel>
                       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                         {selectedCategories.map((catId) => {
                           const meta = getCategoryMeta(catId);
                           const Icon = meta?.icon;
-                          const title = meta?.label ?? "Category";
+                          const title = meta?.label ?? "Department";
                           const picked = rolesByCategory[catId] ?? [];
                           const preset = SUB_ROLES[catId];
                           const capReached = picked.length >= MAX_ROLES_PER_CATEGORY;
@@ -1081,6 +1176,77 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                                             </button>
                                           </div>
                                         )}
+                                            {isOtherCategory && picked.length > 0 && (
+                                              <div
+                                                style={{
+                                                  padding: "12px 14px 12px",
+                                                  borderTop: `1px solid ${C.border}`,
+                                                  background: "rgba(253,251,248,0.85)",
+                                                }}
+                                              >
+                                                <div
+                                                  style={{
+                                                    fontSize: 10.5,
+                                                    fontWeight: 600,
+                                                    color: "#78716C",
+                                                    letterSpacing: "0.03em",
+                                                    textTransform: "uppercase",
+                                                    marginBottom: 8,
+                                                  }}
+                                                >
+                                                  {picked.length === 1
+                                                    ? "Target experience for this role"
+                                                    : "Target experience for these roles"}
+                                                </div>
+                                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                                  {EXPERIENCE_LEVELS.map((level) => {
+                                                    const selectedLevel =
+                                                      experienceLevelByCategory[catId] === level.id;
+                                                    return (
+                                                      <motion.button
+                                                        key={`other-card-${level.id}`}
+                                                        type="button"
+                                                        whileTap={{ scale: 0.97 }}
+                                                        onClick={() =>
+                                                          setExperienceLevelByCategory((prev) => ({
+                                                            ...prev,
+                                                            [catId]: level.id,
+                                                          }))
+                                                        }
+                                                        style={{
+                                                          minHeight: 34,
+                                                          display: "inline-flex",
+                                                          alignItems: "center",
+                                                          justifyContent: "center",
+                                                          gap: 6,
+                                                          padding: "7px 10px",
+                                                          borderRadius: 999,
+                                                          border: "none",
+                                                          background: selectedLevel
+                                                            ? "rgba(234,88,12,0.14)"
+                                                            : "rgba(28,25,23,0.04)",
+                                                          color: selectedLevel ? "#C2410C" : "#57534E",
+                                                          fontSize: 11.5,
+                                                          fontWeight: selectedLevel ? 700 : 600,
+                                                          letterSpacing: "-0.01em",
+                                                          cursor: "pointer",
+                                                          transition:
+                                                            "border-color 0.18s, background 0.18s, color 0.18s",
+                                                          fontFamily: "Inter, sans-serif",
+                                                          whiteSpace: "nowrap",
+                                                          flexShrink: 0,
+                                                        }}
+                                                      >
+                                                        <span style={{ fontSize: 15, lineHeight: 1 }}>
+                                                          {level.emoji}
+                                                        </span>
+                                                        {level.label} ({level.subLabel})
+                                                      </motion.button>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            )}
                                           </div>
                                         </motion.div>
                                       )}
@@ -1088,6 +1254,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                                   </div>
                                 );
                               })()}
+
                               </div>
                               {selectedCategories.indexOf(catId) < selectedCategories.length - 1 && (
                                 <div style={{ height: 1, background: C.border, margin: "0 0 12px" }} />
@@ -1102,34 +1269,377 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
               </motion.div>
             )}
 
-            {/* ══ STEP 5: Work setup ═══════════════════════════════════════ */}
-            {step === 5 && (
-              <motion.div key="s2"
+            {/* ══ STEP 2: Priorities ══════════════════════════════════════ */}
+            {step === 2 && (
+              <motion.div key="s3"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 {/* Heading */}
-                <div style={{ marginBottom: 22 }}>
+                <div style={{ marginBottom: 28 }}>
                   <h2 style={{
                     fontSize: "clamp(19px, 5.5vw, 22px)", fontWeight: 800,
                     color: C.textPrimary, letterSpacing: "-0.04em",
                     lineHeight: 1.25, marginBottom: 8,
                   }}>
-                    What work setup do you prefer?
+                    Tell us how you work best
                   </h2>
+                  <p style={{ fontSize: "13px", color: C.textMuted, letterSpacing: "-0.01em" }}>
+                    Choose all answers that match you
+                  </p>
                 </div>
 
-                {/* Options — mobile: full-width stack; desktop: 3-column choice cards */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: isDesktopLayout ? "repeat(3, minmax(0, 1fr))" : "1fr",
-                    gap: isDesktopLayout ? 16 : 10,
-                    marginBottom: 14,
-                    width: "100%",
-                  }}
-                >
+                {/* Question groups */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  {PRIORITY_QUESTIONS.map((group) => (
+                    <div key={group.id}>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: C.textPrimary,
+                          letterSpacing: "-0.02em",
+                          margin: "0 0 8px",
+                        }}
+                      >
+                        {group.question}
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {group.optionIds.map((optId) => {
+                          const p = PRIORITIES.find((item) => item.id === optId);
+                          if (!p) return null;
+                          return (
+                            <Pill
+                              key={p.id}
+                              label={p.label}
+                              icon={p.icon}
+                              selected={priorities.includes(p.id)}
+                              onClick={() => togglePriority(p.id)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+              </motion.div>
+            )}
+
+            {/* ══ STEP 3: Timeline + salary + work setup ═══════════════════ */}
+            {step === 3 && (
+              <motion.div key="s3-combined"
+                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div style={{ marginBottom: 18 }}>
+                  <h2 style={{
+                    fontSize: "clamp(19px, 5.5vw, 22px)", fontWeight: 800,
+                    color: C.textPrimary, letterSpacing: "-0.04em",
+                    lineHeight: 1.25, marginBottom: 6,
+                  }}>
+                    Final preferences before matching
+                  </h2>
+                  <p style={{ fontSize: "13px", color: C.textMuted, letterSpacing: "-0.01em" }}>
+                    Quick picks to personalize your job matches.
+                  </p>
+                </div>
+
+                <div style={{ border: "1px solid rgba(28,25,23,0.06)", borderRadius: 16, background: "rgba(255,255,255,0.7)", padding: "14px 14px 12px", marginBottom: 12 }}>
+                  <SectionLabel>Notice period</SectionLabel>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+                    {([
+                      { id: "immediately", label: "Immediately", emoji: "🚀" },
+                      { id: "1month", label: "Around 1 month", emoji: "⏳" },
+                      { id: "2months", label: "Around 2 months", emoji: "🗓️" },
+                      { id: "3months", label: "Around 3 months", emoji: "📅" },
+                    ] as const).map((opt) => {
+                      const sel = switchTimeline === opt.id;
+                      return (
+                        <motion.button
+                          key={opt.id}
+                          type="button"
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setSwitchTimeline(opt.id)}
+                          style={{
+                            width: "100%",
+                            minHeight: 40,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            padding: "9px 12px",
+                            borderRadius: 999,
+                            border: `1.5px solid ${sel ? C.brandBorder : C.border}`,
+                            background: sel ? C.brandBg : "white",
+                            color: sel ? C.brand : C.textPrimary,
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            letterSpacing: "-0.01em",
+                            cursor: "pointer",
+                            transition: "border-color 0.18s, background 0.18s, color 0.18s",
+                            fontFamily: "Inter, sans-serif",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <span style={{ fontSize: 16, lineHeight: 1 }}>{opt.emoji}</span>
+                          {opt.label}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ border: "1px solid rgba(28,25,23,0.06)", borderRadius: 16, background: "rgba(255,255,255,0.7)", padding: "14px 14px 12px", marginBottom: 12 }}>
+                  <SectionLabel>Expected salary range</SectionLabel>
+                  <div style={{
+                    marginBottom: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                  }}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        id="zf-salary-currency"
+                        className="zf-salary-currency-trigger"
+                        aria-label="Salary display currency"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          margin: 0,
+                          minHeight: 44,
+                          padding: "8px 4px 8px 2px",
+                          border: "none",
+                          background: "transparent",
+                          cursor: "pointer",
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: "clamp(12px, 3.8vw, 14px)",
+                          fontWeight: 600,
+                          color: C.brand,
+                          letterSpacing: "-0.01em",
+                          WebkitTapHighlightColor: "rgba(234, 88, 12, 0.15)",
+                          touchAction: "manipulation",
+                        }}
+                      >
+                        {SALARY_CURRENCY_OPTIONS.find((o) => o.code === salaryCurrency)?.label ?? "Indian Rupee (₹)"}
+                        <ChevronDown size={17} strokeWidth={2.25} aria-hidden style={{ flexShrink: 0, opacity: 0.92 }} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      sideOffset={8}
+                      collisionPadding={16}
+                      className="zf-salary-currency-menu z-[120]"
+                      style={{
+                        backgroundColor: C.bg,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 12,
+                        boxShadow: "0 8px 28px rgba(28,25,23,0.12)",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      <DropdownMenuRadioGroup
+                        value={salaryCurrency}
+                        onValueChange={(v) => setSalaryCurrency(v as SalaryCurrencyCode)}
+                      >
+                        {SALARY_CURRENCY_OPTIONS.map((opt) => (
+                          <DropdownMenuRadioItem
+                            key={opt.code}
+                            value={opt.code}
+                            className="cursor-pointer outline-none focus-visible:bg-orange-50/80"
+                            style={{ fontFamily: "Inter, sans-serif" }}
+                          >
+                            {opt.label}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                      gap: 12,
+                      marginBottom: 8,
+                      flexWrap: "nowrap",
+                      width: "100%",
+                    }}
+                  >
+                  <div
+                    style={{
+                      flex: isDesktopLayout ? "0 0 auto" : 1,
+                      minWidth: 0,
+                      maxWidth: isDesktopLayout ? 200 : 320,
+                      width: isDesktopLayout ? "auto" : undefined,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: isDesktopLayout ? "flex-start" : undefined,
+                    }}
+                  >
+                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 6, letterSpacing: "0.02em", textAlign: "left" }}>
+                      Minimum
+                    </p>
+                    <label
+                      htmlFor="zf-salary-min-input"
+                      className={`zf-salary-lpa-field${isDesktopLayout ? " zf-salary-lpa-field--compact" : ""}`}
+                      style={{
+                        fontSize: "clamp(15px, 4.2vw, 19px)",
+                        fontWeight: 800,
+                        color: C.textPrimary,
+                        letterSpacing: "-0.04em",
+                        width: "100%",
+                        maxWidth: isDesktopLayout ? 188 : "100%",
+                      }}
+                    >
+                      <input
+                        id="zf-salary-min-input"
+                        className="zf-salary-lpa"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={salMinEditing ? salMinDraft : formatSalaryAnnualDisplay(salMin, salaryCurrency)}
+                        aria-label={`Minimum annual salary, ${salaryCurrency}`}
+                        onFocus={() => {
+                          setSalMinEditing(true);
+                          setSalMinDraft(String(Math.round(lpaToAnnualAmount(salMin, salaryCurrency))));
+                        }}
+                        onChange={(e) => setSalMinDraft(sanitizeAnnualDigits(e.target.value))}
+                        onBlur={() => {
+                          commitSalMinFromDraft(salMinDraft);
+                          setSalMinEditing(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitSalMinFromDraft(salMinDraft);
+                            setSalMinEditing(false);
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        style={{
+                          width: "100%",
+                          minWidth: 0,
+                          padding: 0,
+                          margin: 0,
+                          border: "none",
+                          background: "transparent",
+                          font: "inherit",
+                          fontWeight: 600,
+                          color: "inherit",
+                          letterSpacing: "inherit",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div
+                    style={{
+                      flex: isDesktopLayout ? "0 0 auto" : 1,
+                      minWidth: 0,
+                      maxWidth: isDesktopLayout ? 200 : 320,
+                      width: isDesktopLayout ? "auto" : undefined,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <p style={{ fontSize: "11px", color: C.textSec, marginBottom: 6, letterSpacing: "0.02em", width: "100%", textAlign: "right" }}>
+                      Maximum
+                    </p>
+                    <label
+                      htmlFor="zf-salary-max-input"
+                      className={`zf-salary-lpa-field zf-salary-lpa-field--end${isDesktopLayout ? " zf-salary-lpa-field--compact" : ""}`}
+                      style={{
+                        fontSize: "clamp(15px, 4.2vw, 19px)",
+                        fontWeight: 800,
+                        color: C.textPrimary,
+                        letterSpacing: "-0.04em",
+                        width: "100%",
+                        maxWidth: isDesktopLayout ? 188 : "100%",
+                      }}
+                    >
+                      <input
+                        id="zf-salary-max-input"
+                        className="zf-salary-lpa"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={salMaxEditing ? salMaxDraft : formatSalaryAnnualDisplay(salMax, salaryCurrency)}
+                        aria-label={`Maximum annual salary, ${salaryCurrency}`}
+                        onFocus={() => {
+                          setSalMaxEditing(true);
+                          setSalMaxDraft(String(Math.round(lpaToAnnualAmount(salMax, salaryCurrency))));
+                        }}
+                        onChange={(e) => setSalMaxDraft(sanitizeAnnualDigits(e.target.value))}
+                        onBlur={() => {
+                          commitSalMaxFromDraft(salMaxDraft);
+                          setSalMaxEditing(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            commitSalMaxFromDraft(salMaxDraft);
+                            setSalMaxEditing(false);
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                        style={{
+                          width: "100%",
+                          minWidth: 0,
+                          padding: 0,
+                          margin: 0,
+                          border: "none",
+                          background: "transparent",
+                          font: "inherit",
+                          fontWeight: 600,
+                          color: "inherit",
+                          letterSpacing: "inherit",
+                          fontVariantNumeric: "tabular-nums",
+                          textAlign: "right",
+                        }}
+                      />
+                    </label>
+                  </div>
+                  </div>
+                  {salaryRangeError && (
+                    <p
+                      role="alert"
+                      style={{
+                        marginTop: 0,
+                        marginBottom: 0,
+                        color: "#B42318",
+                        fontSize: 12,
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.45,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {salaryRangeError}
+                    </p>
+                  )}
+                </div>
+
+                <div style={{ border: "1px solid rgba(28,25,23,0.06)", borderRadius: 16, background: "rgba(255,255,255,0.7)", padding: "14px 14px 12px", marginBottom: 14 }}>
+                  <SectionLabel>Preferred work setup</SectionLabel>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: isDesktopLayout ? "repeat(3, minmax(0, 1fr))" : "1fr",
+                      gap: isDesktopLayout ? 16 : 10,
+                      marginBottom: 0,
+                      width: "100%",
+                    }}
+                  >
                   {WORK_SETUPS.map((o) => {
                     const selected = workSetups.includes(o.id);
                     const SetupIcon = o.id === "onsite" ? Building2 : o.id === "hybrid" ? Layers : Globe;
@@ -1221,40 +1731,17 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                               </div>
                               {check}
                             </div>
-                            <div
-                              style={{
-                                fontSize: 17,
-                                fontWeight: 700,
-                                color: C.textPrimary,
-                                letterSpacing: "-0.03em",
-                                lineHeight: 1.25,
-                              }}
-                            >
+                            <div style={{ fontSize: 17, fontWeight: 700, color: C.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.25 }}>
                               {o.label}
                             </div>
-                            <div
-                              style={{
-                                fontSize: 13,
-                                color: C.textMuted,
-                                letterSpacing: "-0.01em",
-                                lineHeight: 1.5,
-                                marginTop: 8,
-                              }}
-                            >
+                            <div style={{ fontSize: 13, color: C.textMuted, letterSpacing: "-0.01em", lineHeight: 1.5, marginTop: 8 }}>
                               {blurb}
                             </div>
                           </>
                         ) : (
                           <>
                             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                              <div
-                                style={{
-                                  fontSize: 15,
-                                  fontWeight: 700,
-                                  color: C.textPrimary,
-                                  letterSpacing: "-0.02em",
-                                }}
-                              >
+                              <div style={{ fontSize: 15, fontWeight: 700, color: C.textPrimary, letterSpacing: "-0.02em" }}>
                                 {o.label}
                               </div>
                               <div style={{ fontSize: 12, color: C.textMuted, letterSpacing: "-0.01em" }}>{blurb}</div>
@@ -1265,22 +1752,20 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                       </motion.button>
                     );
                   })}
-                </div>
+                  </div>
 
-                
-
-                {/* Progressive: Location picker */}
-                <AnimatePresence>
-                  {showLocationPicker && (
-                    <motion.div
-                      key="loc-picker"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.25 }}
-                      style={{ marginTop: 12 }}
-                    >
-                      <SectionLabel>Preferred Job Locations</SectionLabel>
+                  <AnimatePresence>
+                    {showLocationPicker && (
+                      <motion.div
+                        key="loc-picker"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.25 }}
+                        style={{ marginTop: 12 }}
+                      >
+                        <div style={{ height: 1, background: C.border, marginBottom: 12 }} />
+                        <SectionLabel>Preferred Job Locations</SectionLabel>
 
                       {locations.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
@@ -1410,449 +1895,10 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                         )}
                       </div>
 
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-
-            {/* ══ STEP 2: Priorities ══════════════════════════════════════ */}
-            {step === 2 && (
-              <motion.div key="s3"
-                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* Heading */}
-                <div style={{ marginBottom: 28 }}>
-                  <h2 style={{
-                    fontSize: "clamp(19px, 5.5vw, 22px)", fontWeight: 800,
-                    color: C.textPrimary, letterSpacing: "-0.04em",
-                    lineHeight: 1.25, marginBottom: 8,
-                  }}>
-                    Tell us how you work best
-                  </h2>
-                  <p style={{ fontSize: "13px", color: C.textMuted, letterSpacing: "-0.01em" }}>
-                    Choose all answers that match you
-                  </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-
-                {/* Question groups */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  {PRIORITY_QUESTIONS.map((group) => (
-                    <div key={group.id}>
-                      <p
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: C.textPrimary,
-                          letterSpacing: "-0.02em",
-                          margin: "0 0 8px",
-                        }}
-                      >
-                        {group.question}
-                      </p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {group.optionIds.map((optId) => {
-                          const p = PRIORITIES.find((item) => item.id === optId);
-                          if (!p) return null;
-                          return (
-                            <Pill
-                              key={p.id}
-                              label={p.label}
-                              icon={p.icon}
-                              selected={priorities.includes(p.id)}
-                              onClick={() => togglePriority(p.id)}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-              </motion.div>
-            )}
-
-            {/* ══ STEP 3: Switch timeline ═════════════════════════════════ */}
-            {step === 3 && (
-              <motion.div key="s-switch"
-                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div style={{ marginBottom: 28 }}>
-                  <h2 style={{
-                    fontSize: "clamp(19px, 5.5vw, 22px)", fontWeight: 800,
-                    color: C.textPrimary, letterSpacing: "-0.04em",
-                    lineHeight: 1.25, marginBottom: 8,
-                  }}>
-                    When do you want to switch?
-                  </h2>
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {([
-                    { id: "immediately", label: "Immediately", emoji: "🚀" },
-                    { id: "1month",      label: "Within 1 month", emoji: "⏳" },
-                    { id: "3months",     label: "Within 3 months", emoji: "📅" },
-                    { id: "exploring",   label: "Just exploring", emoji: "👀" },
-                  ] as const).map(opt => {
-                    const sel = switchTimeline === opt.id;
-                    return (
-                      <Pill
-                        key={opt.id}
-                        onClick={() => setSwitchTimeline(opt.id)}
-                        label={opt.label}
-                        emoji={opt.emoji}
-                        selected={sel}
-                      />
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-
-            {/* ══ STEP 4: Salary ══════════════════════════════════════════ */}
-            {step === 4 && (
-              <motion.div key="s4"
-                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* Heading */}
-                <div style={{ marginBottom: 10 }}>
-                  <h2 style={{
-                    fontSize: "clamp(19px, 5.5vw, 22px)", fontWeight: 800,
-                    color: C.textPrimary, letterSpacing: "-0.04em",
-                    lineHeight: 1.25, marginBottom: 0,
-                  }}>
-                    Expected salary range?
-                  </h2>
-                </div>
-
-                {/* Currency — compact trigger; list in menu (left-aligned with heading) */}
-                <div style={{
-                  marginBottom: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                }}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        id="zf-salary-currency"
-                        className="zf-salary-currency-trigger"
-                        aria-label="Salary display currency"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          margin: 0,
-                          minHeight: 44,
-                          padding: "8px 4px 8px 2px",
-                          border: "none",
-                          background: "transparent",
-                          cursor: "pointer",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "clamp(12px, 3.8vw, 14px)",
-                          fontWeight: 600,
-                          color: C.brand,
-                          letterSpacing: "-0.01em",
-                          WebkitTapHighlightColor: "rgba(234, 88, 12, 0.15)",
-                          touchAction: "manipulation",
-                        }}
-                      >
-                        {SALARY_CURRENCY_OPTIONS.find((o) => o.code === salaryCurrency)?.label ?? "Indian Rupee (₹)"}
-                        <ChevronDown size={17} strokeWidth={2.25} aria-hidden style={{ flexShrink: 0, opacity: 0.92 }} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      sideOffset={8}
-                      collisionPadding={16}
-                      className="zf-salary-currency-menu z-[120]"
-                      style={{
-                        backgroundColor: C.bg,
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 12,
-                        boxShadow: "0 8px 28px rgba(28,25,23,0.12)",
-                        fontFamily: "Inter, sans-serif",
-                      }}
-                    >
-                      <DropdownMenuRadioGroup
-                        value={salaryCurrency}
-                        onValueChange={(v) => setSalaryCurrency(v as SalaryCurrencyCode)}
-                      >
-                        {SALARY_CURRENCY_OPTIONS.map((opt) => (
-                          <DropdownMenuRadioItem
-                            key={opt.code}
-                            value={opt.code}
-                            className="cursor-pointer outline-none focus-visible:bg-orange-50/80"
-                            style={{ fontFamily: "Inter, sans-serif" }}
-                          >
-                            {opt.label}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Min / Max — inset field affordance + label wraps full tap target for typing */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-end",
-                    gap: 12,
-                    marginBottom: 18,
-                    flexWrap: "nowrap",
-                    width: "100%",
-                  }}
-                >
-                  <div
-                    style={{
-                      flex: isDesktopLayout ? "0 0 auto" : 1,
-                      minWidth: 0,
-                      maxWidth: isDesktopLayout ? 200 : 320,
-                      width: isDesktopLayout ? "auto" : undefined,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: isDesktopLayout ? "flex-start" : undefined,
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: "11px",
-                        color: C.textSec,
-                        marginBottom: 6,
-                        letterSpacing: "0.02em",
-                        textAlign: "left",
-                      }}
-                    >
-                      Minimum
-                    </p>
-                    <label
-                      htmlFor="zf-salary-min-input"
-                      className={`zf-salary-lpa-field${isDesktopLayout ? " zf-salary-lpa-field--compact" : ""}`}
-                      style={{
-                        fontSize: "clamp(15px, 4.2vw, 19px)",
-                        fontWeight: 800,
-                        color: C.textPrimary,
-                        letterSpacing: "-0.04em",
-                        width: "100%",
-                        maxWidth: isDesktopLayout ? 188 : "100%",
-                      }}
-                    >
-                      <input
-                        id="zf-salary-min-input"
-                        className="zf-salary-lpa"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={
-                          salMinEditing
-                            ? salMinDraft
-                            : formatSalaryAnnualDisplay(salMin, salaryCurrency)
-                        }
-                        aria-label={`Minimum annual salary, ${salaryCurrency}`}
-                        onFocus={() => {
-                          setSalMinEditing(true);
-                          setSalMinDraft(
-                            String(Math.round(lpaToAnnualAmount(salMin, salaryCurrency)))
-                          );
-                        }}
-                        onChange={(e) => {
-                          setSalMinDraft(sanitizeAnnualDigits(e.target.value));
-                        }}
-                        onBlur={() => {
-                          commitSalMinFromDraft(salMinDraft);
-                          setSalMinEditing(false);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            commitSalMinFromDraft(salMinDraft);
-                            setSalMinEditing(false);
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        style={{
-                          width: "100%",
-                          minWidth: 0,
-                          padding: 0,
-                          margin: 0,
-                          border: "none",
-                          background: "transparent",
-                          font: "inherit",
-                          fontWeight: 600,
-                          color: "inherit",
-                          letterSpacing: "inherit",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      />
-                    </label>
-                  </div>
-                  <div
-                    style={{
-                      flex: isDesktopLayout ? "0 0 auto" : 1,
-                      minWidth: 0,
-                      maxWidth: isDesktopLayout ? 200 : 320,
-                      width: isDesktopLayout ? "auto" : undefined,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-end",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: "11px",
-                        color: C.textSec,
-                        marginBottom: 6,
-                        letterSpacing: "0.02em",
-                        width: "100%",
-                        textAlign: "right",
-                      }}
-                    >
-                      Maximum
-                    </p>
-                    <label
-                      htmlFor="zf-salary-max-input"
-                      className={`zf-salary-lpa-field zf-salary-lpa-field--end${isDesktopLayout ? " zf-salary-lpa-field--compact" : ""}`}
-                      style={{
-                        fontSize: "clamp(15px, 4.2vw, 19px)",
-                        fontWeight: 800,
-                        color: C.textPrimary,
-                        letterSpacing: "-0.04em",
-                        width: "100%",
-                        maxWidth: isDesktopLayout ? 188 : "100%",
-                      }}
-                    >
-                      <input
-                        id="zf-salary-max-input"
-                        className="zf-salary-lpa"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        spellCheck={false}
-                        value={
-                          salMaxEditing
-                            ? salMaxDraft
-                            : formatSalaryAnnualDisplay(salMax, salaryCurrency)
-                        }
-                        aria-label={`Maximum annual salary, ${salaryCurrency}`}
-                        onFocus={() => {
-                          setSalMaxEditing(true);
-                          setSalMaxDraft(
-                            String(Math.round(lpaToAnnualAmount(salMax, salaryCurrency)))
-                          );
-                        }}
-                        onChange={(e) => {
-                          setSalMaxDraft(sanitizeAnnualDigits(e.target.value));
-                        }}
-                        onBlur={() => {
-                          commitSalMaxFromDraft(salMaxDraft);
-                          setSalMaxEditing(false);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            commitSalMaxFromDraft(salMaxDraft);
-                            setSalMaxEditing(false);
-                            (e.target as HTMLInputElement).blur();
-                          }
-                        }}
-                        style={{
-                          width: "100%",
-                          minWidth: 0,
-                          padding: 0,
-                          margin: 0,
-                          border: "none",
-                          background: "transparent",
-                          font: "inherit",
-                          fontWeight: 600,
-                          color: "inherit",
-                          letterSpacing: "inherit",
-                          fontVariantNumeric: "tabular-nums",
-                          textAlign: "right",
-                        }}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Dual range slider */}
-                <div style={{ marginBottom: 6, paddingLeft: 2, paddingRight: 2 }}>
-                  <div style={{ position: "relative", height: 28, display: "flex", alignItems: "center" }}>
-                    {/* Track background */}
-                    <div style={{
-                      position: "absolute", left: 0, right: 0, height: 5,
-                      background: C.trackBg, borderRadius: 3,
-                    }}>
-                      {/* Filled segment */}
-                      <div style={{
-                        position: "absolute",
-                        left: `${salTrackStartPct}%`, right: `${100 - salTrackEndPct}%`,
-                        top: 0, bottom: 0,
-                        background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
-                        borderRadius: 3,
-                      }} />
-                    </div>
-
-                    {/* Min thumb input */}
-                    <input
-                      type="range" className="zf-range"
-                      min={SAL_MIN} max={SAL_MAX} step={1} value={salMinForSlider}
-                      onChange={(e) => {
-                        cancelSalMinAnim();
-                        setSalMin(Math.min(+e.target.value, salMaxForSlider - SAL_GAP));
-                      }}
-                      style={{ zIndex: salMin > SAL_MAX * 0.85 ? 5 : 3 }}
-                    />
-                    {/* Max thumb input */}
-                    <input
-                      type="range" className="zf-range"
-                      min={SAL_MIN} max={SAL_MAX} step={1} value={salMaxForSlider}
-                      onChange={(e) => {
-                        cancelSalMaxAnim();
-                        setSalMax(Math.max(+e.target.value, salMinForSlider + SAL_GAP));
-                      }}
-                      style={{ zIndex: salMin > SAL_MAX * 0.85 ? 3 : 5 }}
-                    />
-                  </div>
-                </div>
-
-                {/* Scale labels */}
-                <div style={{
-                  display: "flex", justifyContent: "space-between", marginBottom: 32,
-                }}>
-                  <span style={{ fontSize: "11px", color: C.textSec }}>
-                    {formatSalaryScaleEndpoint(SAL_MIN, salaryCurrency)}
-                  </span>
-                  <span style={{ fontSize: "11px", color: C.textSec }}>
-                    {formatSalaryScaleEndpoint(SAL_MAX, salaryCurrency)}
-                  </span>
-                </div>
-                {salaryRangeError && (
-                  <p
-                    role="alert"
-                    style={{
-                      marginTop: -18,
-                      marginBottom: 20,
-                      color: "#B42318",
-                      fontSize: 12,
-                      letterSpacing: "-0.01em",
-                      lineHeight: 1.45,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {salaryRangeError}
-                  </p>
-                )}
-
               </motion.div>
             )}
 

@@ -38,6 +38,8 @@ export interface JobPreferences {
   categories?: string[];
   /** Role titles keyed by category id; max 3 roles per category in the UI. */
   rolesByCategory?: Record<string, string[]>;
+  /** Target experience level keyed by department id. */
+  experienceLevelByCategory?: Record<string, "entry" | "mid" | "senior" | "lead">;
   workSetups?: string[];
   locations?: string[];
   priorities?: string[];
@@ -601,7 +603,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -16, scale: 0.97 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-1 flex-col px-0"
+            className="flex flex-1 flex-col px-4"
           >
 
               {/* ── Step indicator (step 6 of 6; steps 1–5 = JobPreferencesScreen) ── */}
@@ -1167,7 +1169,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
         zIndex: 20,
         padding: transparentSurface
           ? "32px 0 8px"
-          : "12px 20px calc(20px + env(safe-area-inset-bottom))",
+          : "12px 16px calc(20px + env(safe-area-inset-bottom))",
         background: transparentSurface ? "transparent" : "rgba(253,251,248,0.96)",
         backdropFilter: transparentSurface ? "none" : "blur(12px)",
         display: "flex",

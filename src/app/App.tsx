@@ -58,12 +58,15 @@ export default function App() {
   const [pendingPrefs, setPendingPrefs] = useState<JobPreferences | null>(null);
   /** Previous screen for JobPreferences "Back" (and similar flows). */
   const [prefPrev, setPrefPrev] = useState<Screen>("profileReview");
-  /** After completing prefs, Welcome is step 6; going back should reopen prefs at step 5. */
-  const [jobPrefsResumeStep, setJobPrefsResumeStep] = useState<1 | 2 | 3 | 4 | 5 | undefined>(
+  /** After completing prefs, Welcome is final step; going back should reopen prefs at step 3. */
+  const [jobPrefsResumeStep, setJobPrefsResumeStep] = useState<1 | 2 | 3 | undefined>(
     undefined,
   );
   /** Return target after profile edit (Save / Back). */
   const [profileReturnScreen, setProfileReturnScreen] = useState<Screen>("welcome");
+  const [profileEditSection, setProfileEditSection] = useState<
+    "personal" | "experience" | "education" | "skills" | "preferences" | undefined
+  >(undefined);
 
   const profileForEdit = useMemo(
     () => (parsedProfile ? normalizeToFullProfile(parsedProfile) : null),
@@ -190,6 +193,8 @@ export default function App() {
         setJobPrefsResumeStep={setJobPrefsResumeStep}
         profileReturnScreen={profileReturnScreen}
         setProfileReturnScreen={setProfileReturnScreen}
+        profileEditSection={profileEditSection}
+        setProfileEditSection={setProfileEditSection}
         profileForEdit={profileForEdit}
         hasCompletedInterview={hasCompletedInterview}
         setHasCompletedInterview={setHasCompletedInterview}
@@ -333,6 +338,7 @@ export default function App() {
               <ProfileReviewScreen
                 mode="edit"
                 profile={profileForEdit}
+                initialScrollSection={profileEditSection}
                 onBack={() => goTo(profileReturnScreen, "back")}
                 onSave={(next) => {
                   setParsedProfile(next);
@@ -355,7 +361,7 @@ export default function App() {
                     writeSession({ profile: updated });
                     return updated;
                   });
-                  setJobPrefsResumeStep(5);
+                  setJobPrefsResumeStep(3);
                   goTo("welcome", "forward");
                 }}
                 onBack={() => {
@@ -392,8 +398,9 @@ export default function App() {
               <ProfileSummaryScreen
                 profile={parsedProfile}
                 email={email}
-                onEditProfile={() => {
+                onEditProfile={(section) => {
                   setProfileReturnScreen("profileSummary");
+                  setProfileEditSection(section);
                   goTo("profileEdit", "forward");
                 }}
                 onContinue={() => goTo("matchCelebration", "forward")}
@@ -500,6 +507,7 @@ export default function App() {
                 onNavigateProfile={() => {}}
                 onEditProfile={() => {
                   setProfileReturnScreen("jobSeekerProfile");
+                  setProfileEditSection(undefined);
                   goTo("profileEdit", "forward");
                 }}
               />

@@ -502,7 +502,7 @@ export function LoginScreen({
               }}
             >
               New here?{" "}
-              <span style={{ color: C.brand, fontWeight: 700 }}>
+              <span style={{ color: "#EA580C", fontWeight: 700 }}>
                 Create an account
               </span>
             </button>

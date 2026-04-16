@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { FullProfile, WorkExp, Edu, JobPreferences } from "./WelcomeScreen";
 import { FloatingLabelInput } from "./ui/FloatingLabelInput";
@@ -427,6 +427,7 @@ interface ProfileReviewScreenProps {
   profile: FullProfile;
   /** Default onboarding flow (phone verification may be required). */
   mode?: "onboarding" | "edit";
+  initialScrollSection?: "personal" | "experience" | "education" | "skills" | "preferences";
   onBack: () => void;
   onContinue?: () => void;
   /** When `mode` is `edit`, called with the updated profile on Save. */
@@ -436,11 +437,17 @@ interface ProfileReviewScreenProps {
 export function ProfileReviewScreen({
   profile,
   mode = "onboarding",
+  initialScrollSection,
   onBack,
   onContinue,
   onSave,
 }: ProfileReviewScreenProps) {
   const isEdit = mode === "edit";
+  const personalRef = useRef<HTMLDivElement | null>(null);
+  const experienceRef = useRef<HTMLDivElement | null>(null);
+  const educationRef = useRef<HTMLDivElement | null>(null);
+  const skillsRef = useRef<HTMLDivElement | null>(null);
+  const preferencesRef = useRef<HTMLDivElement | null>(null);
 
   // Personal
   const [name,     setName]     = useState(profile.name);
@@ -501,6 +508,21 @@ export function ProfileReviewScreen({
     setOtpError(null);
     setSubmitting(false);
   }, [profile]);
+
+  useEffect(() => {
+    if (!isEdit || !initialScrollSection) return;
+    const target =
+      initialScrollSection === "personal" ? personalRef.current
+      : initialScrollSection === "experience" ? experienceRef.current
+      : initialScrollSection === "education" ? educationRef.current
+      : initialScrollSection === "skills" ? skillsRef.current
+      : preferencesRef.current;
+    if (!target) return;
+    const t = window.setTimeout(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [initialScrollSection, isEdit]);
 
   const updateExp = (id: string, updated: WorkExp) =>
     setExperiences((prev) => prev.map((e) => (e.id === id ? updated : e)));
@@ -648,6 +670,7 @@ export function ProfileReviewScreen({
       <div className="flex flex-col flex-1 px-4 py-5 gap-5 overflow-y-auto">
 
         {/* ── Personal Information ─────────────────────────────────── */}
+        <div ref={personalRef}>
         <Section delay={0.06} title="Personal Information"
           icon={
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -832,8 +855,10 @@ export function ProfileReviewScreen({
               placeholder="e.g. Senior Product Designer · 4 years" />
           </div>
         </Section>
+        </div>
 
         {/* ── Work Experience ──────────────────────────────────────── */}
+        <div ref={experienceRef}>
         <Section delay={0.14} title="Work Experience"
           icon={
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -860,8 +885,10 @@ export function ProfileReviewScreen({
             <AddButton label="Add Work Experience" onClick={addExp} />
           </div>
         </Section>
+        </div>
 
         {/* ── Education ───────────────────────────────────────────── */}
+        <div ref={educationRef}>
         <Section delay={0.22} title="Education"
           icon={
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -889,8 +916,10 @@ export function ProfileReviewScreen({
             <AddButton label="Add Education" onClick={addEdu} />
           </div>
         </Section>
+        </div>
 
         {/* ── Skills ──────────────────────────────────────────────── */}
+        <div ref={skillsRef}>
         <Section delay={0.3} title="Skills"
           icon={
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -995,9 +1024,11 @@ export function ProfileReviewScreen({
             </AnimatePresence>
           </div>
         </Section>
+        </div>
 
         {/* ── Job Preferences (edit mode only) ───────────────────── */}
         {isEdit && (
+          <div ref={preferencesRef}>
           <Section delay={0.36} title="Job Preferences"
             icon={
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -1013,7 +1044,7 @@ export function ProfileReviewScreen({
                 fontSize: 12, fontWeight: 600, color: C.textMuted,
                 letterSpacing: "-0.01em", marginBottom: 8,
               }}>
-                Job Category
+                Department
               </div>
               <select
                 value={prefCategory}
@@ -1040,7 +1071,7 @@ export function ProfileReviewScreen({
                   paddingRight: 34,
                 }}
               >
-                <option value="">Select a category…</option>
+                <option value="">Select a department…</option>
                 {PREF_CATEGORIES.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
@@ -1545,6 +1576,7 @@ export function ProfileReviewScreen({
               )}
             </div>
           </Section>
+          </div>
         )}
 
         {/* ── Continue CTA — inline, below Skills ─────────────────── */}

@@ -13,6 +13,7 @@ const C = {
   orbB: "rgba(146,64,14,0.04)",
   success: "#059669",
 };
+const MAX_RESUME_BYTES = 10 * 1024 * 1024;
 
 type ProfileType = "fresher" | "experienced";
 
@@ -61,6 +62,11 @@ const MASTER_SKILL_OPTIONS = [
   "Data Structures", "Algorithms", "Power BI", "Tableau", "Figma", "UI/UX", "Testing",
   "Jest", "Cypress", "Playwright", "Selenium", "React Native", "Flutter",
 ];
+const MONTH_OPTIONS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+const YEAR_OPTIONS = Array.from({ length: 45 }, (_, i) => String(new Date().getFullYear() - i));
 
 interface Props {
   email: string;
@@ -171,7 +177,7 @@ function SelectField({
           aria-invalid={hasError || undefined}
           className="zf-float__control"
           style={{
-            color: value ? C.textPrimary : C.textSecondary,
+            color: value ? C.textPrimary : C.textMuted,
             paddingTop: 20,
             paddingBottom: 6,
             appearance: "none",
@@ -189,13 +195,13 @@ function SelectField({
           className="zf-float__label"
           style={{
             transform: isFloating ? "translateY(-18px) scale(0.78)" : "translateY(-50%) scale(1)",
-            color: hasError ? "#B91C1C" : C.textSecondary,
+            color: hasError ? "#B91C1C" : C.textMuted,
           }}
         >
           {label}
           {required && <span> *</span>}
         </label>
-        <div className="zf-float__right" style={{ pointerEvents: "none", color: C.textSecondary }}>
+        <div className="zf-float__right" style={{ pointerEvents: "none", color: C.textMuted }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -303,7 +309,7 @@ function SkillsField({
             className="zf-float__label"
             style={{
               transform: focused || Boolean(trimmedInput) ? "translateY(-18px) scale(0.78)" : "translateY(-50%) scale(1)",
-              color: C.textSecondary,
+              color: C.textMuted,
             }}
           >
             Skills *
@@ -312,7 +318,7 @@ function SkillsField({
             type="button"
             onClick={() => setOpen((prev) => !prev)}
             className="zf-float__right"
-            style={{ border: "none", background: "transparent", color: C.textSecondary, cursor: "pointer", padding: 0 }}
+            style={{ border: "none", background: "transparent", color: C.textMuted, cursor: "pointer", padding: 0 }}
             aria-label="Toggle skills dropdown"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -500,66 +506,6 @@ function formatExperienceDuration(years: number, months: number): string {
   return parts.join(" ");
 }
 
-// ── Duration end (Present / Year) ─────────────────────────────────────────────
-function DurationEnd({ isCurrent, setIsCurrent, endYear, setEndYear }: {
-  isCurrent: boolean; setIsCurrent: (v: boolean) => void;
-  endYear: string; setEndYear: (v: string) => void;
-}) {
-  return (
-    <div>
-      {isCurrent ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <FloatingLabelInput
-            label="To"
-            value="Present"
-            readOnly
-          />
-          <button
-            type="button"
-            onClick={() => setIsCurrent(false)}
-            style={{
-              alignSelf: "flex-start",
-              padding: "2px 0",
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              fontFamily: "Inter, sans-serif",
-              fontSize: 11,
-              fontWeight: 600,
-              color: C.textSecondary,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Set end year
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
-          <div style={{ flex: 1 }}>
-            <FloatingLabelInput
-              label="To"
-              value={endYear}
-              onChange={(e) => setEndYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              inputMode="numeric"
-            />
-          </div>
-          <motion.button
-            onClick={() => { setIsCurrent(true); setEndYear(""); }}
-            whileTap={{ scale: 0.95 }}
-            style={{
-              padding: "0 11px", borderRadius: 9,
-              border: `1px solid ${C.border}`, background: "white",
-              cursor: "pointer", fontSize: 11, fontWeight: 600,
-              color: C.textSecondary, whiteSpace: "nowrap" as const,
-              fontFamily: "Inter, sans-serif",
-            }}
-          >Now</motion.button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Section label ─────────────────────────────────────────────────────────────
 function SectionLabel({ icon, children }: { icon: React.ReactNode; children: string }) {
   return (
@@ -656,6 +602,9 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState(isPhoneLogin ? email : "");
   const [userEmail, setUserEmail] = useState(isPhoneLogin ? "" : email);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const resumeInputRef = useRef<HTMLInputElement | null>(null);
 
   // Phone OTP
   const [otpStage, setOtpStage] = useState<"idle" | "sending" | "sent" | "verifying" | "verified">(
@@ -668,6 +617,28 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const isValidPhone = (raw: string) => normalizePhone(raw).replace(/[^\d]/g, "").length >= 10;
   const hasPhone = phone.trim().length > 0;
   const phoneVerified = otpStage === "verified";
+
+  const validateResumeFile = (file: File): string | null => {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (!["pdf", "doc", "docx"].includes(ext)) {
+      return "Use a PDF, DOC, or DOCX file.";
+    }
+    if (file.size > MAX_RESUME_BYTES) {
+      return "Resume must be 10 MB or smaller.";
+    }
+    return null;
+  };
+
+  const handleResumeSelect = (file: File | null) => {
+    if (!file) return;
+    const err = validateResumeFile(file);
+    if (err) {
+      setResumeError(err);
+      return;
+    }
+    setResumeError(null);
+    setResumeFile(file);
+  };
 
   const sendOtp = async () => {
     if (!isValidPhone(phone) || otpStage === "sending" || otpStage === "verifying" || phoneVerified) return;
@@ -702,15 +673,21 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [expMonths, setExpMonths] = useState("");
   const [company, setCompany] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [startMonth, setStartMonth] = useState("");
   const [startYear, setStartYear] = useState("");
   const [isCurrent, setIsCurrent] = useState(true);
+  const [endMonth, setEndMonth] = useState("");
   const [endYear, setEndYear] = useState("");
   const [moreExp, setMoreExp] = useState<Array<{
-    company: string; title: string; start: string; current: boolean; end: string;
+    company: string; title: string;
+    startMonth: string; startYear: string;
+    current: boolean;
+    endMonth: string; endYear: string;
   }>>([]);
 
   // Optionals
   const [internships, setInternships] = useState<Array<{ company: string; role: string; desc: string }>>([]);
+  const [showResumeOptional, setShowResumeOptional] = useState(false);
   const [showInternships, setShowInternships] = useState(false);
   const [projects, setProjects] = useState<Array<{ name: string; desc: string }>>([]);
   const [showProjects, setShowProjects] = useState(false);
@@ -718,6 +695,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [showAchievements, setShowAchievements] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState("");
   const [hasOtherOffers, setHasOtherOffers] = useState<"" | "yes" | "no">("");
   const [offerCompany, setOfferCompany] = useState("");
@@ -818,7 +796,9 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
         grade: "",
       });
       if (company.trim()) {
-        const dur = isCurrent ? `${startYear} – Present` : `${startYear} – ${endYear}`;
+        const fromLabel = [startMonth, startYear].filter(Boolean).join(" ").trim();
+        const toLabel = isCurrent ? "Present" : [endMonth, endYear].filter(Boolean).join(" ").trim();
+        const dur = fromLabel || toLabel ? `${fromLabel || "—"} – ${toLabel || "—"}` : "";
         experiences.push({
           id: "exp-0", company: company.trim(), role: jobTitle.trim(),
           duration: dur, description: "",
@@ -826,9 +806,11 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
       }
       moreExp.forEach((e, i) => {
         if (e.company.trim()) {
+          const fromLabel = [e.startMonth, e.startYear].filter(Boolean).join(" ").trim();
+          const toLabel = e.current ? "Present" : [e.endMonth, e.endYear].filter(Boolean).join(" ").trim();
           experiences.push({
             id: `exp-${i + 1}`, company: e.company.trim(), role: e.title.trim(),
-            duration: e.current ? `${e.start} – Present` : `${e.start} – ${e.end}`,
+            duration: fromLabel || toLabel ? `${fromLabel || "—"} – ${toLabel || "—"}` : "",
             description: "",
           });
         }
@@ -860,6 +842,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           role: "Links",
           duration: "",
           description: portfolioLinks.trim(),
+        });
+      }
+      if (linkedinUrl.trim()) {
+        experiences.push({
+          id: "linkedin-0",
+          company: "LinkedIn",
+          role: "Profile",
+          duration: "",
+          description: linkedinUrl.trim(),
         });
       }
     }
@@ -916,6 +907,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           description: portfolioLinks.trim(),
         });
       }
+      if (linkedinUrl.trim()) {
+        experiences.push({
+          id: "linkedin-0",
+          company: "LinkedIn",
+          role: "Profile",
+          duration: "",
+          description: linkedinUrl.trim(),
+        });
+      }
       if (hasOtherOffers === "yes" && (offerCompany.trim() || offerRole.trim())) {
         experiences.push({
           id: "offer-0",
@@ -954,6 +954,17 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
       experiences,
       education,
     };
+    if (resumeFile) {
+      (
+        profile as FullProfile & {
+          resumeAttachment?: { name: string; size: number; type: string };
+        }
+      ).resumeAttachment = {
+        name: resumeFile.name,
+        size: resumeFile.size,
+        type: resumeFile.type || "application/octet-stream",
+      };
+    }
 
     await new Promise((r) => setTimeout(r, 600));
     onComplete(profile);
@@ -1246,6 +1257,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   </motion.div>
                 )}
               </AnimatePresence>
+
             </div>
           </div>
         </motion.div>
@@ -1388,7 +1400,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       placeholder="e.g. IIT Delhi" required
                       error={showRequiredErrors && missingInstitution}
                       errorText="Institution is required." />
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3">
                       <SelectField
                         label="Course"
                         value={course}
@@ -1542,14 +1554,77 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         errorText="Job Title is required." />
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <Input label="From" value={startYear}
-                        onChange={(v) => setStartYear(v.replace(/\D/g, "").slice(0, 4))}
-                        placeholder="2022" inputMode="numeric" />
-                      <DurationEnd isCurrent={isCurrent} setIsCurrent={setIsCurrent}
-                        endYear={endYear} setEndYear={setEndYear} />
+                      <SelectField
+                        label="From month"
+                        value={startMonth}
+                        onChange={setStartMonth}
+                        options={MONTH_OPTIONS}
+                        placeholder="Select month"
+                      />
+                      <SelectField
+                        label="From year"
+                        value={startYear}
+                        onChange={setStartYear}
+                        options={YEAR_OPTIONS}
+                        placeholder="Select year"
+                      />
                     </div>
+                    <label
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginTop: 2,
+                        cursor: "pointer",
+                        userSelect: "none",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: C.textPrimary,
+                        letterSpacing: "-0.01em",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isCurrent}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setIsCurrent(checked);
+                          if (checked) {
+                            setEndMonth("");
+                            setEndYear("");
+                          }
+                        }}
+                        style={{ accentColor: C.brand }}
+                      />
+                      Currently working here
+                    </label>
+                    {!isCurrent && (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <SelectField
+                          label="To month"
+                          value={endMonth}
+                          onChange={setEndMonth}
+                          options={MONTH_OPTIONS}
+                          placeholder="Select month"
+                        />
+                        <SelectField
+                          label="To year"
+                          value={endYear}
+                          onChange={setEndYear}
+                          options={YEAR_OPTIONS}
+                          placeholder="Select year"
+                        />
+                      </div>
+                    )}
+                    {isCurrent && (
+                      <div style={{ fontSize: 11, color: C.textSecondary, marginTop: -2 }}>
+                        To date will be saved as Present.
+                      </div>
+                    )}
                   </div>
                 </div>
+                
 
                 {/* Extra experience */}
                 <AnimatePresence>
@@ -1598,35 +1673,99 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           placeholder="Role" />
                       </div>
                       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <Input
-                          label="From"
-                          value={exp.start}
+                        <SelectField
+                          label="From month"
+                          value={exp.startMonth}
                           onChange={(v) => {
                             const n = [...moreExp];
-                            n[idx] = { ...n[idx], start: v.replace(/\D/g, "").slice(0, 4) };
+                            n[idx] = { ...n[idx], startMonth: v };
                             setMoreExp(n);
                           }}
-                          placeholder="2020"
-                          inputMode="numeric"
+                          options={MONTH_OPTIONS}
+                          placeholder="Select month"
                         />
-                        <Input
-                          label="To"
-                          value={exp.end}
+                        <SelectField
+                          label="From year"
+                          value={exp.startYear}
                           onChange={(v) => {
                             const n = [...moreExp];
-                            n[idx] = { ...n[idx], end: v.replace(/\D/g, "").slice(0, 4), current: false };
+                            n[idx] = { ...n[idx], startYear: v };
                             setMoreExp(n);
                           }}
-                          placeholder="2022"
-                          inputMode="numeric"
+                          options={YEAR_OPTIONS}
+                          placeholder="Select year"
                         />
                       </div>
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginTop: 8,
+                          cursor: "pointer",
+                          userSelect: "none",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: C.textPrimary,
+                          letterSpacing: "-0.01em",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={exp.current}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            const n = [...moreExp];
+                            n[idx] = {
+                              ...n[idx],
+                              current: checked,
+                              endMonth: checked ? "" : n[idx].endMonth,
+                              endYear: checked ? "" : n[idx].endYear,
+                            };
+                            setMoreExp(n);
+                          }}
+                          style={{ accentColor: C.brand }}
+                        />
+                        Currently working here
+                      </label>
+                      {!exp.current && (
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <SelectField
+                            label="To month"
+                            value={exp.endMonth}
+                            onChange={(v) => {
+                              const n = [...moreExp];
+                              n[idx] = { ...n[idx], endMonth: v };
+                              setMoreExp(n);
+                            }}
+                            options={MONTH_OPTIONS}
+                            placeholder="Select month"
+                          />
+                          <SelectField
+                            label="To year"
+                            value={exp.endYear}
+                            onChange={(v) => {
+                              const n = [...moreExp];
+                              n[idx] = { ...n[idx], endYear: v };
+                              setMoreExp(n);
+                            }}
+                            options={YEAR_OPTIONS}
+                            placeholder="Select year"
+                          />
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
                 <button
-                  onClick={() => setMoreExp((prev) => [...prev, { company: "", title: "", start: "", current: false, end: "" }])}
+                  onClick={() =>
+                    setMoreExp((prev) => [
+                      ...prev,
+                      { company: "", title: "", startMonth: "", startYear: "", current: false, endMonth: "", endYear: "" },
+                    ])
+                  }
                   style={{
                     width: "100%", padding: 11, borderRadius: 11, marginTop: 10,
                     border: `1.5px dashed rgba(28,25,23,0.12)`,
@@ -1673,12 +1812,16 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   errorText="At least one skill is required."
                 />
                 <Input
+                  label="LinkedIn"
+                  value={linkedinUrl}
+                  onChange={setLinkedinUrl}
+                  placeholder="linkedin.com/in/username"
+                />
+                <Input
                   label="Portfolio links"
                   value={portfolioLinks}
                   onChange={setPortfolioLinks}
-                  placeholder="Perosnal website, GitHub, Behanceetc"
-                  multiline
-                  multilineHeight={44}
+                  placeholder="Personal website, GitHub, Behance etc"
                 />
               </div>
             </div>
@@ -1716,12 +1859,16 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   errorText="At least one skill is required."
                 />
                 <Input
+                  label="LinkedIn"
+                  value={linkedinUrl}
+                  onChange={setLinkedinUrl}
+                  placeholder="linkedin.com/in/username"
+                />
+                <Input
                   label="Portfolio links"
                   value={portfolioLinks}
                   onChange={setPortfolioLinks}
                   placeholder="Personal website, GitHub, Behance etc"
-                  multiline
-                  multilineHeight={44}
                 />
 
                 <div>
@@ -2047,6 +2194,190 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           </div>
         )}
 
+        {/* ── Optional boosts (experienced) ─────────────────────────────── */}
+        {profileType === "experienced" && (
+        <div>
+          <SectionLabel icon={
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M7 2v10M2 7h10" stroke={C.brand} strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          }>Boost your profile (optional)</SectionLabel>
+
+          <div className="flex flex-col gap-5">
+                <OptionalSection
+                  icon={(
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2.2" y="3" width="11.6" height="10.6" rx="2" stroke={C.brand} strokeWidth="1.3" />
+                      <path d="M6 3V2.8c0-.44.36-.8.8-.8h2.4c.44 0 .8.36.8.8V3" stroke={C.brand} strokeWidth="1.3" strokeLinecap="round" />
+                      <path d="M2.2 7.4h11.6" stroke={C.brand} strokeWidth="1.15" />
+                    </svg>
+                  )}
+                  title="Upload your resume"
+                  subtitle="We will not parse it in this step."
+                  expanded={showResumeOptional}
+                  onToggle={() => setShowResumeOptional((prev) => !prev)}
+                >
+                  <input
+                    ref={resumeInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      handleResumeSelect(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      {resumeFile ? (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.textPrimary,
+                            lineHeight: 1.35,
+                            wordBreak: "break-word",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {resumeFile.name}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 11, color: C.textSecondary }}>
+                          PDF, DOC, DOCX up to 10 MB
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => resumeInputRef.current?.click()}
+                        style={{
+                          border: "1px solid rgba(194,65,12,0.2)",
+                          background: "rgba(194,65,12,0.05)",
+                          color: C.brand,
+                          borderRadius: 10,
+                          padding: "8px 10px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        {resumeFile ? "Replace" : "Attach"}
+                      </button>
+                      {resumeFile ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResumeFile(null);
+                            setResumeError(null);
+                          }}
+                          style={{
+                            border: `1px solid ${C.border}`,
+                            background: "white",
+                            color: C.textMuted,
+                            borderRadius: 10,
+                            padding: "8px 10px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  {resumeError ? (
+                    <div style={{ marginTop: 7, fontSize: 11, fontWeight: 600, color: "#B91C1C" }}>
+                      {resumeError}
+                    </div>
+                  ) : null}
+                </OptionalSection>
+
+                <OptionalSection
+                  icon={(
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M7.2 2.2l1.8 1.8-2.2 2.2L5 4.4l2.2-2.2z" stroke={C.brand} strokeWidth="1.2" />
+                      <path d="M8.9 4.1l3 3c1.1 1.1 1.1 2.9 0 4l-.8.8-4.1-4.1.8-.8c1.1-1.1 2.9-1.1 4 0z" stroke={C.brand} strokeWidth="1.2" />
+                      <path d="M6.9 8.8L4.4 11.3" stroke={C.brand} strokeWidth="1.2" strokeLinecap="round" />
+                      <path d="M3 13l1.2-1.2" stroke={C.brand} strokeWidth="1.2" strokeLinecap="round" />
+                    </svg>
+                  )} title="Any projects to showcase?"
+                  subtitle="Great way to show what you've built"
+                  expanded={showProjects}
+                  onToggle={() => {
+                    if (!showProjects && projects.length === 0)
+                      setProjects([{ name: "", desc: "" }]);
+                    setShowProjects(!showProjects);
+                  }}
+                >
+                  <div className="flex flex-col gap-3">
+                    {projects.map((proj, idx) => (
+                      <div key={idx} className="flex flex-col gap-3">
+                        {idx > 0 && <div style={{ height: 1, background: "rgba(28,25,23,0.06)", margin: "4px 0" }} />}
+                        <Input label="Project name" value={proj.name}
+                          onChange={(v) => { const n = [...projects]; n[idx] = { ...n[idx], name: v }; setProjects(n); }}
+                          placeholder="e.g. Portfolio website" />
+                        <Input label="Brief description" value={proj.desc}
+                          onChange={(v) => { const n = [...projects]; n[idx] = { ...n[idx], desc: v }; setProjects(n); }}
+                          placeholder="What did you build?"
+                          multiline
+                          multilineRows={4}
+                          multilineHeight={76} />
+                      </div>
+                    ))}
+                    <button onClick={() => setProjects((prev) => [...prev, { name: "", desc: "" }])}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        fontSize: 12, fontWeight: 600, color: C.brand,
+                        fontFamily: "Inter, sans-serif", padding: "4px 0", textAlign: "left" as const,
+                      }}>+ Add another</button>
+                  </div>
+                </OptionalSection>
+
+                <OptionalSection
+                  icon={(
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M8 2.2l1.7 3.4 3.8.5-2.8 2.7.7 3.7L8 10.9l-3.4 1.6.7-3.7-2.8-2.7 3.8-.5L8 2.2z"
+                        stroke={C.brand} strokeWidth="1.2" strokeLinejoin="round" />
+                    </svg>
+                  )} title="Any achievements or extracurriculars?"
+                  subtitle="Highlights your impact beyond work"
+                  expanded={showAchievements}
+                  onToggle={() => {
+                    if (!showAchievements && achievements.length === 0)
+                      setAchievements([{ title: "", desc: "" }]);
+                    setShowAchievements(!showAchievements);
+                  }}
+                >
+                  <div className="flex flex-col gap-3">
+                    {achievements.map((item, idx) => (
+                      <div key={idx} className="flex flex-col gap-3">
+                        {idx > 0 && <div style={{ height: 1, background: "rgba(28,25,23,0.06)", margin: "4px 0" }} />}
+                        <Input label="Achievement" value={item.title}
+                          onChange={(v) => { const n = [...achievements]; n[idx] = { ...n[idx], title: v }; setAchievements(n); }}
+                          placeholder="e.g. Award, Conference talk, Leadership milestone" />
+                        <Input label="Brief description" value={item.desc}
+                          onChange={(v) => { const n = [...achievements]; n[idx] = { ...n[idx], desc: v }; setAchievements(n); }}
+                          placeholder="What did you achieve?"
+                          multiline
+                          multilineHeight={76} />
+                      </div>
+                    ))}
+                    <button onClick={() => setAchievements((prev) => [...prev, { title: "", desc: "" }])}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        fontSize: 12, fontWeight: 600, color: C.brand,
+                        fontFamily: "Inter, sans-serif", padding: "4px 0", textAlign: "left" as const,
+                      }}>+ Add another</button>
+                  </div>
+                </OptionalSection>
+          </div>
+        </div>
+        )}
+
         {/* ── Optional (fresher only) ──────────────────────────────── */}
         {profileType === "fresher" && (
         <div>
@@ -2057,6 +2388,98 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           }>Boost your profile (optional)</SectionLabel>
 
           <div className="flex flex-col gap-5">
+                <OptionalSection
+                  icon={(
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2.2" y="3" width="11.6" height="10.6" rx="2" stroke={C.brand} strokeWidth="1.3" />
+                      <path d="M6 3V2.8c0-.44.36-.8.8-.8h2.4c.44 0 .8.36.8.8V3" stroke={C.brand} strokeWidth="1.3" strokeLinecap="round" />
+                      <path d="M2.2 7.4h11.6" stroke={C.brand} strokeWidth="1.15" />
+                    </svg>
+                  )}
+                  title="Upload your resume"
+                  subtitle="We will not parse it in this step."
+                  expanded={showResumeOptional}
+                  onToggle={() => setShowResumeOptional((prev) => !prev)}
+                >
+                  <input
+                    ref={resumeInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      handleResumeSelect(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      {resumeFile ? (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.textPrimary,
+                            lineHeight: 1.35,
+                            wordBreak: "break-word",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {resumeFile.name}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 11, color: C.textSecondary }}>
+                          PDF, DOC, DOCX up to 10 MB
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => resumeInputRef.current?.click()}
+                        style={{
+                          border: "1px solid rgba(194,65,12,0.2)",
+                          background: "rgba(194,65,12,0.05)",
+                          color: C.brand,
+                          borderRadius: 10,
+                          padding: "8px 10px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        {resumeFile ? "Replace" : "Attach"}
+                      </button>
+                      {resumeFile ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResumeFile(null);
+                            setResumeError(null);
+                          }}
+                          style={{
+                            border: `1px solid ${C.border}`,
+                            background: "white",
+                            color: C.textMuted,
+                            borderRadius: 10,
+                            padding: "8px 10px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  {resumeError ? (
+                    <div style={{ marginTop: 7, fontSize: 11, fontWeight: 600, color: "#B91C1C" }}>
+                      {resumeError}
+                    </div>
+                  ) : null}
+                </OptionalSection>
+
                 <OptionalSection
                   icon={(
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

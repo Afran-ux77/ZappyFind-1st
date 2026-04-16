@@ -87,10 +87,12 @@ export type DesktopAppRootProps = {
   setPendingPrefs: React.Dispatch<React.SetStateAction<JobPreferences | null>>;
   prefPrev: Screen;
   setPrefPrev: (s: Screen) => void;
-  jobPrefsResumeStep: 1 | 2 | 3 | 4 | 5 | undefined;
-  setJobPrefsResumeStep: React.Dispatch<React.SetStateAction<1 | 2 | 3 | 4 | 5 | undefined>>;
+  jobPrefsResumeStep: 1 | 2 | 3 | undefined;
+  setJobPrefsResumeStep: React.Dispatch<React.SetStateAction<1 | 2 | 3 | undefined>>;
   profileReturnScreen: Screen;
   setProfileReturnScreen: (s: Screen) => void;
+  profileEditSection?: "personal" | "experience" | "education" | "skills" | "preferences";
+  setProfileEditSection: (s: "personal" | "experience" | "education" | "skills" | "preferences" | undefined) => void;
   profileForEdit: FullProfile | null;
   hasCompletedInterview: boolean;
   setHasCompletedInterview: (v: boolean) => void;
@@ -129,6 +131,8 @@ export function DesktopAppRoot({
   setJobPrefsResumeStep,
   profileReturnScreen,
   setProfileReturnScreen,
+  profileEditSection,
+  setProfileEditSection,
   profileForEdit,
   hasCompletedInterview,
   setHasCompletedInterview,
@@ -355,6 +359,7 @@ export function DesktopAppRoot({
               <ProfileReviewScreen
                 mode="edit"
                 profile={profileForEdit}
+                initialScrollSection={profileEditSection}
                 onBack={() => goTo(profileReturnScreen, "back")}
                 onSave={(next) => {
                   setParsedProfile(next);
@@ -387,7 +392,7 @@ export function DesktopAppRoot({
                     writeSession({ profile: updated });
                     return updated;
                   });
-                  setJobPrefsResumeStep(5);
+                  setJobPrefsResumeStep(3);
                   goTo("welcome", "forward");
                 }}
                 onBack={() => {
@@ -428,8 +433,9 @@ export function DesktopAppRoot({
                 transparentSurface
                 profile={parsedProfile}
                 email={email}
-                onEditProfile={() => {
+                onEditProfile={(section) => {
                   setProfileReturnScreen("profileSummary");
+                  setProfileEditSection(section);
                   goTo("profileEdit", "forward");
                 }}
                 onContinue={() => goTo("matchCelebration", "forward")}
@@ -570,6 +576,7 @@ export function DesktopAppRoot({
                 onNavigateProfile={() => {}}
                 onEditProfile={() => {
                   setProfileReturnScreen("jobSeekerProfile");
+                  setProfileEditSection(undefined);
                   goTo("profileEdit", "forward");
                 }}
               />,

@@ -2068,7 +2068,7 @@ function SearchContent({
             textTransform: "uppercase" as const,
           }}
         >
-          Browse by category
+          Browse by department
         </div>
         <div
           style={{
@@ -2160,7 +2160,7 @@ function SearchContent({
             margin: "0 0 20px",
           }}
         >
-          Try different keywords or browse categories above.
+          Try different keywords or browse departments above.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
           {SEARCH_SUGGESTIONS.slice(0, 4).map((s) => (

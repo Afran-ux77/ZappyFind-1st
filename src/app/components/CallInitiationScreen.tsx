@@ -47,7 +47,7 @@ const OUTCOMES = [
   {
     icon: <Users size={15} color={C.brand} strokeWidth={2} />,
     title: "Direct recruiter intros",
-    desc: "Zappy pitches you to hiring managers — no cold applications",
+    desc: "Zappy pitches you to hiring managers, no cold applications",
   },
   {
     icon: <Eye size={15} color={C.brand} strokeWidth={2} />,
