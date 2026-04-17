@@ -32,9 +32,9 @@ const C = {
   textPrimary: "#1C1917",
   textMuted: "#78716C",
   textSec: "#A8A29E",
-  avatarGrad: "linear-gradient(145deg, #FFF4ED 0%, #FFE8D9 40%, #FFDCC8 100%)",
-  avatarShadow: "0 6px 18px rgba(255, 140, 100, 0.22)",
-  avatarInitial: "#B45309",
+  avatarGrad: "#FFE7D6",
+  avatarShadow: "none",
+  avatarInitial: "#C2410C",
 };
 
 const prefRowIconInline: React.CSSProperties = {
@@ -46,10 +46,10 @@ const prefRowIconInline: React.CSSProperties = {
 };
 
 const PROFILE_MILESTONES: Array<{ id: string; title: string; subtitle: string; dateLabel: string }> = [
-  { id: "m1", title: "Account created", subtitle: "Your ZappyFind profile went live", dateLabel: "Jan 8, 2026" },
-  { id: "m2", title: "AI voice call completed", subtitle: "We captured your goals and context", dateLabel: "Jan 18, 2026" },
-  { id: "m3", title: "56 curated jobs suggested", subtitle: "Roles matched to your preferences", dateLabel: "Feb 3, 2026" },
   { id: "m4", title: "Applied to 12 jobs", subtitle: "Via Zappy Apply and partner postings", dateLabel: "Apr 17, 2026" },
+  { id: "m3", title: "56 curated jobs suggested", subtitle: "Roles matched to your preferences", dateLabel: "Feb 3, 2026" },
+  { id: "m2", title: "AI voice call completed", subtitle: "We captured your goals and context", dateLabel: "Jan 18, 2026" },
+  { id: "m1", title: "Account created", subtitle: "Your ZappyFind profile went live", dateLabel: "Jan 8, 2026" },
 ];
 
 const TIMELINE_INITIAL_VISIBLE = 2;
@@ -668,7 +668,7 @@ function CoachBulletBlock({
             style={{
               fontSize: 12.5,
               lineHeight: 1.52,
-              color: "#78716C",
+              color: "#57534E",
               marginTop: i > 0 ? 8 : 0,
               paddingLeft: 15,
               position: "relative",
@@ -706,7 +706,9 @@ function ProfileMilestoneTimeline({
   expanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const shown = expanded ? milestones : milestones.slice(0, Math.min(initialVisible, milestones.length));
+  const shown = expanded
+    ? milestones
+    : milestones.slice(0, Math.min(initialVisible, milestones.length));
   const hiddenCount = Math.max(0, milestones.length - initialVisible);
   const canExpand = milestones.length > initialVisible;
 

@@ -3,6 +3,7 @@ import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "
 import {
   Bookmark,
   Briefcase,
+  House,
   Check,
   ChevronRight,
   Eye,
@@ -18,6 +19,7 @@ import {
   CalendarClock,
   Send,
   ThumbsDown,
+  User,
 } from "lucide-react";
 
 export type Job = {
@@ -951,16 +953,19 @@ export function JobReviewScreen({
                   {
                     key: "home",
                     text: "Home",
+                    icon: <House size={14} strokeWidth={2} />,
                     onClick: onNavigateHome,
                   },
                   {
                     key: "jobs",
                     text: "Jobs",
+                    icon: <Briefcase size={14} strokeWidth={2} />,
                     onClick: onNavigateJobs,
                   },
                   {
                     key: "profile",
                     text: "Profile",
+                    icon: <User size={14} strokeWidth={2} />,
                     onClick: onNavigateProfile,
                   },
                 ].map((item) => {
@@ -993,6 +998,18 @@ export function JobReviewScreen({
                         opacity: active ? 1 : 0.95,
                       }}
                     >
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: active ? "#1A1613" : "rgba(107,101,96,1)",
+                          opacity: active ? 1 : 0.9,
+                          marginRight: 8,
+                        }}
+                      >
+                        {item.icon}
+                      </span>
                       <span>{item.text}</span>
                     </button>
                   );
