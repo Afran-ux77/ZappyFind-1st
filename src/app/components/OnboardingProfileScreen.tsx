@@ -700,7 +700,6 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [moreExp, setMoreExp] = useState<Array<{
     company: string; title: string;
     startMonth: string; startYear: string;
-    current: boolean;
     endMonth: string; endYear: string;
   }>>([]);
 
@@ -827,7 +826,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
       moreExp.forEach((e, i) => {
         if (e.company.trim()) {
           const fromLabel = [e.startMonth, e.startYear].filter(Boolean).join(" ").trim();
-          const toLabel = e.current ? "Present" : [e.endMonth, e.endYear].filter(Boolean).join(" ").trim();
+          const toLabel = [e.endMonth, e.endYear].filter(Boolean).join(" ").trim();
           experiences.push({
             id: `exp-${i + 1}`, company: e.company.trim(), role: e.title.trim(),
             duration: fromLabel || toLabel ? `${fromLabel || "—"} – ${toLabel || "—"}` : "",
@@ -1105,72 +1104,71 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   placeholder="Your full name" required
                   error={showRequiredErrors && missingFullName}
                   errorText="Full Name is required." />
-                <Input label="Location" value={location} onChange={setLocation}
-                  placeholder="e.g. Bangalore" required
-                  error={showRequiredErrors && missingLocation}
-                  errorText="Location is required." />
+                {isPhoneLogin ? (
+                  <Input label="Email" value={userEmail} onChange={setUserEmail}
+                    placeholder="you@email.com" inputMode="email" required
+                    error={showRequiredErrors && missingEmail}
+                    errorText="Email is required." />
+                ) : (
+                  <Input label="Email" value={userEmail} readOnly required
+                    error={showRequiredErrors && missingEmail}
+                    errorText="Email is required." />
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {isPhoneLogin ? (
-                  <>
-                    <Input label="Email" value={userEmail} onChange={setUserEmail}
-                      placeholder="you@email.com" inputMode="email" required
-                      error={showRequiredErrors && missingEmail}
-                      errorText="Email is required." />
-                    <Input label="Phone" value={phone} readOnly required
-                      error={showRequiredErrors && missingPhone}
-                      errorText="Phone is required."
-                      rightAdornment={
-                        <span style={{
-                          width: 20, height: 20, borderRadius: 999,
-                          background: C.success,
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          boxShadow: "0 2px 6px rgba(5,150,105,0.25)",
-                        }}>
-                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                            <path d="M2.2 6.3l2.3 2.3L9.9 3.2" stroke="white"
-                              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                      }
-                    />
-                  </>
+                  <Input label="Phone" value={phone} readOnly required
+                    error={showRequiredErrors && missingPhone}
+                    errorText="Phone is required."
+                    rightAdornment={
+                      <span style={{
+                        width: 20, height: 20, borderRadius: 999,
+                        background: C.success,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: "0 2px 6px rgba(5,150,105,0.25)",
+                      }}>
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.2 6.3l2.3 2.3L9.9 3.2" stroke="white"
+                            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    }
+                  />
                 ) : (
-                  <>
-                    <Input label="Email" value={userEmail} readOnly required
-                      error={showRequiredErrors && missingEmail}
-                      errorText="Email is required." />
-                    <Input label="Phone" value={phone}
-                      onChange={(v) => {
-                        setPhone(v);
-                        if (!v.trim() || !isValidPhone(v)) {
-                          setOtpStage("idle");
-                          setOtp("");
-                          setOtpError(null);
-                        }
-                      }}
-                      placeholder="+91 98765 43210"
-                      inputMode="tel"
-                      required
-                      error={showRequiredErrors && (missingPhone || missingPhoneVerification)}
-                      errorText={missingPhone ? "Phone is required." : "Please verify your phone number."}
-                      rightAdornment={phoneVerified ? (
-                        <span style={{
-                          width: 20, height: 20, borderRadius: 999,
-                          background: C.success,
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          boxShadow: "0 2px 6px rgba(5,150,105,0.25)",
-                        }}>
-                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                            <path d="M2.2 6.3l2.3 2.3L9.9 3.2" stroke="white"
-                              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                      ) : undefined}
-                    />
-                  </>
+                  <Input label="Phone" value={phone}
+                    onChange={(v) => {
+                      setPhone(v);
+                      if (!v.trim() || !isValidPhone(v)) {
+                        setOtpStage("idle");
+                        setOtp("");
+                        setOtpError(null);
+                      }
+                    }}
+                    placeholder="+91 98765 43210"
+                    inputMode="tel"
+                    required
+                    error={showRequiredErrors && (missingPhone || missingPhoneVerification)}
+                    errorText={missingPhone ? "Phone is required." : "Please verify your phone number."}
+                    rightAdornment={phoneVerified ? (
+                      <span style={{
+                        width: 20, height: 20, borderRadius: 999,
+                        background: C.success,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: "0 2px 6px rgba(5,150,105,0.25)",
+                      }}>
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.2 6.3l2.3 2.3L9.9 3.2" stroke="white"
+                            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    ) : undefined}
+                  />
                 )}
+                <Input label="Location" value={location} onChange={setLocation}
+                  placeholder="e.g. Bangalore" required
+                  error={showRequiredErrors && missingLocation}
+                  errorText="Location is required." />
               </div>
 
               {/* ── Phone OTP ─────────────────────────────────────── */}
@@ -1693,54 +1691,19 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           }}
                         />
                       </div>
-                      <label
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginTop: 8,
-                          cursor: "pointer",
-                          userSelect: "none",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: C.textPrimary,
-                          letterSpacing: "-0.01em",
-                          fontFamily: "Inter, sans-serif",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={exp.current}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
+                      <div className="mt-3">
+                        <Input
+                          label="To month & year"
+                          type="month"
+                          value={toMonthInputValue(exp.endMonth, exp.endYear)}
+                          onChange={(value) => {
+                            const { monthLabel, year } = fromMonthInputValue(value);
                             const n = [...moreExp];
-                            n[idx] = {
-                              ...n[idx],
-                              current: checked,
-                              endMonth: checked ? "" : n[idx].endMonth,
-                              endYear: checked ? "" : n[idx].endYear,
-                            };
+                            n[idx] = { ...n[idx], endMonth: monthLabel, endYear: year };
                             setMoreExp(n);
                           }}
-                          style={{ accentColor: C.brand }}
                         />
-                        Currently working here
-                      </label>
-                      {!exp.current && (
-                        <div className="mt-3">
-                          <Input
-                            label="To month & year"
-                            type="month"
-                            value={toMonthInputValue(exp.endMonth, exp.endYear)}
-                            onChange={(value) => {
-                              const { monthLabel, year } = fromMonthInputValue(value);
-                              const n = [...moreExp];
-                              n[idx] = { ...n[idx], endMonth: monthLabel, endYear: year };
-                              setMoreExp(n);
-                            }}
-                          />
-                        </div>
-                      )}
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -1749,7 +1712,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   onClick={() =>
                     setMoreExp((prev) => [
                       ...prev,
-                      { company: "", title: "", startMonth: "", startYear: "", current: false, endMonth: "", endYear: "" },
+                      { company: "", title: "", startMonth: "", startYear: "", endMonth: "", endYear: "" },
                     ])
                   }
                   style={{
