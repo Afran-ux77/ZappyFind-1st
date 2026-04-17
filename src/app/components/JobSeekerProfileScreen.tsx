@@ -1,8 +1,10 @@
 import {
   useState,
   useEffect,
+  useRef,
   cloneElement,
   isValidElement,
+  type ChangeEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
@@ -18,6 +20,8 @@ import {
   Target,
   Building2,
   IndianRupee,
+  Camera,
+  ChevronDown,
 } from "lucide-react";
 import type { FullProfile } from "./WelcomeScreen";
 import { DashboardHeader, SettingsBottomSheet } from "./DashboardPreviewScreen";
@@ -28,8 +32,9 @@ const C = {
   textPrimary: "#1C1917",
   textMuted: "#78716C",
   textSec: "#A8A29E",
-  avatarGrad: "linear-gradient(135deg, #FFB36B 0%, #FF6A2B 100%)",
-  avatarShadow: "0 8px 22px rgba(255,106,43,0.35)",
+  avatarGrad: "linear-gradient(145deg, #FFF4ED 0%, #FFE8D9 40%, #FFDCC8 100%)",
+  avatarShadow: "0 6px 18px rgba(255, 140, 100, 0.22)",
+  avatarInitial: "#B45309",
 };
 
 const prefRowIconInline: React.CSSProperties = {
@@ -39,6 +44,15 @@ const prefRowIconInline: React.CSSProperties = {
   flexShrink: 0,
   marginTop: 2,
 };
+
+const PROFILE_MILESTONES: Array<{ id: string; title: string; subtitle: string; dateLabel: string }> = [
+  { id: "m1", title: "Account created", subtitle: "Your ZappyFind profile went live", dateLabel: "Jan 8, 2026" },
+  { id: "m2", title: "AI voice call completed", subtitle: "We captured your goals and context", dateLabel: "Jan 18, 2026" },
+  { id: "m3", title: "56 curated jobs suggested", subtitle: "Roles matched to your preferences", dateLabel: "Feb 3, 2026" },
+  { id: "m4", title: "Applied to 12 jobs", subtitle: "Via Zappy Apply and partner postings", dateLabel: "Apr 17, 2026" },
+];
+
+const TIMELINE_INITIAL_VISIBLE = 2;
 
 interface JobSeekerProfileScreenProps {
   firstName: string;
@@ -64,6 +78,9 @@ export function JobSeekerProfileScreen({
   const isDesktop = layout === "desktop";
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarObjectUrl, setAvatarObjectUrl] = useState<string | null>(null);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
   const displayName = firstName || "Alex";
 
   const anyProfile = (profile || {}) as Record<string, unknown>;
@@ -127,16 +144,46 @@ export function JobSeekerProfileScreen({
     (experiences[0] as { description?: string } | undefined)?.description ||
     "Experience across product teams, shipping polished interfaces and scalable design systems.";
 
-  const aiSummary =
-    (typeof anyProfile.summary === "string" && anyProfile.summary) ||
-    `ZappyFind sees you as a ${currentRole.toLowerCase()} · ${years.toLowerCase()}, strong communication skills, and a track record in relationship-driven product work. You’re currently targeting ${desiredRole.toLowerCase()} in modern, growth‑oriented teams.`;
+  const workingWellItems: string[] = [
+    (typeof anyProfile.summary === "string" && String(anyProfile.summary).trim())
+      ? String(anyProfile.summary).trim()
+      : `Your profile reads clearly as a ${currentRole.toLowerCase()} with ${years.toLowerCase()} and solid communication habits.`,
+    `Strong alignment with ${desiredRole.toLowerCase()} and ${workSetup.toLowerCase()} teams you’re targeting.`,
+  ];
+
+  const improveItems: string[] = [
+    `Add one more shipped case study so senior-level conversations have sharper proof points.`,
+    `Refresh salary and location occasionally so matches stay in your comfort zone.`,
+  ];
 
   const firstInitial = name.trim().charAt(0).toUpperCase() || "A";
+
+  const openPhotoPicker = () => fileInputRef.current?.click();
+
+  const onAvatarFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file?.type.startsWith("image/")) {
+      e.target.value = "";
+      return;
+    }
+    setAvatarObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    e.target.value = "";
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 280);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (avatarObjectUrl) URL.revokeObjectURL(avatarObjectUrl);
+    },
+    [avatarObjectUrl],
+  );
 
   return (
     <div
@@ -174,7 +221,7 @@ export function JobSeekerProfileScreen({
       >
         <div
           style={{
-            padding: "28px 20px 120px",
+            padding: "28px 20px calc(32px + env(safe-area-inset-bottom))",
             maxWidth: isDesktop ? 560 : undefined,
             marginLeft: isDesktop ? "auto" : undefined,
             marginRight: isDesktop ? "auto" : undefined,
@@ -188,30 +235,81 @@ export function JobSeekerProfileScreen({
             transition={{ duration: 0.4, delay: 0.02, ease: EASE }}
             style={{ marginBottom: 24 }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <div
                 style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 16,
-                  background: C.avatarGrad,
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: C.avatarShadow,
+                  gap: 8,
                   flexShrink: 0,
                 }}
               >
-                <span
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={onAvatarFileChange}
+                />
+                <button
+                  type="button"
+                  onClick={openPhotoPicker}
+                  aria-label="Upload profile photo from your device"
                   style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: "white",
-                    letterSpacing: "-0.03em",
+                    width: 52,
+                    height: 52,
+                    padding: 0,
+                    border: "none",
+                    borderRadius: 16,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    overflow: "hidden",
+                    boxShadow: C.avatarShadow,
+                    background: avatarObjectUrl ? "transparent" : C.avatarGrad,
+                    backgroundImage: avatarObjectUrl ? `url(${avatarObjectUrl})` : undefined,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {firstInitial}
-                </span>
+                  {!avatarObjectUrl ? (
+                    <span
+                      style={{
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: C.avatarInitial,
+                        letterSpacing: "-0.03em",
+                      }}
+                    >
+                      {firstInitial}
+                    </span>
+                  ) : null}
+                </button>
+                <button
+                  type="button"
+                  onClick={openPhotoPicker}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    border: "none",
+                    background: "rgba(28,25,23,0.04)",
+                    color: C.textMuted,
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    letterSpacing: "-0.02em",
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
+                  <Camera size={13} strokeWidth={2} aria-hidden />
+                  {avatarObjectUrl ? "Change photo" : "Add photo"}
+                </button>
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h1
@@ -222,6 +320,7 @@ export function JobSeekerProfileScreen({
                     letterSpacing: "-0.04em",
                     lineHeight: 1.15,
                     margin: 0,
+                    minWidth: 0,
                   }}
                 >
                   {name}
@@ -255,6 +354,30 @@ export function JobSeekerProfileScreen({
               <ContactLine icon={<Phone size={15} strokeWidth={2} />} text={phoneDisplay} />
               <ContactLine icon={<MapPin size={15} strokeWidth={2} />} text={locationDisplay} />
             </div>
+
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.97 }}
+              onClick={onEditProfile}
+              aria-label="Edit profile"
+              style={{
+                width: "100%",
+                marginTop: 18,
+                height: 50,
+                borderRadius: 14,
+                border: "1px solid rgba(28, 25, 23, 0.12)",
+                background: "#FFFFFF",
+                color: C.textMuted,
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+                boxShadow: "0 1px 2px rgba(28,25,23,0.06)",
+              }}
+            >
+              Edit profile
+            </motion.button>
           </motion.div>
 
           {/* Zappy's read — same glass treatment as ProfileSummaryScreen */}
@@ -287,7 +410,7 @@ export function JobSeekerProfileScreen({
                 background: "linear-gradient(90deg, transparent, rgba(234,88,12,0.35), transparent)",
               }}
             />
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, position: "relative", zIndex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, position: "relative", zIndex: 1 }}>
               <div
                 style={{
                   width: 22,
@@ -314,20 +437,30 @@ export function JobSeekerProfileScreen({
               </span>
             </div>
 
-            <p
+            <div
               style={{
-                fontSize: 12.5,
-                lineHeight: 1.55,
-                color: "#78716C",
-                letterSpacing: "-0.01em",
-                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
                 position: "relative",
                 zIndex: 1,
               }}
             >
-              {aiSummary}
-            </p>
+              <CoachBulletBlock title="Working well" variant="positive" lines={workingWellItems} />
+              <div
+                aria-hidden
+                style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(28,25,23,0.07), transparent)" }}
+              />
+              <CoachBulletBlock title="Could improve" variant="grow" lines={improveItems} />
+            </div>
           </motion.div>
+
+          <ProfileMilestoneTimeline
+            milestones={PROFILE_MILESTONES}
+            initialVisible={TIMELINE_INITIAL_VISIBLE}
+            expanded={timelineExpanded}
+            onToggleExpand={() => setTimelineExpanded((v) => !v)}
+          />
 
           <AnimatePresence>
             {ready && (
@@ -494,50 +627,215 @@ export function JobSeekerProfileScreen({
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.35, ease: EASE }}
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: "14px 20px calc(14px + env(safe-area-inset-bottom))",
-          background: "rgba(253,251,248,0.92)",
-          backdropFilter: "blur(16px)",
-          zIndex: 10,
-        }}
-      >
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.97 }}
-          onClick={onEditProfile}
-          style={{
-            width: "100%",
-            height: 50,
-            borderRadius: 14,
-            border: "none",
-            background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
-            color: "white",
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            boxShadow: "0 6px 24px rgba(234,88,12,0.3)",
-          }}
-        >
-          Edit profile
-        </motion.button>
-      </motion.div>
-
       <SettingsBottomSheet
         open={settingsOpen}
         displayName={displayName}
         onClose={() => setSettingsOpen(false)}
       />
     </div>
+  );
+}
+
+function CoachBulletBlock({
+  title,
+  lines,
+  variant,
+}: {
+  title: string;
+  lines: string[];
+  variant: "positive" | "grow";
+}) {
+  const labelColor = variant === "positive" ? "#047857" : "#B45309";
+  const dotBg = variant === "positive" ? "rgba(5,150,105,0.4)" : "rgba(217,119,6,0.4)";
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: labelColor,
+          marginBottom: 8,
+        }}
+      >
+        {title}
+      </div>
+      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+        {lines.map((line, i) => (
+          <li
+            key={i}
+            style={{
+              fontSize: 12.5,
+              lineHeight: 1.52,
+              color: "#78716C",
+              marginTop: i > 0 ? 8 : 0,
+              paddingLeft: 15,
+              position: "relative",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: 0,
+                top: "0.58em",
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: dotBg,
+              }}
+            />
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ProfileMilestoneTimeline({
+  milestones,
+  initialVisible,
+  expanded,
+  onToggleExpand,
+}: {
+  milestones: Array<{ id: string; title: string; subtitle: string; dateLabel: string }>;
+  initialVisible: number;
+  expanded: boolean;
+  onToggleExpand: () => void;
+}) {
+  const shown = expanded ? milestones : milestones.slice(0, Math.min(initialVisible, milestones.length));
+  const hiddenCount = Math.max(0, milestones.length - initialVisible);
+  const canExpand = milestones.length > initialVisible;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.14, ease: EASE }}
+      style={{ marginBottom: 20 }}
+    >
+      <div style={{ marginBottom: 14 }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#78716C",
+            letterSpacing: "0.09em",
+            textTransform: "uppercase",
+          }}
+        >
+          Your journey
+        </span>
+      </div>
+      <div style={{ position: "relative", paddingLeft: 20 }}>
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: 6,
+            top: 10,
+            bottom: 10,
+            width: 2,
+            borderRadius: 2,
+            background: "linear-gradient(180deg, rgba(234,88,12,0.45) 0%, rgba(28,25,23,0.1) 100%)",
+          }}
+        />
+        {shown.map((m, i) => (
+          <div
+            key={m.id}
+            style={{
+              position: "relative",
+              paddingBottom: i < shown.length - 1 ? 14 : 0,
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: -14,
+                top: 5,
+                width: 11,
+                height: 11,
+                borderRadius: "50%",
+                background: "#FFFFFF",
+                border: "2px solid rgba(234,88,12,0.5)",
+                boxShadow: "0 0 0 3px rgba(253,251,248,1)",
+              }}
+            />
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "#A8A29E",
+                letterSpacing: "-0.01em",
+                marginBottom: 3,
+              }}
+            >
+              {m.dateLabel}
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#1C1917",
+                letterSpacing: "-0.02em",
+                lineHeight: 1.25,
+              }}
+            >
+              {m.title}
+            </div>
+            <p
+              style={{
+                fontSize: 12,
+                color: "#78716C",
+                margin: "4px 0 0",
+                lineHeight: 1.4,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {m.subtitle}
+            </p>
+          </div>
+        ))}
+      </div>
+      {canExpand ? (
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          aria-expanded={expanded}
+          style={{
+            marginTop: 4,
+            padding: "8px 4px",
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontFamily: "Inter, sans-serif",
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: "#EA580C",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {expanded ? (
+            <>
+              Show less
+              <ChevronDown size={16} strokeWidth={2.2} style={{ transform: "rotate(180deg)" }} aria-hidden />
+            </>
+          ) : (
+            <>
+              Show {hiddenCount} more {hiddenCount === 1 ? "event" : "events"}
+              <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
+            </>
+          )}
+        </button>
+      ) : null}
+    </motion.div>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { FullProfile } from "./WelcomeScreen";
 import {
@@ -29,6 +29,7 @@ import {
   Layers,
   Lock,
   Zap,
+  Clock3,
 } from "lucide-react";
 
 // ── Design Tokens ────────────────────────────────────────────────────────────
@@ -73,7 +74,6 @@ const MOCK_JOBS = [
     title: "Senior Product Designer",
     company: "Zappyhire",
     logoLetter: "R",
-    logoBg: "#E8F0FF",
     logoColor: "#2D6AFF",
     matchScore: 94,
     salary: "₹28L – ₹35L",
@@ -89,7 +89,6 @@ const MOCK_JOBS = [
     title: "Product Designer II",
     company: "ZappyVue",
     logoLetter: "S",
-    logoBg: "#FFF3E8",
     logoColor: "#FC8019",
     matchScore: 91,
     salary: "₹24L – ₹30L",
@@ -105,7 +104,6 @@ const MOCK_JOBS = [
     title: "UX Design Lead",
     company: "ZappyCore",
     logoLetter: "P",
-    logoBg: "#F3ECFF",
     logoColor: "#5F259F",
     matchScore: 88,
     salary: "₹32L – ₹40L",
@@ -281,13 +279,6 @@ const GROWTH_INSIGHTS = [
 
 const GROWTH_PLAN_STEPS = [
   {
-    title: "Record your intro video",
-    description: "Candidates with video get 3× more recruiter attention",
-    impact: "High impact",
-    impactColor: "#059669",
-    iconType: "video" as const,
-  },
-  {
     title: "Add in-demand skills",
     description: "SQL and Data Storytelling are top-requested for your target roles",
     impact: "Quick win",
@@ -302,10 +293,10 @@ const GROWTH_PLAN_STEPS = [
     iconType: "file" as const,
   },
   {
-    title: "Practice with Zappy AI",
-    description: "One session can improve your interview score by up to 20%",
-    impact: "High impact",
-    impactColor: "#059669",
+    title: "Retake ZappyFind Call",
+    description: "Paid add-on: one session can improve your interview score by up to 20%",
+    impact: "Paid",
+    impactColor: "#D97706",
     iconType: "mic" as const,
   },
 ];
@@ -367,7 +358,6 @@ const LOW_PERF_JOBS = [
     title: "Junior Product Designer",
     company: "ZappyOrbit",
     logoLetter: "C",
-    logoBg: "#EEF2FF",
     logoColor: "#4F46E5",
     matchScore: 62,
     salary: "₹12L – ₹18L",
@@ -383,7 +373,6 @@ const LOW_PERF_JOBS = [
     title: "UI Designer",
     company: "ZappyNest",
     logoLetter: "F",
-    logoBg: "#E8F5E9",
     logoColor: "#2E7D32",
     matchScore: 55,
     salary: "₹10L – ₹16L",
@@ -394,9 +383,42 @@ const LOW_PERF_JOBS = [
     postedAgo: "1d ago",
     tags: ["SaaS", "Mentorship"],
   },
+  {
+    id: "lp3",
+    title: "Associate Product Designer",
+    company: "ZappyLabs",
+    logoLetter: "Z",
+    logoColor: "#C2410C",
+    matchScore: 58,
+    salary: "₹11L – ₹17L",
+    location: "Kochi",
+    locationType: "Hybrid",
+    context:
+      "You match their early-career product design path, and this role offers structured mentorship with exposure to end-to-end product work.",
+    postedAgo: "2d ago",
+    tags: ["Product", "Early-career"],
+  },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Same logo tile treatment as Applied / review job cards in JobReviewScreen. */
+function jobLogoAvatarStyle(logoColor: string): CSSProperties {
+  return {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    background: `linear-gradient(145deg, ${logoColor}26 0%, ${logoColor}0F 55%, #FFFFFF 100%)`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: logoColor,
+    fontSize: 15,
+    fontWeight: 700,
+    flexShrink: 0,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
+  };
+}
 
 function getTimeGreeting(): string {
   const h = new Date().getHours();
@@ -437,6 +459,8 @@ export function DashboardHeader({
   displayName,
   onAvatarClick,
   isLowPerformer,
+  caseOptions,
+  activeCaseKey,
   currentPage,
   onNavigateHome,
   onNavigateJobs,
@@ -446,6 +470,8 @@ export function DashboardHeader({
   displayName: string;
   onAvatarClick?: () => void;
   isLowPerformer?: boolean;
+  caseOptions?: Array<{ key: string; label: string; onSelect: () => void }>;
+  activeCaseKey?: string;
   currentPage: "home" | "jobs" | "profile";
   onNavigateHome?: () => void;
   onNavigateJobs?: () => void;
@@ -454,16 +480,21 @@ export function DashboardHeader({
 }) {
   const initial = displayName.charAt(0).toUpperCase();
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [caseMenuOpen, setCaseMenuOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement | null>(null);
+  const caseMenuRef = useRef<HTMLDivElement | null>(null);
   const label =
     currentPage === "jobs" ? "Jobs" : currentPage === "profile" ? "Profile" : "Home";
 
   useEffect(() => {
     if (!switcherOpen) return;
     const handlePointerDown = (event: MouseEvent) => {
-      if (!switcherRef.current) return;
-      if (!switcherRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (switcherRef.current && !switcherRef.current.contains(target)) {
         setSwitcherOpen(false);
+      }
+      if (caseMenuRef.current && !caseMenuRef.current.contains(target)) {
+        setCaseMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handlePointerDown);
@@ -617,31 +648,91 @@ export function DashboardHeader({
           <Settings size={16} color={T.textSec} strokeWidth={1.9} />
         </motion.button>
 
-        <div
-          onClick={onAvatarClick}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 999,
-            background:
-              "linear-gradient(135deg, rgba(255,140,90,0.15) 0%, rgba(255,106,43,0.28) 100%)",
-            border: "1.5px solid rgba(234,88,12,0.18)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 13,
-            fontWeight: 600,
-            color: T.accent,
-            letterSpacing: "-0.02em",
-            cursor: onAvatarClick ? "pointer" : "default",
-            outline: isLowPerformer
-              ? "2px solid rgba(234,88,12,0.5)"
-              : "none",
-            outlineOffset: 2,
-            transition: "outline 0.2s ease",
-          }}
-        >
-          {initial}
+        <div ref={caseMenuRef} style={{ position: "relative" }}>
+          <div
+            onClick={() => {
+              if (caseOptions?.length) {
+                setCaseMenuOpen((v) => !v);
+                return;
+              }
+              onAvatarClick?.();
+            }}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 999,
+              background:
+                "linear-gradient(135deg, rgba(255,140,90,0.15) 0%, rgba(255,106,43,0.28) 100%)",
+              border: "1.5px solid rgba(234,88,12,0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 13,
+              fontWeight: 600,
+              color: T.accent,
+              letterSpacing: "-0.02em",
+              cursor: (caseOptions?.length || onAvatarClick) ? "pointer" : "default",
+              outline: isLowPerformer
+                ? "2px solid rgba(234,88,12,0.5)"
+                : "none",
+              outlineOffset: 2,
+              transition: "outline 0.2s ease",
+            }}
+          >
+            {initial}
+          </div>
+
+          {caseOptions?.length && caseMenuOpen && (
+            <div
+              role="menu"
+              style={{
+                position: "absolute",
+                top: 40,
+                right: 0,
+                minWidth: 140,
+                borderRadius: 12,
+                padding: 6,
+                background: "#FFFFFF",
+                border: "1px solid rgba(28,25,23,0.08)",
+                boxShadow:
+                  "0 10px 30px rgba(28,25,23,0.10), 0 2px 6px rgba(28,25,23,0.06)",
+              }}
+            >
+              {caseOptions.map((item) => {
+                const active = item.key === activeCaseKey;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    role="menuitem"
+                    disabled={active}
+                    onClick={() => {
+                      setCaseMenuOpen(false);
+                      item.onSelect();
+                    }}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background: active ? "rgba(28,25,23,0.04)" : "transparent",
+                      cursor: active ? "default" : "pointer",
+                      padding: "9px 10px",
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      fontFamily: T.sans,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: active ? T.text : T.textSec,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </header>
@@ -871,9 +962,26 @@ export function SettingsBottomSheet({
                       </div>
                       <div>
                         <div style={{ fontSize: 12, color: T.textTer, marginBottom: 6 }}>Primary Email</div>
-                        <div style={{ borderRadius: 10, border: `1px solid ${T.border}`, background: "#FFFFFF", padding: "11px 12px", color: T.text }}>
-                          afransajeeb@gmail.com
-                        </div>
+                        <input
+                          type="email"
+                          value="afransajeeb@gmail.com"
+                          readOnly
+                          disabled
+                          aria-label="Primary email (read-only)"
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            borderRadius: 10,
+                            border: `1px solid ${T.border}`,
+                            background: "rgba(28,25,23,0.04)",
+                            padding: "11px 12px",
+                            color: T.textTer,
+                            fontSize: 14,
+                            fontFamily: T.sans,
+                            cursor: "not-allowed",
+                            outline: "none",
+                          }}
+                        />
                       </div>
                     </div>
                   </motion.div>
@@ -973,28 +1081,6 @@ export function SettingsBottomSheet({
                   >
                     <h3 style={{ margin: 0, fontSize: 25, fontFamily: T.serif, fontWeight: 400, color: T.text }}>Account</h3>
                     <p style={{ margin: "4px 0 16px", color: T.textSec, fontSize: 13 }}>Manage your account settings</p>
-                    <div style={{ borderRadius: 14, border: `1px solid ${T.border}`, background: "#FFFFFF", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                      {["Change password", "Manage account settings", "Logout"].map((label) => (
-                        <button
-                          key={label}
-                          type="button"
-                          style={{
-                            height: 40,
-                            borderRadius: 10,
-                            border: "none",
-                            background: "rgba(28,25,23,0.03)",
-                            color: T.text,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            textAlign: "left",
-                            padding: "0 12px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
                     <div
                       style={{
                         marginTop: 16,
@@ -1051,6 +1137,10 @@ function MatchHeroCard({
   topPercentile,
   totalCandidates,
   hasCompletedInterview,
+  retryMode = false,
+  paidRetryMode = false,
+  analysisMode = false,
+  internetFallbackMode = false,
   onStartInterview,
   onViewSaved,
 }: {
@@ -1065,6 +1155,10 @@ function MatchHeroCard({
   topPercentile: number;
   totalCandidates: number;
   hasCompletedInterview: boolean;
+  retryMode?: boolean;
+  paidRetryMode?: boolean;
+  analysisMode?: boolean;
+  internetFallbackMode?: boolean;
   onStartInterview: () => void;
   onViewSaved: () => void;
 }) {
@@ -1126,22 +1220,56 @@ function MatchHeroCard({
           </span>
         </h1>
         {hasCompletedInterview ? (
-          <p
-            style={{
-              fontSize: 13,
-              color: T.textSec,
-              marginTop: 6,
-              letterSpacing: "-0.01em",
-              lineHeight: 1.5,
-              margin: "6px 0 0",
-            }}
-          >
-            You're in the{" "}
-            <strong style={{ color: T.accent, fontWeight: 700 }}>
-              top {topPercentile}%
-            </strong>{" "}
-            of {totalCandidates.toLocaleString()} {roleLabel} candidates on ZappyFind
-          </p>
+          analysisMode ? (
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <motion.span
+                  animate={{ scale: [1, 1.14, 1], opacity: [0.55, 1, 0.55] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: [0.4, 0, 0.2, 1] }}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#EA580C",
+                    boxShadow: "0 0 0 6px rgba(234,88,12,0.12)",
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ fontSize: 13.5, color: T.text, lineHeight: 1.35, fontWeight: 650, letterSpacing: "-0.01em" }}>
+                  ZappyFind AI is curating your best-fit roles now
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: T.textSec, letterSpacing: "-0.01em" }}>
+                Next: await a WhatsApp or email alert within a few hours when your curated matches are ready.
+              </div>
+            </div>
+          ) : (
+            <p
+              style={{
+                fontSize: 13,
+                color: T.textSec,
+                marginTop: 6,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.5,
+                margin: "6px 0 0",
+              }}
+            >
+              {internetFallbackMode ? (
+                <>
+                  You are a strong fit. We are onboarding ZappyFind roles that match your
+                  preferences while surfacing top internet roles for you to apply now.
+                </>
+              ) : (
+                <>
+                  You're in the{" "}
+                  <strong style={{ color: T.accent, fontWeight: 700 }}>
+                    top {topPercentile}%
+                  </strong>{" "}
+                  of {totalCandidates.toLocaleString()} {roleLabel} candidates on ZappyFind
+                </>
+              )}
+            </p>
+          )
         ) : (
           <p
             style={{
@@ -1153,7 +1281,11 @@ function MatchHeroCard({
               margin: "6px 0 0",
             }}
           >
-            One last step to see where you stand among Product Designers on ZappyFind — and unlock top matches + recruiter introductions.
+            {paidRetryMode
+              ? <>You have completed <strong style={{ color: T.text, fontWeight: 600 }}>3 unsuccessful retake attempts</strong>. Free retakes are now paused for this profile.</>
+              : retryMode
+              ? "Your last ZappyFind call was interrupted, so your best matches are still locked."
+              : "One last step to see where you stand among Product Designers on ZappyFind — and unlock top matches + recruiter introductions."}
           </p>
         )}
       </div>
@@ -1173,22 +1305,22 @@ function MatchHeroCard({
           }}
         >
           <div>
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 12,
-                background: "rgba(234,88,12,0.12)",
-                border: "1px solid rgba(234,88,12,0.16)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                marginBottom: 10,
-              }}
-            >
-              <Mic size={15} color={T.accent} strokeWidth={2} />
-            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 10,
+                  background: "rgba(234,88,12,0.12)",
+                  border: "1px solid rgba(234,88,12,0.16)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Mic size={13} color={T.accent} strokeWidth={2} />
+              </div>
             <div
               style={{
                 fontSize: 13,
@@ -1197,202 +1329,316 @@ function MatchHeroCard({
                 letterSpacing: "-0.01em",
               }}
             >
-              Complete your Zappy conversation to unlock your home feed
+              {paidRetryMode
+                ? "Free retakes are paused for this profile"
+                : retryMode
+                ? "Retake your call to unlock top matches"
+                : "Complete your Zappy conversation to unlock your home feed"}
+            </div>
             </div>
             <div
               style={{
                 fontSize: 12,
                 color: T.textSec,
-                marginTop: 3,
+                marginTop: 0,
                 lineHeight: 1.45,
               }}
             >
-              After a quick (~10 min) voice interview, you’ll unlock your standing, top matches, and direct recruiter introductions.
+              {paidRetryMode
+                ? "Next actions: pay for an additional retake or contact support if this was due to a technical issue."
+                : retryMode
+                ? "Usually caused by network/audio issues. A quick retake (~10 min) unlocks your ranking, full match insights, and recruiter access."
+                : "After a quick (~10 min) voice interview, you’ll unlock your standing, top matches, and direct recruiter introductions."}
             </div>
-            <button
-              onClick={onStartInterview}
-              style={{
-                marginTop: 10,
-                width: "100%",
-                padding: "11px 12px",
-                borderRadius: 12,
-                border: "none",
-                background: T.accentGradient,
-                color: "white",
-                cursor: "pointer",
-                fontFamily: T.sans,
-                fontSize: 13,
-                fontWeight: 650,
-                letterSpacing: "-0.01em",
-                boxShadow: "0 6px 18px rgba(234,88,12,0.25)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <Mic size={14} color="white" strokeWidth={2} />
-              Start voice interview
-            </button>
+            {paidRetryMode ? (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    padding: "12px 12px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: T.accentGradient,
+                    color: "white",
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                    fontSize: 13,
+                    fontWeight: 650,
+                    letterSpacing: "-0.01em",
+                    boxShadow: "0 6px 18px rgba(234,88,12,0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  Pay to unlock another retake
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    padding: "11px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(28,25,23,0.14)",
+                    background: "rgba(255,255,255,0.72)",
+                    color: T.text,
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: "-0.01em",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  Contact support
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onStartInterview}
+                style={{
+                  marginTop: 10,
+                  width: "100%",
+                  padding: "11px 12px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: T.accentGradient,
+                  color: "white",
+                  cursor: "pointer",
+                  fontFamily: T.sans,
+                  fontSize: 13,
+                  fontWeight: 650,
+                  letterSpacing: "-0.01em",
+                  boxShadow: "0 6px 18px rgba(234,88,12,0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Mic size={14} color="white" strokeWidth={2} />
+                {retryMode ? "Retake ZappyFind call" : "Start voice interview"}
+              </button>
+            )}
           </div>
         </motion.div>
       )}
 
       {hasCompletedInterview && (
-        <>
-          {/* Three-stat strip */}
+        analysisMode ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.45, duration: 0.5, ease: EASE }}
-            style={{
-              position: "relative",
-              display: "flex",
-              borderRadius: 14,
-              background: "rgba(255,255,255,0.5)",
-              border: "1px solid rgba(255,200,160,0.18)",
-              overflow: "hidden",
-            }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.45, ease: EASE }}
+            style={{ marginTop: 12 }}
           >
-            {[
-              {
-                value: activeCompanies,
-                label: "Companies",
-                icon: <Briefcase size={13} color={T.accent} strokeWidth={2.2} />,
-              },
-              {
-                value: totalJobs,
-                label: "Curated roles",
-                icon: <Sparkles size={13} color="#D97706" strokeWidth={2.2} />,
-              },
-              {
-                value: newJobs,
-                label: "New this week",
-                icon: <Zap size={13} color={T.success} strokeWidth={2.2} />,
-              },
-            ].map((stat, i) => (
-              <div
-                key={stat.label}
-                style={{
-                  flex: 1,
-                  padding: "12px 0",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 3,
-                  borderRight:
-                    i < 2 ? "1px solid rgba(255,200,160,0.15)" : "none",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    marginBottom: 1,
-                  }}
-                >
-                  {stat.icon}
-                  <span
-                    style={{
-                      fontFamily: T.serif,
-                      fontSize: 22,
-                      color: T.text,
-                      lineHeight: 1,
-                      letterSpacing: "-0.03em",
-                    }}
-                  >
-                    <AnimatedCounter
-                      target={stat.value}
-                      duration={1000 + i * 200}
-                    />
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    color: T.textTer,
-                    letterSpacing: "-0.01em",
-                    fontWeight: 500,
-                  }}
-                >
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Quick actions row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.65, duration: 0.45, ease: EASE }}
-            style={{
-              marginTop: 10,
-              display: "flex",
-              gap: 8,
-            }}
-          >
-            <button
-              onClick={onViewSaved}
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "9px 0",
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.55)",
-                border: "1px solid rgba(255,200,160,0.18)",
-                cursor: "pointer",
-                fontFamily: T.sans,
-                fontSize: 12,
-                fontWeight: 500,
-                color: T.textSec,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              <Bookmark size={13} color={T.accent} strokeWidth={2} />
-              {savedJobs} saved
-            </button>
             <div
               style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "9px 0",
-                borderRadius: 10,
-                background: "rgba(254,106,54,0.05)",
-                border: "1px solid rgba(254,106,54,0.1)",
-                fontSize: 12,
-                fontWeight: 500,
-                color: "#FE6A36",
-                letterSpacing: "-0.01em",
+                height: 5,
+                borderRadius: 999,
+                background: "rgba(234,88,12,0.16)",
+                position: "relative",
+                overflow: "hidden",
               }}
             >
-              <span style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                <Users size={13} color="#FE6A36" strokeWidth={2} />
+              <motion.div
+                animate={{ left: ["-32%", "100%"] }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: "-32%",
+                  width: "32%",
+                  height: "100%",
+                  borderRadius: 999,
+                  background: "linear-gradient(90deg, rgba(255,143,86,0) 0%, #EA580C 50%, rgba(255,143,86,0) 100%)",
+                }}
+              />
+            </div>
+            <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+              {[0, 1, 2].map((i) => (
                 <motion.span
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  key={i}
+                  animate={{ opacity: [0.35, 1, 0.35], scale: [1, 1.12, 1] }}
+                  transition={{
+                    duration: 1.4,
+                    repeat: Infinity,
+                    delay: i * 0.18,
+                    ease: "easeInOut",
+                  }}
                   style={{
-                    position: "absolute",
-                    top: -1,
-                    right: -3,
-                    width: 5,
-                    height: 5,
+                    width: 6,
+                    height: 6,
                     borderRadius: "50%",
-                    background: "#FE6A36",
+                    background: "#EA580C",
                   }}
                 />
-              </span>
-              {recruiterViews} recruiter views
+              ))}
             </div>
           </motion.div>
-        </>
+        ) : (
+          <>
+            {/* Three-stat strip */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45, duration: 0.5, ease: EASE }}
+              style={{
+                position: "relative",
+                display: "flex",
+                borderRadius: 14,
+                background: "rgba(255,255,255,0.5)",
+                border: "1px solid rgba(255,200,160,0.18)",
+                overflow: "hidden",
+              }}
+            >
+              {[
+                {
+                  value: totalJobs,
+                  label: "Curated roles",
+                  icon: <Sparkles size={13} color="#D97706" strokeWidth={2.2} />,
+                },
+                {
+                  value: newJobs,
+                  label: "New this week",
+                  icon: <Zap size={13} color={T.success} strokeWidth={2.2} />,
+                },
+                {
+                  value: 16,
+                  label: "Applied",
+                  icon: <Briefcase size={13} color={T.accent} strokeWidth={2.2} />,
+                },
+              ].map((stat, i) => (
+                <div
+                  key={stat.label}
+                  style={{
+                    flex: 1,
+                    padding: "12px 0",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 3,
+                    borderRight:
+                      i < 2 ? "1px solid rgba(255,200,160,0.15)" : "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      marginBottom: 1,
+                    }}
+                  >
+                    {stat.icon}
+                    <span
+                      style={{
+                        fontFamily: T.serif,
+                        fontSize: 22,
+                        color: T.text,
+                        lineHeight: 1,
+                        letterSpacing: "-0.03em",
+                      }}
+                    >
+                      <AnimatedCounter
+                        target={stat.value}
+                        duration={1000 + i * 200}
+                      />
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      color: T.textTer,
+                      letterSpacing: "-0.01em",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Quick actions row */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.65, duration: 0.45, ease: EASE }}
+              style={{
+                marginTop: 10,
+                display: "flex",
+                gap: 8,
+              }}
+            >
+              <button
+                onClick={onViewSaved}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: "9px 0",
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.55)",
+                  border: "1px solid rgba(255,200,160,0.18)",
+                  cursor: "pointer",
+                  fontFamily: T.sans,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: T.textSec,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                <Bookmark size={13} color={T.accent} strokeWidth={2} />
+                {savedJobs} saved
+              </button>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: "9px 0",
+                  borderRadius: 10,
+                  background: "rgba(254,106,54,0.05)",
+                  border: "1px solid rgba(254,106,54,0.1)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: "#FE6A36",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                <span style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                  <Users size={13} color="#FE6A36" strokeWidth={2} />
+                  <motion.span
+                    animate={{ opacity: [1, 0.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                      position: "absolute",
+                      top: -1,
+                      right: -3,
+                      width: 5,
+                      height: 5,
+                      borderRadius: "50%",
+                      background: "#FE6A36",
+                    }}
+                  />
+                </span>
+                {recruiterViews} recruiter views
+              </div>
+            </motion.div>
+          </>
+        )
       )}
 
     </motion.div>
@@ -1487,13 +1733,21 @@ function JobMatchCard({
   job,
   index,
   onTap,
+  locked = false,
+  blurInsight = false,
+  hideScore = false,
+  headerIconSize = 15,
+  lockHintText = "Retake the ZappyFind call to unlock full match details",
 }: {
   job: MockJob;
   index: number;
   onTap: () => void;
+  locked?: boolean;
+  blurInsight?: boolean;
+  hideScore?: boolean;
+  headerIconSize?: number;
+  lockHintText?: string;
 }) {
-  const [saved, setSaved] = useState(false);
-
   const scoreColor =
     job.matchScore >= 90
       ? T.success
@@ -1513,17 +1767,43 @@ function JobMatchCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.25 + index * 0.09, ease: EASE }}
       whileTap={{ scale: 0.98 }}
-      onClick={onTap}
+      onClick={() => {
+        if (locked) return;
+        onTap();
+      }}
       style={{
         borderRadius: 20,
         padding: 18,
         background: T.cardBg,
         border: `1px solid ${T.border}`,
         boxShadow: T.shadow,
-        cursor: "pointer",
+        cursor: locked ? "default" : "pointer",
         position: "relative",
       }}
     >
+      {locked && (
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 10px",
+            borderRadius: 999,
+            background: "rgba(28,25,23,0.07)",
+            color: T.textSec,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+            textTransform: "uppercase",
+          }}
+        >
+          <Lock size={11} strokeWidth={2.2} />
+          Locked
+        </div>
+      )}
       {/* Top: logo + title + score */}
       <div
         style={{
@@ -1533,23 +1813,7 @@ function JobMatchCard({
           marginBottom: 12,
         }}
       >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            background: job.logoBg,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 16,
-            fontWeight: 700,
-            color: job.logoColor,
-            flexShrink: 0,
-          }}
-        >
-          {job.logoLetter}
-        </div>
+        <div style={jobLogoAvatarStyle(job.logoColor)}>{job.logoLetter}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -1588,22 +1852,24 @@ function JobMatchCard({
       </div>
 
       {/* Match badge — top right */}
-      <div
-        style={{
-          position: "absolute",
-          top: 18,
-          right: 18,
-          padding: "4px 10px",
-          borderRadius: 999,
-          background: scoreBg,
-          fontSize: 13,
-          fontWeight: 700,
-          color: scoreColor,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {job.matchScore}%
-      </div>
+      {!hideScore && (
+        <div
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            padding: "4px 10px",
+            borderRadius: 999,
+            background: scoreBg,
+            fontSize: 13,
+            fontWeight: 700,
+            color: scoreColor,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {job.matchScore}%
+        </div>
+      )}
 
       {/* Meta chips */}
       <div
@@ -1644,7 +1910,6 @@ function JobMatchCard({
         style={{
           display: "flex",
           alignItems: "flex-start",
-          gap: 12,
           padding: "12px 14px",
           borderRadius: 14,
           background:
@@ -1653,26 +1918,13 @@ function JobMatchCard({
           boxShadow: "0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 8px rgba(234,88,12,0.06)",
         }}
       >
-        <div
-          style={{
-            flexShrink: 0,
-            width: 38,
-            height: 38,
-            borderRadius: 11,
-            background: T.accentGradient,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(234,88,12,0.28)",
-          }}
-          aria-hidden
-        >
-          <Sparkles size={18} color="#FFFFFF" strokeWidth={2.2} />
-        </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
-              fontSize: 10,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 11,
               fontWeight: 700,
               color: T.accentDark,
               letterSpacing: "0.05em",
@@ -1680,6 +1932,7 @@ function JobMatchCard({
               marginBottom: 5,
             }}
           >
+            <Sparkles size={headerIconSize} color={T.accent} fill={T.accent} strokeWidth={1.9} />
             Why you match
           </div>
           <div
@@ -1688,6 +1941,9 @@ function JobMatchCard({
               color: T.textSec,
               lineHeight: 1.55,
               letterSpacing: "-0.01em",
+              filter: blurInsight ? "blur(3px)" : "none",
+              userSelect: blurInsight ? "none" : "auto",
+              pointerEvents: blurInsight ? "none" : "auto",
             }}
           >
             {job.whyMatch}
@@ -1695,60 +1951,23 @@ function JobMatchCard({
         </div>
       </div>
 
-      {/* Bottom row: tags + bookmark */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 12,
-        }}
-      >
-        <div style={{ display: "flex", gap: 6 }}>
-          {job.tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: T.textTer,
-                padding: "3px 8px",
-                borderRadius: 6,
-                border: `1px solid ${T.border}`,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSaved(!saved);
-          }}
+      {locked && (
+        <div
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 999,
-            border: "none",
-            background: saved ? T.accentSoft : "transparent",
-            display: "flex",
+            marginTop: 10,
+            fontSize: 11.5,
+            color: T.textTer,
+            letterSpacing: "-0.01em",
+            display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "background 0.2s",
+            gap: 6,
           }}
         >
-          <Bookmark
-            size={16}
-            color={saved ? T.accent : T.textTer}
-            fill={saved ? T.accent : "none"}
-            strokeWidth={1.8}
-          />
-        </button>
-      </div>
+          <Lock size={12} strokeWidth={2.1} />
+          {lockHintText}
+        </div>
+      )}
+
     </motion.div>
   );
 }
@@ -1794,6 +2013,180 @@ function ReviewAllButton({
       Review all {count} jobs
       <ArrowRight size={16} strokeWidth={2.2} />
     </motion.button>
+  );
+}
+
+function RetakeCallTipsCard({ onStart }: { onStart: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.6, ease: EASE }}
+      style={{
+        borderRadius: 20,
+        padding: 0,
+        background:
+          "linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(255,249,244,0.94) 100%)",
+        border: "1px solid rgba(234,88,12,0.14)",
+        boxShadow: "0 8px 24px rgba(28,25,23,0.06), 0 1px 2px rgba(28,25,23,0.05)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "14px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          background:
+            "linear-gradient(90deg, rgba(234,88,12,0.1) 0%, rgba(255,255,255,0) 85%)",
+          borderBottom: "1px solid rgba(234,88,12,0.12)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 10,
+              background: "rgba(234,88,12,0.12)",
+              border: "1px solid rgba(234,88,12,0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Mic size={15} color={T.accent} strokeWidth={2.2} />
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+            Quick prep for a stronger retake
+          </span>
+        </div>
+      </div>
+      <div
+        style={{
+          padding: "12px 16px 4px",
+          fontSize: 12,
+          color: T.textSec,
+          lineHeight: 1.45,
+          marginBottom: 10,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        This takes under a minute and can significantly improve your call quality.
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 16px 14px" }}>
+        {[
+          "Use a quiet room and earphones for clear audio.",
+          "Answer naturally in your own words; no script needed.",
+          "Use short examples (problem -> action -> result).",
+          "If the call drops, reopen and continue immediately.",
+        ].map((tip, idx) => (
+          <div
+            key={tip}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8,
+              fontSize: 12,
+              color: T.textSec,
+              lineHeight: 1.45,
+              border: "1px solid rgba(28,25,23,0.06)",
+              background: "rgba(255,255,255,0.72)",
+              borderRadius: 10,
+              padding: "8px 10px",
+            }}
+          >
+            <span
+              style={{
+                color: T.accent,
+                lineHeight: 1,
+                fontSize: 11,
+                fontWeight: 700,
+                background: "rgba(234,88,12,0.1)",
+                borderRadius: 999,
+                minWidth: 18,
+                height: 18,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 1,
+              }}
+            >
+              {idx + 1}
+            </span>
+            <span>{tip}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function InterviewAnalysisCard() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
+      style={{
+        borderRadius: 20,
+        padding: 18,
+        background: T.cardBg,
+        border: `1px solid ${T.border}`,
+        boxShadow: T.shadow,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <Sparkles size={15} color={T.accent} fill={T.accent} strokeWidth={1.9} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+          AI performance snapshot
+        </span>
+      </div>
+
+      <div
+        style={{
+          borderRadius: 12,
+          border: "1px solid rgba(234,88,12,0.14)",
+          background:
+            "linear-gradient(160deg, rgba(234,88,12,0.09) 0%, rgba(255,255,255,0.92) 42%, rgba(255,248,242,0.85) 100%)",
+          padding: "12px 13px",
+          fontSize: 12.5,
+          color: T.textSec,
+          lineHeight: 1.55,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        <div style={{ fontWeight: 700, color: T.text, marginBottom: 8 }}>What went well</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {[
+            ["Communication", "Clear and confident responses with practical examples."],
+            ["Domain depth", "Strong understanding of your core responsibilities and impact."],
+            ["Role fit", "Signals align well with target roles and recruiter expectations."],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <span style={{ color: T.accent, lineHeight: 1 }}>•</span>
+              <div>
+                <span style={{ fontWeight: 600, color: T.text }}>{label}: </span>
+                <span>{value}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 10, fontSize: 11.5, color: T.textTer, fontWeight: 600 }}>
+        Listen to your full interview
+      </div>
+      <div style={{ marginTop: 6 }}>
+        <audio controls preload="none" style={{ width: "100%" }}>
+          <source src="" type="audio/mpeg" />
+        </audio>
+      </div>
+
+    </motion.div>
   );
 }
 
@@ -3149,11 +3542,13 @@ function SkillChip({
 function BelowAverageDashboard({
   greeting,
   displayName,
+  case6Mode = false,
   onStartInterview,
   onReviewJobs,
 }: {
   greeting: string;
   displayName: string;
+  case6Mode?: boolean;
   onStartInterview: () => void;
   onReviewJobs: () => void;
 }) {
@@ -3241,8 +3636,9 @@ function BelowAverageDashboard({
               margin: "6px 0 0",
             }}
           >
-            You're building momentum — every step forward gets you closer to the
-            right role.
+            {case6Mode
+              ? "Profile strength is low for your current target roles. Core skills and competencies need improvement."
+              : "You're building momentum — every step forward gets you closer to the right role."}
           </p>
         </div>
 
@@ -3314,7 +3710,9 @@ function BelowAverageDashboard({
               letterSpacing: "-0.01em",
             }}
           >
-            Complete the steps below to unlock better matches
+            {case6Mode
+              ? "Follow the growth plan below to improve your fit."
+              : "Complete the steps below to unlock better matches"}
           </span>
         </motion.div>
 
@@ -3334,14 +3732,14 @@ function BelowAverageDashboard({
         >
           {[
             {
-              value: "4",
-              label: "Steps to go",
+              value: "3",
+              label: "Growth plans",
               icon: (
                 <Target size={12} color={T.accent} strokeWidth={2.2} />
               ),
             },
             {
-              value: "5",
+              value: "14",
               label: "Growing matches",
               icon: (
                 <Sparkles size={12} color="#D97706" strokeWidth={2.2} />
@@ -3512,127 +3910,6 @@ function BelowAverageDashboard({
               />
             </motion.div>
           ))}
-        </div>
-      </motion.div>
-
-      {/* ── Strengths ──────────────────────────────────────── */}
-      <SectionHeader
-        title="What Zappy Sees in You"
-        subtitle="Every candidate has unique strengths"
-        delay={0.5}
-      />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.55, ease: EASE }}
-        style={{
-          borderRadius: 22,
-          overflow: "hidden",
-          background: T.cardBg,
-          border: `1px solid ${T.border}`,
-          boxShadow: T.shadowLg,
-        }}
-      >
-        <div style={{ padding: "4px 0" }}>
-          {LOW_STRENGTHS.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.4,
-                delay: 0.6 + i * 0.08,
-                ease: EASE,
-              }}
-              style={{
-                padding: "16px 20px",
-                borderBottom:
-                  i < LOW_STRENGTHS.length - 1
-                    ? `1px solid ${T.border}`
-                    : "none",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 8,
-                }}
-              >
-                <div
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 9,
-                    background: `${s.color}12`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {STRENGTH_ICONS[i]}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <span
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: T.text,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: s.color,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  Top {100 - s.percentile}%
-                </span>
-              </div>
-              <div
-                style={{
-                  fontSize: 12.5,
-                  color: T.textSec,
-                  lineHeight: 1.55,
-                  letterSpacing: "-0.01em",
-                  paddingLeft: 40,
-                }}
-              >
-                {s.detail}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        <div
-          style={{
-            padding: "12px 20px 14px",
-            background: "rgba(5,150,105,0.02)",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <Sparkles size={12} color={T.success} strokeWidth={2.2} />
-          <span
-            style={{
-              fontSize: 11,
-              color: T.textTer,
-              letterSpacing: "-0.005em",
-              lineHeight: 1.4,
-            }}
-          >
-            Strengths are identified from your resume, interview, and
-            preferences — they update as you grow.
-          </span>
         </div>
       </motion.div>
 
@@ -3832,9 +4109,126 @@ function BelowAverageDashboard({
         </div>
       </motion.div>
 
-      {/* ── Video Intro ───────────────────────────────────── */}
-      <SectionHeader title="Stand Out to Recruiters" delay={0.9} />
-      <VideoIntroCard onStart={onStartInterview} />
+      {/* ── Strengths ──────────────────────────────────────── */}
+      <SectionHeader
+        title="What Zappy Sees in You"
+        subtitle="Every candidate has unique strengths"
+        delay={0.5}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.55, ease: EASE }}
+        style={{
+          borderRadius: 22,
+          overflow: "hidden",
+          background: T.cardBg,
+          border: `1px solid ${T.border}`,
+          boxShadow: T.shadowLg,
+        }}
+      >
+        <div style={{ padding: "4px 0" }}>
+          {LOW_STRENGTHS.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.4,
+                delay: 0.6 + i * 0.08,
+                ease: EASE,
+              }}
+              style={{
+                padding: "16px 20px",
+                borderBottom:
+                  i < LOW_STRENGTHS.length - 1
+                    ? `1px solid ${T.border}`
+                    : "none",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 9,
+                    background: `${s.color}12`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {STRENGTH_ICONS[i]}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: T.text,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: s.color,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Top {100 - s.percentile}%
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: T.textSec,
+                  lineHeight: 1.55,
+                  letterSpacing: "-0.01em",
+                  paddingLeft: 40,
+                }}
+              >
+                {s.detail}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            padding: "12px 20px 14px",
+            background: "rgba(5,150,105,0.02)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Sparkles size={12} color={T.success} strokeWidth={2.2} />
+          <span
+            style={{
+              fontSize: 11,
+              color: T.textTer,
+              letterSpacing: "-0.005em",
+              lineHeight: 1.4,
+            }}
+          >
+            Strengths are identified from your resume, interview, and
+            preferences — they update as you grow.
+          </span>
+        </div>
+      </motion.div>
 
       {/* ── Jobs (Deprioritized) ───────────────────────────── */}
       <SectionHeader
@@ -3877,23 +4271,7 @@ function BelowAverageDashboard({
                 marginBottom: 12,
               }}
             >
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: job.logoBg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: job.logoColor,
-                  flexShrink: 0,
-                }}
-              >
-                {job.logoLetter}
-              </div>
+              <div style={jobLogoAvatarStyle(job.logoColor)}>{job.logoLetter}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
@@ -3992,57 +4370,48 @@ function BelowAverageDashboard({
               ))}
             </div>
 
-            {/* Why this could work */}
+            {/* Why you match */}
             <div
               style={{
-                padding: "10px 14px",
-                borderRadius: 12,
-                background: "rgba(217,119,6,0.04)",
-                borderLeft: `3px solid ${T.warning}`,
+                display: "flex",
+                alignItems: "flex-start",
+                padding: "12px 14px",
+                borderRadius: 14,
+                background:
+                  "linear-gradient(160deg, rgba(234,88,12,0.09) 0%, rgba(255,255,255,0.92) 42%, rgba(255,248,242,0.85) 100%)",
+                border: `1px solid rgba(234,88,12,0.14)`,
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 8px rgba(234,88,12,0.06)",
               }}
             >
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: T.warning,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase" as const,
-                  marginBottom: 4,
-                }}
-              >
-                Why this could work
-              </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: T.textSec,
-                  lineHeight: 1.55,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {job.context}
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-              {job.tags.map((tag) => (
-                <span
-                  key={tag}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
                     fontSize: 11,
-                    fontWeight: 500,
-                    color: T.textTer,
-                    padding: "3px 8px",
-                    borderRadius: 6,
-                    border: `1px solid ${T.border}`,
+                    fontWeight: 700,
+                    color: T.accentDark,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase" as const,
+                    marginBottom: 5,
+                  }}
+                >
+                  <Sparkles size={14} color={T.accent} fill={T.accent} strokeWidth={1.9} />
+                  Potential fit
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: T.textSec,
+                    lineHeight: 1.55,
                     letterSpacing: "-0.01em",
                   }}
                 >
-                  {tag}
-                </span>
-              ))}
+                  {job.context}
+                </div>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -4075,8 +4444,22 @@ export function DashboardPreviewScreen({
 }: DashboardPreviewScreenProps) {
   const displayName = firstName || "Alex";
   const greeting = getTimeGreeting();
-  const [isLowPerformer, setIsLowPerformer] = useState(false);
+  const [activeCaseKey, setActiveCaseKey] = useState<"case-0" | "case-1" | "case-2" | "case-3" | "case-4" | "case-6" | "case-7" | "case-8">("case-1");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const isCase1Dashboard = activeCaseKey === "case-0";
+  const isCase4Dashboard = activeCaseKey === "case-4";
+  const isLowPerformer = activeCaseKey === "case-2" || activeCaseKey === "case-6";
+  const isCase5Dashboard = activeCaseKey === "case-3";
+  const isCase7Dashboard = activeCaseKey === "case-7";
+  const isCase8Dashboard = activeCaseKey === "case-8";
+  const effectiveHasCompletedInterview =
+    activeCaseKey === "case-0" || activeCaseKey === "case-1" || activeCaseKey === "case-4"
+      ? true
+      : activeCaseKey === "case-3" || activeCaseKey === "case-7" || activeCaseKey === "case-8"
+        ? false
+        : hasCompletedInterview;
+  const isRetryCallDashboard = isCase5Dashboard || isCase7Dashboard;
+  const isLockedInterviewDashboard = isCase5Dashboard || isCase7Dashboard || isCase8Dashboard;
 
   return (
     <div
@@ -4125,7 +4508,17 @@ export function DashboardPreviewScreen({
 
       <DashboardHeader
         displayName={displayName}
-        onAvatarClick={() => setIsLowPerformer(!isLowPerformer)}
+        caseOptions={[
+          { key: "case-0", label: "Case 1", onSelect: () => setActiveCaseKey("case-0") },
+          { key: "case-1", label: "Case 2", onSelect: () => setActiveCaseKey("case-1") },
+          { key: "case-2", label: "Case 3", onSelect: () => setActiveCaseKey("case-2") },
+          { key: "case-4", label: "Case 4", onSelect: () => setActiveCaseKey("case-4") },
+          { key: "case-3", label: "Case 5", onSelect: () => setActiveCaseKey("case-3") },
+          { key: "case-6", label: "Case 6", onSelect: () => setActiveCaseKey("case-6") },
+          { key: "case-7", label: "Case 7", onSelect: () => setActiveCaseKey("case-7") },
+          { key: "case-8", label: "Case 8", onSelect: () => setActiveCaseKey("case-8") },
+        ]}
+        activeCaseKey={activeCaseKey}
         isLowPerformer={isLowPerformer}
         currentPage="home"
         onNavigateHome={() => {}}
@@ -4146,6 +4539,7 @@ export function DashboardPreviewScreen({
             <BelowAverageDashboard
               greeting={greeting}
               displayName={displayName}
+              case6Mode={activeCaseKey === "case-6"}
               onStartInterview={onStartInterview}
               onReviewJobs={onReviewJobs}
             />
@@ -4164,130 +4558,248 @@ export function DashboardPreviewScreen({
             roleLabel="Product Design"
             topPercentile={12}
             totalCandidates={2340}
-            hasCompletedInterview={hasCompletedInterview}
+            hasCompletedInterview={effectiveHasCompletedInterview}
+            retryMode={isRetryCallDashboard}
+            paidRetryMode={isCase7Dashboard}
+            analysisMode={isCase1Dashboard}
+            internetFallbackMode={isCase4Dashboard}
             onStartInterview={onStartInterview}
             onViewSaved={onViewSavedJobs}
           />
 
-          {/* Your Top Matches */}
-          <SectionHeader
-            title="Your Top Matches"
-            subtitle="Most matching jobs according to your profile"
-            action="See all"
-            onAction={onReviewJobs}
-            delay={0.35}
-          />
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {MOCK_JOBS.slice(0, 2).map((job, i) => (
-              <JobMatchCard
-                key={job.id}
-                job={job}
-                index={i}
-                onTap={onReviewJobs}
+          {isCase1Dashboard && (
+            <>
+              <SectionHeader title="Interview Analysis" delay={0.32} />
+              <InterviewAnalysisCard />
+            </>
+          )}
+
+          {isRetryCallDashboard && (
+            <>
+              <SectionHeader title="Prepare Before You Retake" delay={0.3} />
+              <RetakeCallTipsCard onStart={onStartInterview} />
+            </>
+          )}
+
+          {!isCase1Dashboard && (
+            <>
+              {/* Your Top Matches */}
+              <SectionHeader
+                title={isCase4Dashboard ? "Curated Internet Roles" : "Your Top Matches"}
+                subtitle={
+                  isCase4Dashboard
+                    ? "No ZappyFind matches yet. Apply these curated internet roles while we onboard roles for your preferences."
+                    : isLockedInterviewDashboard
+                    ? isCase8Dashboard
+                      ? "Preview is locked until you start the ZappyFind voice interview"
+                      : isCase7Dashboard
+                      ? "Retakes are paused after 3 unsuccessful attempts"
+                      : "Preview is locked until you retake the ZappyFind call"
+                    : "Most matching jobs according to your profile"
+                }
+                action={isLockedInterviewDashboard || isCase4Dashboard ? undefined : "See all"}
+                onAction={isLockedInterviewDashboard || isCase4Dashboard ? undefined : onReviewJobs}
+                delay={0.35}
               />
-            ))}
-          </div>
-          <ReviewAllButton count={42} onClick={onReviewJobs} />
-
-          {/* Competitive Edge */}
-          <SectionHeader
-            title="Your Competitive Edge"
-            delay={0.55}
-          />
-          <CompetitiveEdgeCard
-            hasInterview={hasCompletedInterview}
-            onStartInterview={onStartInterview}
-          />
-
-          {/* Skills × Market */}
-          <SectionHeader
-            title="Skills &times; Market Demand"
-            delay={0.75}
-          />
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.8, ease: EASE }}
-            style={{
-              borderRadius: 20,
-              padding: 18,
-              background: T.cardBg,
-              border: `1px solid ${T.border}`,
-              boxShadow: T.shadow,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                marginBottom: 14,
-              }}
-            >
-              {SKILLS_DATA.map((skill, i) => (
-                <SkillChip
-                  key={skill.name}
-                  name={skill.name}
-                  demand={skill.demand}
-                  delay={0.85 + i * 0.04}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {MOCK_JOBS.slice(0, 3).map((job, i) => (
+                <JobMatchCard
+                  key={job.id}
+                  job={job}
+                  index={i}
+                  onTap={onReviewJobs}
+                  locked={isLockedInterviewDashboard}
+                  blurInsight={((isCase5Dashboard || isCase7Dashboard) && i < 3) || (isCase8Dashboard && i < 3)}
+                  hideScore={isLockedInterviewDashboard}
+                  headerIconSize={(isCase5Dashboard || isCase7Dashboard) ? 13 : 15}
+                  lockHintText={
+                    isCase8Dashboard
+                      ? "Start the voice interview to unlock full match details"
+                      : isCase7Dashboard
+                      ? "Free retakes are paused. Pay for another call or contact support."
+                      : "Retake the ZappyFind call to unlock full match details"
+                  }
                 />
               ))}
             </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 16,
-                paddingTop: 12,
-                borderTop: `1px solid ${T.border}`,
-              }}
-            >
-              {(["high", "medium", "growing"] as const).map((level) => (
-                <div
-                  key={level}
+            </>
+          )}
+          {!isLockedInterviewDashboard && !isCase1Dashboard ? (
+            <ReviewAllButton count={isCase4Dashboard ? MOCK_JOBS.length : 42} onClick={onReviewJobs} />
+          ) : (
+            !isCase1Dashboard && (
+            isCase7Dashboard ? (
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.55, ease: EASE }}
+                style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}
+              >
+                <button
+                  type="button"
                   style={{
+                    width: "100%",
+                    padding: "15px",
+                    borderRadius: 16,
+                    border: "none",
+                    background: T.accentGradient,
+                    color: "white",
+                    fontSize: 15,
+                    fontWeight: 600,
+                    letterSpacing: "-0.01em",
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                    boxShadow:
+                      "0 4px 20px rgba(234,88,12,0.3), 0 1px 4px rgba(234,88,12,0.15)",
                     display: "flex",
                     alignItems: "center",
-                    gap: 5,
+                    justifyContent: "center",
+                    gap: 8,
                   }}
                 >
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: DEMAND_THEME[level].color,
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: T.textTer,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {DEMAND_THEME[level].label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+                  Pay to unlock another retake
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    padding: "13px",
+                    borderRadius: 14,
+                    border: "1px solid rgba(28,25,23,0.14)",
+                    background: "rgba(255,255,255,0.72)",
+                    color: T.text,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    letterSpacing: "-0.01em",
+                    cursor: "pointer",
+                    fontFamily: T.sans,
+                  }}
+                >
+                  Contact support
+                </button>
+              </motion.div>
+            ) : (
+              <motion.button
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.55, ease: EASE }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onStartInterview}
+                type="button"
+                style={{
+                  width: "100%",
+                  marginTop: 14,
+                  padding: "15px",
+                  borderRadius: 16,
+                  border: "none",
+                  background: T.accentGradient,
+                  color: "white",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                  cursor: "pointer",
+                  fontFamily: T.sans,
+                  boxShadow:
+                    "0 4px 20px rgba(234,88,12,0.3), 0 1px 4px rgba(234,88,12,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Mic size={16} strokeWidth={2.2} />
+                {isCase8Dashboard
+                  ? "Start voice interview"
+                  : "Retake call to unlock all 42 jobs"}
+              </motion.button>
+            )
+            )
+          )}
 
-          {/* Self introduction video / prompt */}
-          {hasCompletedInterview ? (
+          {!isRetryCallDashboard && (
             <>
+              {/* Competitive Edge */}
               <SectionHeader
-                title="Stand Out to Recruiters"
-                delay={0.9}
+                title="Your Competitive Edge"
+                delay={0.55}
               />
-              <VideoIntroCard onStart={onStartInterview} />
-            </>
-          ) : (
-            <>
+              <CompetitiveEdgeCard
+                hasInterview={effectiveHasCompletedInterview}
+                onStartInterview={onStartInterview}
+              />
+
+              {/* Skills × Market */}
               <SectionHeader
-                title="Stand Out to Recruiters"
-                delay={0.9}
+                title="Skills &times; Market Demand"
+                delay={0.75}
               />
-              <VideoIntroCard onStart={onStartInterview} />
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.8, ease: EASE }}
+                style={{
+                  borderRadius: 20,
+                  padding: 18,
+                  background: T.cardBg,
+                  border: `1px solid ${T.border}`,
+                  boxShadow: T.shadow,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginBottom: 14,
+                  }}
+                >
+                  {SKILLS_DATA.map((skill, i) => (
+                    <SkillChip
+                      key={skill.name}
+                      name={skill.name}
+                      demand={skill.demand}
+                      delay={0.85 + i * 0.04}
+                    />
+                  ))}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    paddingTop: 12,
+                    borderTop: `1px solid ${T.border}`,
+                  }}
+                >
+                  {(["high", "medium", "growing"] as const).map((level) => (
+                    <div
+                      key={level}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: DEMAND_THEME[level].color,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: T.textTer,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {DEMAND_THEME[level].label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
             </>
           )}
 

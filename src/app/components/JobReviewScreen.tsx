@@ -1,6 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { AnimatePresence, motion, useMotionValue, useTransform } from "motion/react";
-import { Bookmark, Briefcase, Check, Eye, CalendarClock, ExternalLink, ChevronDown, Bell, Search, X, MapPin, Sparkles, Globe } from "lucide-react";
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "motion/react";
+import {
+  Bookmark,
+  Briefcase,
+  Check,
+  ChevronRight,
+  Eye,
+  ExternalLink,
+  ChevronDown,
+  Bell,
+  Search,
+  X,
+  MapPin,
+  Sparkles,
+  Globe,
+  CalendarClock,
+  Send,
+} from "lucide-react";
 
 export type Job = {
   id: string;
@@ -13,6 +29,9 @@ export type Job = {
   logoLetter: string;
   logoColor: string;
   matchScore?: number;
+  /** Total years of relevant experience typically required for the role (shown when match score is below the experience chip threshold). */
+  experienceYearsMin: number;
+  experienceYearsMax: number;
   headlines: string;
   whyFit: string;
   watchOut: string;
@@ -32,6 +51,8 @@ export const JOBS: Job[] = [
     logoLetter: "A",
     logoColor: "#1E40AF",
     matchScore: 92,
+    experienceYearsMin: 4,
+    experienceYearsMax: 7,
     headlines:
       "Arctic Wolf protects organizations with its Aurora Platform. You'd be a Senior UX Designer on the XDR team.",
     whyFit:
@@ -40,6 +61,7 @@ export const JOBS: Job[] = [
       "Compensation and specific team growth opportunities need to be clarified.",
     jobDescription:
       "At Arctic Wolf, you won't just watch the cybersecurity industry evolve — you'll help lead the change. Our global Pack is made up of people who thrive on pushing boundaries, solving problems, and building things that matter. As a Senior UX Designer, you'll own the end-to-end design of key product surfaces, collaborate cross-functionally with product managers and engineers, and shape the experience of security practitioners worldwide.",
+    externalUrl: "https://arcticwolf.com/company/careers/",
   },
   {
     id: "2",
@@ -52,6 +74,8 @@ export const JOBS: Job[] = [
     logoLetter: "N",
     logoColor: "#0891B2",
     matchScore: 88,
+    experienceYearsMin: 3,
+    experienceYearsMax: 5,
     headlines:
       "Northwind Tech builds fintech tools for emerging markets. You'd join as a Product Designer focusing on growth funnels and activation.",
     whyFit:
@@ -72,6 +96,8 @@ export const JOBS: Job[] = [
     logoLetter: "S",
     logoColor: "#DC2626",
     matchScore: 90,
+    experienceYearsMin: 5,
+    experienceYearsMax: 8,
     headlines:
       "Signalpath builds decision-support tools for enterprise teams. You'd design calm, assistive AI workflows for complex data environments.",
     whyFit:
@@ -93,6 +119,8 @@ export const JOBS: Job[] = [
     logoLetter: "C",
     logoColor: "#059669",
     matchScore: 85,
+    experienceYearsMin: 8,
+    experienceYearsMax: 12,
     headlines:
       "Canopy powers internal tools for fast-growing teams. You'd lead platform design and mentor a small, senior design team.",
     whyFit:
@@ -113,6 +141,8 @@ export const JOBS: Job[] = [
     logoLetter: "T",
     logoColor: "#D97706",
     matchScore: 82,
+    experienceYearsMin: 3,
+    experienceYearsMax: 6,
     headlines:
       "Tessera builds workflow automation for mid-market B2B teams. You'd drive mixed-methods research across their core product.",
     whyFit:
@@ -133,6 +163,8 @@ export const JOBS: Job[] = [
     logoLetter: "M",
     logoColor: "#6366F1",
     matchScore: 87,
+    experienceYearsMin: 10,
+    experienceYearsMax: 14,
     headlines:
       "Meridian is redefining enterprise collaboration. You'd be a Staff Designer owning the core workspace experience.",
     whyFit:
@@ -154,6 +186,8 @@ export const JOBS: Job[] = [
     logoLetter: "L",
     logoColor: "#0EA5E9",
     matchScore: 84,
+    experienceYearsMin: 2,
+    experienceYearsMax: 4,
     headlines:
       "Lumina builds consumer-facing mobile apps for health and wellness. You'd own end-to-end mobile UX and visual design.",
     whyFit:
@@ -174,6 +208,8 @@ export const JOBS: Job[] = [
     logoLetter: "B",
     logoColor: "#E11D48",
     matchScore: 89,
+    experienceYearsMin: 5,
+    experienceYearsMax: 8,
     headlines:
       "Bazaar powers checkout and payments for D2C brands. You'd design flows that convert and scale across regions.",
     whyFit:
@@ -195,6 +231,8 @@ export const JOBS: Job[] = [
     logoLetter: "A",
     logoColor: "#10B981",
     matchScore: 86,
+    experienceYearsMin: 6,
+    experienceYearsMax: 10,
     headlines:
       "Atlas provides a design system used by 50+ product teams. You'd lead the system roadmap and component library.",
     whyFit:
@@ -215,6 +253,8 @@ export const JOBS: Job[] = [
     logoLetter: "D",
     logoColor: "#8B5CF6",
     matchScore: 83,
+    experienceYearsMin: 2,
+    experienceYearsMax: 5,
     headlines:
       "DevFlow builds tools for developers. You'd design dashboards, CLIs, and docs that developers love.",
     whyFit:
@@ -235,6 +275,8 @@ export const JOBS: Job[] = [
     logoLetter: "G",
     logoColor: "#F59E0B",
     matchScore: 85,
+    experienceYearsMin: 5,
+    experienceYearsMax: 9,
     headlines:
       "Guardian helps platforms manage trust and safety. You'd design moderation tools and policy surfaces.",
     whyFit:
@@ -255,6 +297,8 @@ export const JOBS: Job[] = [
     logoLetter: "L",
     logoColor: "#EC4899",
     matchScore: 81,
+    experienceYearsMin: 2,
+    experienceYearsMax: 4,
     headlines:
       "Launchpad helps SaaS products activate users faster. You'd own onboarding and activation experiences.",
     whyFit:
@@ -275,6 +319,8 @@ export const JOBS: Job[] = [
     logoLetter: "C",
     logoColor: "#14B8A6",
     matchScore: 88,
+    experienceYearsMin: 5,
+    experienceYearsMax: 8,
     headlines:
       "Chartwise builds analytics and reporting for enterprises. You'd design data-heavy dashboards and visualizations.",
     whyFit:
@@ -295,6 +341,8 @@ export const JOBS: Job[] = [
     logoLetter: "B",
     logoColor: "#EA580C",
     matchScore: 82,
+    experienceYearsMin: 3,
+    experienceYearsMax: 5,
     headlines:
       "Bazaar's marketplace connects buyers and sellers. You'd design discovery, search, and transaction flows.",
     whyFit:
@@ -316,6 +364,8 @@ export const JOBS: Job[] = [
     logoLetter: "N",
     logoColor: "#64748B",
     matchScore: 84,
+    experienceYearsMin: 8,
+    experienceYearsMax: 12,
     headlines:
       "Narrative is a content platform for teams. You'd lead design across brand, marketing, and product.",
     whyFit:
@@ -326,6 +376,21 @@ export const JOBS: Job[] = [
       "We're hiring a Lead Designer to own brand, marketing site, and core product experience. You'll set direction, work with leadership, and grow the design function. We value strong craft, storytelling, and the ability to work across brand and product.",
   },
 ];
+
+const REQUIRED_SKILLS_BY_JOB: Record<string, string[]> = {
+  "1": ["Figma", "Design Systems", "B2B SaaS UX", "Stakeholder Management", "Interaction Design", "Accessibility"],
+  "2": ["Experimentation", "A/B Testing", "Funnel Analysis", "Growth UX", "Product Analytics"],
+  "3": ["AI UX", "Information Architecture", "Enterprise Workflows", "Prototyping", "Data-heavy UI"],
+  "4": ["Design Leadership", "Design Systems", "Cross-team Collaboration", "Mentoring", "Platform UX"],
+  "5": ["User Interviews", "Usability Testing", "Survey Design", "Research Synthesis", "Insight Communication"],
+  "6": ["Systems Thinking", "Product Strategy", "Design Critique", "Stakeholder Alignment", "Design Quality"],
+  "7": ["Mobile UX", "iOS/Android Patterns", "Interaction Design", "Visual Design", "Prototyping"],
+  "8": ["Checkout UX", "Conversion Optimization", "Payments UX", "Experiment Design", "Data-informed Design"],
+  "9": ["Component Architecture", "Token Systems", "Documentation", "Accessibility", "Design-Engineering Collaboration"],
+  "10": ["Developer Tools UX", "Information Design", "Technical Communication", "Dashboard UX", "Docs UX"],
+  "11": ["Complex Workflow UX", "Policy-aware Design", "Systems Design", "Risk Thinking", "Edge-case Handling"],
+  "12": ["Onboarding UX", "Activation Design", "Journey Mapping", "Experimentation", "Funnel UX"],
+};
 
 type SearchJob = {
   id: string;
@@ -547,8 +612,8 @@ const SEARCH_SUGGESTIONS = [
 
 const STACK_VISIBLE = 3;
 const SWIPE_THRESHOLD = 100;
-const CARD_OFFSET_Y = 16;
-const CARD_SCALE_STEP = 0.045;
+const CARD_OFFSET_Y = 7;
+const CARD_SCALE_STEP = 0.06;
 
 type ApplicationStatus =
   | "submitted"
@@ -593,6 +658,7 @@ export function JobReviewScreen({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSavedIds, setSearchSavedIds] = useState<Set<string>>(new Set());
   const [quickApplyToast, setQuickApplyToast] = useState<{ id: string; title: string } | null>(null);
+  const [appliedSheetJob, setAppliedSheetJob] = useState<Job | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isAnimating = useRef(false);
   const switcherRef = useRef<HTMLDivElement | null>(null);
@@ -717,9 +783,27 @@ export function JobReviewScreen({
 
   useEffect(() => {
     if (!quickApplyToast) return;
-    const t = window.setTimeout(() => setQuickApplyToast(null), 2800);
+    const t = window.setTimeout(() => setQuickApplyToast(null), 1200);
     return () => window.clearTimeout(t);
   }, [quickApplyToast]);
+
+  useEffect(() => {
+    if (!appliedSheetJob) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAppliedSheetJob(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [appliedSheetJob]);
+
+  useEffect(() => {
+    if (!appliedSheetJob) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [appliedSheetJob]);
 
   return (
     <div
@@ -1169,17 +1253,23 @@ export function JobReviewScreen({
                 </p>
               </div>
             ) : (
-              <>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {appliedJobs.map((job) => (
-                    <AppliedJobCard
-                      key={job.id}
-                      job={job}
-                      meta={appliedMetaById[job.id]}
-                    />
-                  ))}
-                </div>
-              </>
+              <div
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 11,
+                }}
+              >
+                {appliedJobs.map((job) => (
+                  <AppliedJobCard
+                    key={job.id}
+                    job={job}
+                    meta={appliedMetaById[job.id]}
+                    onViewDetails={() => setAppliedSheetJob(job)}
+                  />
+                ))}
+              </div>
             )}
           </div>
         ) : (
@@ -1484,21 +1574,32 @@ export function JobReviewScreen({
         </>
         )}
       </main>
+
+      <AnimatePresence>
+        {appliedSheetJob ? (
+          <AppliedJobDetailSheet
+            key={appliedSheetJob.id}
+            job={appliedSheetJob}
+            meta={appliedMetaById[appliedSheetJob.id]}
+            onClose={() => setAppliedSheetJob(null)}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
 
 function formatAppliedDate(iso?: string): string {
-  if (!iso) return "Applied";
+  if (!iso) return "Recently";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "Applied";
-  return `Applied ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  if (Number.isNaN(d.getTime())) return "Recently";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 function statusBadge(status: ApplicationStatus): { label: string; bg: string; text: string } {
   switch (status) {
     case "submitted":
-      return { label: "Submitted", bg: "rgba(2,132,199,0.10)", text: "#0369A1" };
+      return { label: "Applied", bg: "rgba(2,132,199,0.10)", text: "#0369A1" };
     case "viewed":
       return { label: "Viewed", bg: "rgba(5,150,105,0.12)", text: "#047857" };
     case "shortlisted":
@@ -1512,8 +1613,34 @@ function statusBadge(status: ApplicationStatus): { label: string; bg: string; te
   }
 }
 
-function AppliedJobCard({ job, meta }: { job: Job; meta?: AppliedMeta }) {
-  const [open, setOpen] = useState(false);
+function StatusBadgeIcon({ status, color }: { status: ApplicationStatus; color: string }) {
+  const size = 12;
+  const stroke = 2.25;
+  switch (status) {
+    case "submitted":
+      return <Send size={size} color={color} strokeWidth={stroke} aria-hidden />;
+    case "viewed":
+      return <Eye size={size} color={color} strokeWidth={stroke} aria-hidden />;
+    case "shortlisted":
+      return <Sparkles size={size} color={color} strokeWidth={stroke} aria-hidden />;
+    case "interview":
+      return <Bell size={size} color={color} strokeWidth={stroke} aria-hidden />;
+    case "offer":
+      return <Check size={size} color={color} strokeWidth={stroke} aria-hidden />;
+    case "rejected":
+      return <X size={size} color={color} strokeWidth={stroke} aria-hidden />;
+  }
+}
+
+function AppliedJobDetailSheet({
+  job,
+  meta,
+  onClose,
+}: {
+  job: Job;
+  meta?: AppliedMeta;
+  onClose: () => void;
+}) {
   const safeMeta: AppliedMeta = meta ?? {
     appliedAtISO: new Date().toISOString(),
     status: "submitted",
@@ -1522,190 +1649,456 @@ function AppliedJobCard({ job, meta }: { job: Job; meta?: AppliedMeta }) {
     followUpInDays: 3,
   };
   const badge = statusBadge(safeMeta.status);
+  const appliedSheetHint =
+    safeMeta.status === "submitted"
+      ? "You'll be notified when the recruiter views your profile."
+      : safeMeta.status === "viewed"
+        ? "The hiring team has viewed your application."
+        : "We'll notify you as this application moves forward.";
+
+  const sheetOffsetY = useMotionValue(0);
+  const backdropOpacity = useTransform(sheetOffsetY, [0, 280], [1, 0]);
+  const dragRef = useRef<{ pointerId: number; startY: number; startOffset: number } | null>(null);
+
+  const finishSheetDrag = useCallback(() => {
+    const current = sheetOffsetY.get();
+    const threshold = Math.min(160, window.innerHeight * 0.22);
+    if (current > threshold) {
+      void animate(sheetOffsetY, window.innerHeight, {
+        duration: 0.26,
+        ease: [0.32, 0, 0.67, 1],
+      }).then(() => onClose());
+    } else {
+      void animate(sheetOffsetY, 0, { type: "spring", damping: 32, stiffness: 380 });
+    }
+  }, [onClose, sheetOffsetY]);
+
+  const onHandlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startY: e.clientY,
+      startOffset: sheetOffsetY.get(),
+    };
+  };
+
+  const onHandlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragRef.current;
+    if (!state || e.pointerId !== state.pointerId) return;
+    const dy = e.clientY - state.startY;
+    sheetOffsetY.set(Math.max(0, state.startOffset + dy));
+  };
+
+  const onHandlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragRef.current;
+    if (!state || e.pointerId !== state.pointerId) return;
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore if already released
+    }
+    dragRef.current = null;
+    finishSheetDrag();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 60,
+      }}
+    >
+      <motion.div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          y: sheetOffsetY,
+        }}
+      >
+        <motion.div
+          role="presentation"
+          aria-hidden
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.48)",
+            opacity: backdropOpacity,
+          }}
+        />
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Job details"
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 32, stiffness: 380 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "relative",
+            width: "100%",
+            maxWidth: 420,
+            maxHeight: "92dvh",
+            background: "#FFFFFF",
+            borderTopLeftRadius: 22,
+            borderTopRightRadius: 22,
+            boxShadow: "0 -20px 50px rgba(0,0,0,0.22)",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            zIndex: 1,
+          }}
+        >
+        <div
+          onPointerDown={onHandlePointerDown}
+          onPointerMove={onHandlePointerMove}
+          onPointerUp={onHandlePointerEnd}
+          onPointerCancel={onHandlePointerEnd}
+          style={{
+            flexShrink: 0,
+            height: 36,
+            padding: "12px 20px 8px",
+            background: "#FFFFFF",
+            touchAction: "none",
+            cursor: "grab",
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 4,
+              margin: "0 auto",
+              borderRadius: 999,
+              background: "#E7E5E4",
+            }}
+            aria-hidden
+          />
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            padding: "12px 20px 12px",
+            background: "#FFFFFF",
+          }}
+        >
+          <div
+            style={{
+              marginBottom: 14,
+              paddingBottom: 14,
+              borderBottom: "1px solid rgba(28,25,23,0.08)",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 11px 4px 7px",
+                borderRadius: 999,
+                background: badge.bg,
+                color: badge.text,
+                fontSize: 11,
+                fontWeight: 650,
+                letterSpacing: "-0.01em",
+                lineHeight: "18px",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <StatusBadgeIcon status={safeMeta.status} color={badge.text} />
+              <span style={{ flexShrink: 0 }}>{badge.label}</span>
+              <span style={{ opacity: 0.35, fontWeight: 700 }} aria-hidden>
+                ·
+              </span>
+              <span style={{ fontWeight: 600, opacity: 0.88, overflowWrap: "anywhere", minWidth: 0 }}>
+                {formatAppliedDate(safeMeta.appliedAtISO)}
+              </span>
+            </span>
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontSize: 12,
+                lineHeight: "17px",
+                color: "#A8A29E",
+                letterSpacing: "-0.01em",
+                maxWidth: 340,
+              }}
+            >
+              {appliedSheetHint}
+            </p>
+          </div>
+          <JobCard job={job} isTop={false} variant="embedded" />
+        </div>
+
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "12px 20px calc(12px + env(safe-area-inset-bottom, 0px))",
+            background: "#FFFFFF",
+            borderTop: "1px solid rgba(28,25,23,0.08)",
+          }}
+        >
+          <button
+            type="button"
+            title={job.externalUrl ? undefined : "Posting link is not available for this role yet."}
+            onClick={() => {
+              if (job.externalUrl) {
+                try {
+                  window.open(job.externalUrl, "_blank", "noopener,noreferrer");
+                } catch {
+                  // ignore
+                }
+              }
+            }}
+            style={{
+              width: "100%",
+              minHeight: 44,
+              borderRadius: 12,
+              border: "1px solid rgba(28,25,23,0.14)",
+              background: "#FFFFFF",
+              color: "#292524",
+              fontSize: 13,
+              fontWeight: 650,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              boxSizing: "border-box",
+              boxShadow: "0 1px 2px rgba(28,25,23,0.04)",
+            }}
+          >
+            <ExternalLink size={16} strokeWidth={2.2} />
+            View job posting
+          </button>
+        </div>
+      </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/** Shared logo tile: gradient wash + letter in brand color (matches Applied job cards). */
+function jobLogoAvatarStyle(logoColor: string): React.CSSProperties {
+  return {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    background: `linear-gradient(145deg, ${logoColor}26 0%, ${logoColor}0F 55%, #FFFFFF 100%)`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: logoColor,
+    fontSize: 15,
+    fontWeight: 700,
+    flexShrink: 0,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
+  };
+}
+
+function AppliedJobCard({
+  job,
+  meta,
+  onViewDetails,
+}: {
+  job: Job;
+  meta?: AppliedMeta;
+  onViewDetails: () => void;
+}) {
+  const safeMeta: AppliedMeta = meta ?? {
+    appliedAtISO: new Date().toISOString(),
+    status: "submitted",
+    via: "Zappy Apply",
+    resume: "Zappy profile",
+    followUpInDays: 3,
+  };
+  const badge = statusBadge(safeMeta.status);
+  const metaDividerStyle: React.CSSProperties = {
+    color: "#A8A29E",
+    padding: "0 7px",
+    fontSize: 15,
+    fontWeight: 700,
+    lineHeight: 1,
+    position: "relative",
+    top: 1,
+  };
 
   return (
     <div
       style={{
         borderRadius: 18,
-        padding: 16,
+        overflow: "hidden",
         background: "#FFFFFF",
-        border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+        boxShadow: "0 0 0 1px rgba(28,25,23,0.05), 0 4px 20px rgba(28,25,23,0.06)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            background: job.logoColor,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#FFFFFF",
-            fontSize: 18,
-            fontWeight: 800,
-            flexShrink: 0,
-          }}
-        >
-          {job.logoLetter}
-        </div>
+      <div style={{ padding: "15px 16px 14px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div style={jobLogoAvatarStyle(job.logoColor)}>{job.logoLetter}</div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div
-              style={{
-                fontSize: 15.5,
-                fontWeight: 800,
-                color: "#111827",
-                letterSpacing: "-0.02em",
-                lineHeight: "20px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {job.title}
-            </div>
-            {typeof job.matchScore === "number" && (
-              <div
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <h3
                 style={{
-                  marginLeft: "auto",
-                  padding: "4px 8px",
-                  borderRadius: 999,
-                  background: "rgba(0,0,0,0.04)",
-                  color: "#111827",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "-0.02em",
-                  flexShrink: 0,
+                  margin: 0,
+                  fontSize: 15,
+                  fontWeight: 650,
+                  color: "#0C0A09",
+                  letterSpacing: "-0.035em",
+                  lineHeight: "21px",
+                  overflowWrap: "anywhere",
+                  wordBreak: "break-word",
                 }}
               >
-                {job.matchScore}% match
-              </div>
-            )}
-          </div>
+                {job.title}
+              </h3>
+              {typeof job.matchScore === "number" && (
+                <div
+                  style={{
+                    padding: "4px 9px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(28,25,23,0.08)",
+                    background: "linear-gradient(180deg, #FAFAF9 0%, #F5F5F4 100%)",
+                    color: "#44403C",
+                    fontSize: 11,
+                    fontWeight: 750,
+                    letterSpacing: "-0.04em",
+                    flexShrink: 0,
+                    lineHeight: "15px",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {job.matchScore}%
+                </div>
+              )}
+            </div>
 
-          <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12.5, color: "#6B7280", fontWeight: 600, letterSpacing: "-0.01em" }}>
-              {job.company}
-            </span>
-            <span style={{ color: "#D1D5DB" }}>·</span>
-            <span style={{ fontSize: 12.5, color: "#6B7280", letterSpacing: "-0.01em" }}>
-              {job.location} · {job.locationType}
-            </span>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                color: "#78716C",
+                letterSpacing: "-0.012em",
+                lineHeight: "18px",
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+            >
+              <span style={{ fontWeight: 600, color: "#57534E" }}>{job.company}</span>
+              <span style={metaDividerStyle} aria-hidden>
+                ·
+              </span>
+              {job.location}
+              <span style={metaDividerStyle} aria-hidden>
+                ·
+              </span>
+              {job.locationType}
+            </p>
           </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <div
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "11px 14px 12px",
+          background: "linear-gradient(180deg, rgba(250,250,249,0.96) 0%, #F5F5F4 100%)",
+          borderTop: "1px solid rgba(28,25,23,0.06)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "6px 12px",
+            minWidth: 0,
+          }}
+        >
+          <span
             style={{
-              padding: "4px 10px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "3px 9px 3px 7px",
               borderRadius: 999,
               background: badge.bg,
               color: badge.text,
-              fontSize: 12,
-              fontWeight: 800,
+              fontSize: 11,
+              fontWeight: 650,
               letterSpacing: "-0.01em",
+              lineHeight: "16px",
+              flexShrink: 0,
             }}
           >
+            <StatusBadgeIcon status={safeMeta.status} color={badge.text} />
             {badge.label}
-          </div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6B7280", fontSize: 12.5 }}>
-            <CalendarClock size={14} strokeWidth={2} />
-            <span style={{ letterSpacing: "-0.01em" }}>{formatAppliedDate(safeMeta.appliedAtISO)}</span>
-          </div>
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              color: "#78716C",
+              letterSpacing: "-0.01em",
+              lineHeight: "18px",
+              minWidth: 0,
+            }}
+          >
+            <CalendarClock size={14} strokeWidth={2} style={{ flexShrink: 0, color: "#A8A29E" }} aria-hidden />
+            <span style={{ overflowWrap: "anywhere" }}>{formatAppliedDate(safeMeta.appliedAtISO)}</span>
+          </span>
         </div>
+
+        <button
+          type="button"
+          onClick={onViewDetails}
+          aria-label={`View full details for ${job.title} at ${job.company}`}
+          style={{
+            flexShrink: 0,
+            minHeight: 44,
+            minWidth: 44,
+            padding: "0 10px 0 14px",
+            margin: "-4px -6px -4px 0",
+            border: "none",
+            borderRadius: 12,
+            background: "transparent",
+            color: "#EA580C",
+            fontSize: 13,
+            fontWeight: 650,
+            letterSpacing: "-0.02em",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 2,
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          Details
+          <ChevronRight size={18} color="#EA580C" strokeWidth={2.25} aria-hidden />
+        </button>
       </div>
-
-      {open && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 14,
-                border: "1px solid rgba(0,0,0,0.08)",
-                background: "#FFFFFF",
-                color: "#111827",
-                fontSize: 13,
-                fontWeight: 800,
-                letterSpacing: "-0.01em",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-              onClick={() => {
-                // placeholder: would open job posting in real app
-              }}
-            >
-              <ExternalLink size={16} strokeWidth={2} />
-              View posting
-            </button>
-            <button
-              type="button"
-              style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 14,
-                border: "none",
-                background: "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
-                color: "#FFFFFF",
-                fontSize: 13,
-                fontWeight: 900,
-                letterSpacing: "-0.01em",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                boxShadow: "0 10px 28px rgba(234,88,12,0.35)",
-              }}
-              onClick={() => {
-                // placeholder: would open prep/checklist in real app
-              }}
-            >
-              Prep checklist
-            </button>
-          </div>
-
-          <div style={{ marginTop: 12 }}>
-            <JobCard job={job} isTop={false} />
-          </div>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          marginTop: 12,
-          width: "100%",
-          height: 44,
-          borderRadius: 14,
-          border: "1px solid rgba(0,0,0,0.08)",
-          background: "#FFFFFF",
-          color: "#EA580C",
-          fontSize: 13,
-          fontWeight: 800,
-          letterSpacing: "-0.01em",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-        }}
-      >
-        {open ? "Hide details" : "View details"}
-        <span style={{ fontSize: 11 }}>{open ? "▲" : "▼"}</span>
-      </button>
     </div>
   );
 }
@@ -1732,56 +2125,57 @@ function getScoreBadgeStyle(score: number): {
   };
 }
 
-function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
-  const [expanded, setExpanded] = useState(false);
+function formatJobExperienceRange(min: number, max: number): string {
+  if (max <= min) {
+    return `${min}+ yrs required`;
+  }
+  return `${min}\u2013${max} yrs required`;
+}
 
-  const descriptionPreviewLength = 160;
-  const isLong = job.jobDescription.length > descriptionPreviewLength;
-  const visibleDescription =
-    expanded || !isLong
-      ? job.jobDescription
-      : job.jobDescription.slice(0, descriptionPreviewLength) + "…";
+function JobCard({
+  job,
+  isTop,
+  variant = "card",
+}: {
+  job: Job;
+  isTop: boolean;
+  variant?: "card" | "embedded";
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [showAllSkills, setShowAllSkills] = useState(false);
+  const requiredSkills = REQUIRED_SKILLS_BY_JOB[job.id] ?? ["Product Design", "User Research", "Visual Design", "Prototyping"];
+  const visibleSkills = showAllSkills ? requiredSkills : requiredSkills.slice(0, 4);
+  const hiddenSkillsCount = Math.max(requiredSkills.length - visibleSkills.length, 0);
+  const experienceMatches = (job.matchScore ?? 0) >= 85;
+  const embedded = variant === "embedded";
 
   return (
     <div
       style={{
-        borderRadius: 20,
-        padding: 20,
-        background: "#FFFFFF",
-        border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: isTop
-          ? "0 20px 50px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03)"
-          : "0 8px 24px rgba(0,0,0,0.06)",
+        borderRadius: embedded ? 0 : 20,
+        padding: embedded ? 0 : 20,
+        background: embedded ? "transparent" : "#FFFFFF",
+        border: embedded ? "none" : "1px solid rgba(0,0,0,0.06)",
+        boxShadow: embedded
+          ? "none"
+          : isTop
+            ? "0 20px 50px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03)"
+            : "0 8px 24px rgba(0,0,0,0.06)",
         position: "relative",
-        overflow: "hidden",
+        overflow: embedded ? "visible" : "hidden",
       }}
     >
       {/* Header: Logo + Title + Company */}
       <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: embedded ? "center" : "flex-start",
+          justifyContent: embedded ? "center" : undefined,
           gap: 12,
           marginBottom: 14,
         }}
       >
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            background: job.logoColor,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#FFFFFF",
-            fontSize: 20,
-            fontWeight: 700,
-            flexShrink: 0,
-          }}
-        >
-          {job.logoLetter}
-        </div>
+        <div style={jobLogoAvatarStyle(job.logoColor)}>{job.logoLetter}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div
@@ -1795,20 +2189,20 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
             >
               {job.title}
             </div>
-            <span style={{ fontSize: 13, color: "#9CA3AF" }}>↗</span>
             {typeof job.matchScore === "number" && (
               <div
                 style={{
                   marginLeft: "auto",
-                  padding: "4px 8px",
+                  padding: "6px 10px",
                   borderRadius: 999,
                   background: getScoreBadgeStyle(job.matchScore).bg,
                   color: getScoreBadgeStyle(job.matchScore).text,
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: "-0.02em",
-                  lineHeight: "14px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                  lineHeight: "15px",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                  border: "1px solid rgba(0,0,0,0.08)",
                   flexShrink: 0,
                 }}
               >
@@ -1855,6 +2249,30 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
           {job.location} · {job.locationType}
         </span>
 
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 13,
+            fontWeight: 500,
+            padding: "5px 12px",
+            borderRadius: 999,
+            backgroundColor: experienceMatches ? "#F0FDF4" : "#FFFBEB",
+            color: experienceMatches ? "#166534" : "#EA580C",
+            border: experienceMatches
+              ? "1px solid rgba(22,163,74,0.18)"
+              : "1px dashed rgba(217,119,6,0.35)",
+          }}
+        >
+          <span>{experienceMatches ? "✓" : "!"}</span>
+          <span>
+            {experienceMatches
+              ? "Experience match"
+              : formatJobExperienceRange(job.experienceYearsMin, job.experienceYearsMax)}
+          </span>
+        </span>
+
         {/* Salary chip */}
         <span
           style={{
@@ -1889,12 +2307,91 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
         body={job.whyFit}
       />
 
-      {/* What to watch out for */}
-      <SectionBlock
-        barColor="#D4A574"
-        title="What to watch out for"
-        body={job.watchOut}
-      />
+      {embedded && (
+        <SectionBlock
+          barColor="#EA580C"
+          title="What to watch out for"
+          body={job.watchOut}
+        />
+      )}
+
+      {/* Required Skills */}
+      <div style={{ marginBottom: 14 }}>
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: "#111827",
+            marginBottom: 7,
+          }}
+        >
+          Required skills
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {visibleSkills.map((skill) => (
+            <span
+              key={skill}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "5px 10px",
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#4B5563",
+                background: "#F8FAFC",
+                border: "1px solid rgba(148,163,184,0.3)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {skill}
+            </span>
+          ))}
+          {hiddenSkillsCount > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAllSkills(true);
+              }}
+              style={{
+                border: "none",
+                background: "rgba(234,88,12,0.10)",
+                color: "#C2410C",
+                padding: "5px 10px",
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              +{hiddenSkillsCount} more
+            </button>
+          )}
+          {showAllSkills && requiredSkills.length > 4 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAllSkills(false);
+              }}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#EA580C",
+                padding: "5px 4px",
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Show less
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Divider */}
       <div
@@ -1918,25 +2415,15 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
         >
           Job Description
         </div>
-        <p
-          style={{
-            margin: 0,
-            fontSize: 13,
-            lineHeight: "21px",
-            color: "#4B5563",
-          }}
-        >
-          {visibleDescription}
-        </p>
-        {isLong && (
+        {!expanded ? (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setExpanded((v) => !v);
+              setExpanded(true);
             }}
             style={{
-              marginTop: 6,
+              marginTop: 2,
               padding: 0,
               border: "none",
               background: "transparent",
@@ -1949,9 +2436,45 @@ function JobCard({ job, isTop }: { job: Job; isTop: boolean }) {
               gap: 4,
             }}
           >
-            <span style={{ fontSize: 11 }}>{expanded ? "▲" : "▼"}</span>
-            {expanded ? "Show less" : "View more"}
+            <span style={{ fontSize: 11 }}>▼</span>
+            View job description
           </button>
+        ) : (
+          <>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 13,
+                lineHeight: "21px",
+                color: "#4B5563",
+              }}
+            >
+              {job.jobDescription}
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(false);
+              }}
+              style={{
+                marginTop: 6,
+                padding: 0,
+                border: "none",
+                background: "transparent",
+                color: "#EA580C",
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <span style={{ fontSize: 11 }}>▲</span>
+              Hide description
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -2333,23 +2856,7 @@ function SearchResultCard({
     >
       {/* Collapsed header */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            background: job.logoColor,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#FFFFFF",
-            fontSize: 16,
-            fontWeight: 700,
-            flexShrink: 0,
-          }}
-        >
-          {job.logoLetter}
-        </div>
+        <div style={jobLogoAvatarStyle(job.logoColor)}>{job.logoLetter}</div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
