@@ -1590,7 +1590,7 @@ function MatchHeroCard({
                   letterSpacing: "-0.01em",
                 }}
               >
-                <Users size={12} color="#71717A" strokeWidth={1.9} />
+                <Users size={12} color="#6B5FA8" strokeWidth={1.9} />
                 {recruiterViews} recruiter views
               </div>
             </motion.div>

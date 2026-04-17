@@ -634,6 +634,16 @@ type AppliedMeta = {
   notes?: string;
 };
 
+const SKIP_REASON_OPTIONS = [
+  "Salary doesn't match my expectations",
+  "Location doesn't work for me",
+  "Not the right seniority level",
+  "Wrong industry or domain",
+  "Not the type of role I'm looking for",
+  "Not interested in this company",
+  "Already applied or interviewing here",
+] as const;
+
 interface JobReviewScreenProps {
   firstName: string;
   initialTab?: "new" | "saved";
@@ -662,6 +672,9 @@ export function JobReviewScreen({
   const [sortMode, setSortMode] = useState<"most_recent" | "highest_score">("most_recent");
   const [quickApplyToast, setQuickApplyToast] = useState<{ id: string; title: string } | null>(null);
   const [appliedSheetJob, setAppliedSheetJob] = useState<Job | null>(null);
+  const [skipSheetOpen, setSkipSheetOpen] = useState(false);
+  const [selectedSkipReasons, setSelectedSkipReasons] = useState<Set<string>>(new Set());
+  const [skipNotes, setSkipNotes] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isAnimating = useRef(false);
   const switcherRef = useRef<HTMLDivElement | null>(null);
@@ -717,6 +730,21 @@ export function JobReviewScreen({
       else next.add(id);
       return next;
     });
+  }, []);
+
+  const toggleSkipReason = useCallback((reason: string) => {
+    setSelectedSkipReasons((prev) => {
+      const next = new Set(prev);
+      if (next.has(reason)) next.delete(reason);
+      else next.add(reason);
+      return next;
+    });
+  }, []);
+
+  const closeSkipSheet = useCallback(() => {
+    setSkipSheetOpen(false);
+    setSelectedSkipReasons(new Set());
+    setSkipNotes("");
   }, []);
 
   const exitSearch = useCallback(() => {
@@ -788,6 +816,12 @@ export function JobReviewScreen({
   const currentJob = sortedJobs[currentIndex];
   const isCurrentExternal = Boolean(currentJob?.externalUrl);
 
+  const submitSkip = useCallback(() => {
+    // Reason capture is optional today; keep this for analytics wiring later.
+    closeSkipSheet();
+    handleAdvance("left");
+  }, [closeSkipSheet, handleAdvance]);
+
   useEffect(() => {
     if (!switcherOpen) return;
     const handlePointerDown = (event: MouseEvent) => {
@@ -816,6 +850,15 @@ export function JobReviewScreen({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [appliedSheetJob]);
+
+  useEffect(() => {
+    if (!skipSheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSkipSheet();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [skipSheetOpen, closeSkipSheet]);
 
   useEffect(() => {
     if (!appliedSheetJob) return;
@@ -1544,7 +1587,7 @@ export function JobReviewScreen({
               type="button"
               whileTap={{ scale: 0.92 }}
               whileHover={{ backgroundColor: "#F3F4F6" }}
-              onClick={() => handleAdvance("left")}
+              onClick={() => setSkipSheetOpen(true)}
               style={{
                 width: 50,
                 height: 50,
@@ -1654,6 +1697,234 @@ export function JobReviewScreen({
             meta={appliedMetaById[appliedSheetJob.id]}
             onClose={() => setAppliedSheetJob(null)}
           />
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {skipSheetOpen ? (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close skip reason sheet"
+              onClick={closeSkipSheet}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 70,
+                border: "none",
+                background: "rgba(28,25,23,0.38)",
+                padding: 0,
+                margin: 0,
+                cursor: "pointer",
+              }}
+            />
+            <motion.section
+              role="dialog"
+              aria-modal="true"
+              aria-label="Skip job reasons"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: "fixed",
+                left: 0,
+                right: 0,
+                top: 8,
+                bottom: 0,
+                zIndex: 71,
+                marginInline: "auto",
+                width: "min(100%, 440px)",
+                maxWidth: "100vw",
+                background: "#FFFEFB",
+                borderTopLeftRadius: 22,
+                borderTopRightRadius: 22,
+                border: "1px solid rgba(28,25,23,0.08)",
+                borderBottom: "none",
+                boxShadow: "0 -12px 36px rgba(28,25,23,0.16)",
+                padding: "10px 16px calc(14px + env(safe-area-inset-bottom))",
+                maxHeight: "calc(100dvh - 8px)",
+                overflowY: "auto",
+                overscrollBehaviorY: "contain",
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 999,
+                  background: "rgba(28,25,23,0.16)",
+                  margin: "0 auto 12px",
+                }}
+              />
+
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 22,
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 700,
+                  letterSpacing: "-0.015em",
+                  color: "#1A1613",
+                  lineHeight: 1.25,
+                }}
+              >
+                Skipping this one?
+              </h3>
+
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                  color: "#6B7280",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                No problem. It will be removed from your list. You can optionally tell us why to improve future recommendations.
+              </p>
+
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1A1613", letterSpacing: "-0.01em" }}>
+                  Quick reasons <span style={{ color: "#A8A29E", fontWeight: 500 }}>(optional)</span>
+                </div>
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {SKIP_REASON_OPTIONS.map((reason) => {
+                    const checked = selectedSkipReasons.has(reason);
+                    return (
+                      <button
+                        key={reason}
+                        type="button"
+                        onClick={() => toggleSkipReason(reason)}
+                        style={{
+                          width: "100%",
+                          minHeight: 44,
+                          textAlign: "left",
+                          border: checked
+                            ? "1px solid rgba(234,88,12,0.34)"
+                            : "1px solid rgba(28,25,23,0.09)",
+                          background: checked
+                            ? "rgba(234,88,12,0.06)"
+                            : "rgba(255,255,255,0.92)",
+                          borderRadius: 12,
+                          padding: "7px 10px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          touchAction: "manipulation",
+                          WebkitTapHighlightColor: "transparent",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: 5,
+                            border: checked
+                              ? "1px solid rgba(234,88,12,0.45)"
+                              : "1px solid rgba(28,25,23,0.2)",
+                            background: checked ? "rgba(234,88,12,0.14)" : "#FFFFFF",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#EA580C",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {checked ? <Check size={11} strokeWidth={3} /> : null}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 12.5,
+                            fontWeight: 500,
+                            color: "#1F2937",
+                            letterSpacing: "-0.01em",
+                            lineHeight: 1.35,
+                          }}
+                        >
+                          {reason}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1A1613", letterSpacing: "-0.01em" }}>
+                  Anything else? <span style={{ color: "#A8A29E", fontWeight: 500 }}>(optional)</span>
+                </div>
+                <textarea
+                  value={skipNotes}
+                  onChange={(e) => setSkipNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Add any extra context (optional)..."
+                  style={{
+                    marginTop: 8,
+                    width: "100%",
+                    resize: "none",
+                    borderRadius: 12,
+                    border: "1px solid rgba(28,25,23,0.11)",
+                    background: "#FFFEFA",
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                    color: "#374151",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    fontFamily: "Inter, sans-serif",
+                    letterSpacing: "-0.01em",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={closeSkipSheet}
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    borderRadius: 12,
+                    border: "1px solid rgba(28,25,23,0.14)",
+                    background: "#FFFFFF",
+                    color: "#1F2937",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitSkip}
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    borderRadius: 12,
+                    border: "none",
+                    background: "linear-gradient(135deg, #FF8A56 0%, #EA580C 100%)",
+                    color: "#FFFFFF",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    letterSpacing: "-0.01em",
+                    boxShadow: "0 8px 20px rgba(234,88,12,0.28)",
+                  }}
+                >
+                  Skip this role
+                </button>
+              </div>
+            </motion.section>
+          </>
         ) : null}
       </AnimatePresence>
     </div>

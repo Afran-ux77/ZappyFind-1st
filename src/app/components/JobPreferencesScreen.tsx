@@ -730,8 +730,9 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
       flex: transparentSurface ? "1 1 0%" : undefined,
       minWidth: transparentSurface ? 0 : undefined,
       background: transparentSurface ? "transparent" : C.bg, fontFamily: "Inter, sans-serif",
-      display: "flex", flexDirection: "column",
       paddingBottom: transparentSurface ? 0 : "env(safe-area-inset-bottom)",
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch",
     }}>
 
       {/* ── Progress bar ──────────────────────────────────────────────────── */}
@@ -759,18 +760,13 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
       {/* ── Scrollable content ────────────────────────────────────────────── */}
       <div
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          overscrollBehaviorY: "contain",
-          WebkitOverflowScrolling: "touch",
           touchAction: "pan-y",
         }}
       >
         <div
           style={{
             padding: isDesktopLayout ? "0" : "20px 20px",
-            minHeight: "100%",
+            minHeight: "auto",
             display: "flex",
             flexDirection: "column",
           }}
@@ -1909,7 +1905,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
 
       {/* ── Bottom navigation footer ──────────────────────────────────────── */}
       <div style={{
-        marginTop: "auto",
+        marginTop: isDesktopLayout ? 14 : 16,
         padding: isDesktopLayout
           ? "16px 0 calc(12px + env(safe-area-inset-bottom))"
           : "24px 20px calc(20px + env(safe-area-inset-bottom))",
@@ -1917,7 +1913,6 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
         justifyContent: "space-between",
         alignItems: "center",
         gap: 12,
-        flexShrink: 0,
       }}>
         {/* Previous */}
         <motion.button
