@@ -67,6 +67,25 @@ const MONTH_OPTIONS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 const YEAR_OPTIONS = Array.from({ length: 45 }, (_, i) => String(new Date().getFullYear() - i));
+const MONTH_INDEX_BY_LABEL: Record<string, number> = MONTH_OPTIONS.reduce((acc, label, idx) => {
+  acc[label] = idx;
+  return acc;
+}, {} as Record<string, number>);
+
+function toMonthInputValue(monthLabel: string, year: string): string {
+  if (!monthLabel || !year) return "";
+  const monthIndex = MONTH_INDEX_BY_LABEL[monthLabel];
+  if (typeof monthIndex !== "number") return "";
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+}
+
+function fromMonthInputValue(value: string): { monthLabel: string; year: string } {
+  if (!value || !/^\d{4}-\d{2}$/.test(value)) return { monthLabel: "", year: "" };
+  const [year, monthPart] = value.split("-");
+  const monthIndex = Number(monthPart) - 1;
+  if (monthIndex < 0 || monthIndex > 11) return { monthLabel: "", year: "" };
+  return { monthLabel: MONTH_OPTIONS[monthIndex], year };
+}
 
 interface Props {
   email: string;
@@ -693,6 +712,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [showProjects, setShowProjects] = useState(false);
   const [achievements, setAchievements] = useState<Array<{ title: string; desc: string }>>([]);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showOtherOffers, setShowOtherOffers] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -1553,22 +1573,16 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         error={showRequiredErrors && missingJobTitle}
                         errorText="Job Title is required." />
                     </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <SelectField
-                        label="From month"
-                        value={startMonth}
-                        onChange={setStartMonth}
-                        options={MONTH_OPTIONS}
-                        placeholder="Select month"
-                      />
-                      <SelectField
-                        label="From year"
-                        value={startYear}
-                        onChange={setStartYear}
-                        options={YEAR_OPTIONS}
-                        placeholder="Select year"
-                      />
-                    </div>
+                    <Input
+                      label="From month & year"
+                      type="month"
+                      value={toMonthInputValue(startMonth, startYear)}
+                      onChange={(value) => {
+                        const { monthLabel, year } = fromMonthInputValue(value);
+                        setStartMonth(monthLabel);
+                        setStartYear(year);
+                      }}
+                    />
                     <label
                       style={{
                         display: "inline-flex",
@@ -1600,22 +1614,16 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       Currently working here
                     </label>
                     {!isCurrent && (
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <SelectField
-                          label="To month"
-                          value={endMonth}
-                          onChange={setEndMonth}
-                          options={MONTH_OPTIONS}
-                          placeholder="Select month"
-                        />
-                        <SelectField
-                          label="To year"
-                          value={endYear}
-                          onChange={setEndYear}
-                          options={YEAR_OPTIONS}
-                          placeholder="Select year"
-                        />
-                      </div>
+                      <Input
+                        label="To month & year"
+                        type="month"
+                        value={toMonthInputValue(endMonth, endYear)}
+                        onChange={(value) => {
+                          const { monthLabel, year } = fromMonthInputValue(value);
+                          setEndMonth(monthLabel);
+                          setEndYear(year);
+                        }}
+                      />
                     )}
                     {isCurrent && (
                       <div style={{ fontSize: 11, color: C.textSecondary, marginTop: -2 }}>
@@ -1672,28 +1680,17 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           onChange={(v) => { const n = [...moreExp]; n[idx] = { ...n[idx], title: v }; setMoreExp(n); }}
                           placeholder="Role" />
                       </div>
-                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <SelectField
-                          label="From month"
-                          value={exp.startMonth}
-                          onChange={(v) => {
+                      <div className="mt-3">
+                        <Input
+                          label="From month & year"
+                          type="month"
+                          value={toMonthInputValue(exp.startMonth, exp.startYear)}
+                          onChange={(value) => {
+                            const { monthLabel, year } = fromMonthInputValue(value);
                             const n = [...moreExp];
-                            n[idx] = { ...n[idx], startMonth: v };
+                            n[idx] = { ...n[idx], startMonth: monthLabel, startYear: year };
                             setMoreExp(n);
                           }}
-                          options={MONTH_OPTIONS}
-                          placeholder="Select month"
-                        />
-                        <SelectField
-                          label="From year"
-                          value={exp.startYear}
-                          onChange={(v) => {
-                            const n = [...moreExp];
-                            n[idx] = { ...n[idx], startYear: v };
-                            setMoreExp(n);
-                          }}
-                          options={YEAR_OPTIONS}
-                          placeholder="Select year"
                         />
                       </div>
                       <label
@@ -1730,28 +1727,17 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         Currently working here
                       </label>
                       {!exp.current && (
-                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <SelectField
-                            label="To month"
-                            value={exp.endMonth}
-                            onChange={(v) => {
+                        <div className="mt-3">
+                          <Input
+                            label="To month & year"
+                            type="month"
+                            value={toMonthInputValue(exp.endMonth, exp.endYear)}
+                            onChange={(value) => {
+                              const { monthLabel, year } = fromMonthInputValue(value);
                               const n = [...moreExp];
-                              n[idx] = { ...n[idx], endMonth: v };
+                              n[idx] = { ...n[idx], endMonth: monthLabel, endYear: year };
                               setMoreExp(n);
                             }}
-                            options={MONTH_OPTIONS}
-                            placeholder="Select month"
-                          />
-                          <SelectField
-                            label="To year"
-                            value={exp.endYear}
-                            onChange={(v) => {
-                              const n = [...moreExp];
-                              n[idx] = { ...n[idx], endYear: v };
-                              setMoreExp(n);
-                            }}
-                            options={YEAR_OPTIONS}
-                            placeholder="Select year"
                           />
                         </div>
                       )}
@@ -1794,6 +1780,35 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                 <path d="M5 5h4M5 7h3M5 9h4" stroke={C.brand} strokeWidth="1.2"
                   strokeLinecap="round" />
               </svg>
+            }>Skills</SectionLabel>
+
+            <div style={{
+              borderRadius: 14, border: `1.5px solid rgba(194,65,12,0.12)`,
+              background: "white", padding: 16,
+              boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
+            }}>
+              <SkillsField
+                skills={skills}
+                skillInput={skillInput}
+                setSkillInput={setSkillInput}
+                onAddSkill={addSkill}
+                onRemoveSkill={removeSkill}
+                error={showRequiredErrors && missingSkills}
+                errorText="At least one skill is required."
+              />
+            </div>
+          </div>
+        )}
+
+        {profileType === "experienced" && (
+          <div>
+            <SectionLabel icon={
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M1 7c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6-6-2.7-6-6z"
+                  stroke={C.brand} strokeWidth="1.2" />
+                <path d="M5 5h4M5 7h3M5 9h4" stroke={C.brand} strokeWidth="1.2"
+                  strokeLinecap="round" />
+              </svg>
             }>Portfolio</SectionLabel>
 
             <div style={{
@@ -1802,15 +1817,6 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
               boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
             }}>
               <div className="flex flex-col gap-5">
-                <SkillsField
-                  skills={skills}
-                  skillInput={skillInput}
-                  setSkillInput={setSkillInput}
-                  onAddSkill={addSkill}
-                  onRemoveSkill={removeSkill}
-                  error={showRequiredErrors && missingSkills}
-                  errorText="At least one skill is required."
-                />
                 <Input
                   label="LinkedIn"
                   value={linkedinUrl}
@@ -1841,7 +1847,40 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                 />
                 <path d="M1.4 7.6h11.2" stroke={C.brand} strokeWidth="1.2" strokeLinecap="round" />
               </svg>
-            }>Portfolio & offers</SectionLabel>
+            }>Skills</SectionLabel>
+
+            <div style={{
+              borderRadius: 14, border: `1.5px solid rgba(194,65,12,0.12)`,
+              background: "white", padding: 16,
+              boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
+            }}>
+              <SkillsField
+                skills={skills}
+                skillInput={skillInput}
+                setSkillInput={setSkillInput}
+                onAddSkill={addSkill}
+                onRemoveSkill={removeSkill}
+                error={showRequiredErrors && missingSkills}
+                errorText="At least one skill is required."
+              />
+            </div>
+          </div>
+        )}
+
+        {profileType === "fresher" && (
+          <div>
+            <SectionLabel icon={
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M5 4.2V3.7c0-.8.65-1.45 1.45-1.45h1.1c.8 0 1.45.65 1.45 1.45v.5M2.4 5.2h9.2c.72 0 1.3.58 1.3 1.3v4.25c0 .72-.58 1.3-1.3 1.3H2.4c-.72 0-1.3-.58-1.3-1.3V6.5c0-.72.58-1.3 1.3-1.3Z"
+                  stroke={C.brand}
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path d="M1.4 7.6h11.2" stroke={C.brand} strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            }>Portfolio</SectionLabel>
 
             <div style={{
               borderRadius: 14, border: `1.5px solid rgba(194,65,12,0.12)`,
@@ -1849,15 +1888,6 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
               boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
             }}>
               <div className="flex flex-col gap-5">
-                <SkillsField
-                  skills={skills}
-                  skillInput={skillInput}
-                  setSkillInput={setSkillInput}
-                  onAddSkill={addSkill}
-                  onRemoveSkill={removeSkill}
-                  error={showRequiredErrors && missingSkills}
-                  errorText="At least one skill is required."
-                />
                 <Input
                   label="LinkedIn"
                   value={linkedinUrl}
@@ -1870,68 +1900,6 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   onChange={setPortfolioLinks}
                   placeholder="Personal website, GitHub, Behance etc"
                 />
-
-                <div>
-                  <label style={{
-                    display: "block", fontSize: 10, fontWeight: 700,
-                    color: C.textSecondary, letterSpacing: "0.07em",
-                    textTransform: "uppercase" as const,
-                    marginBottom: 8, fontFamily: "Inter, sans-serif",
-                  }}>
-                    Any other job offers currently?
-                  </label>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setHasOtherOffers("yes")}
-                      style={{
-                        flex: 1, padding: "10px 12px", borderRadius: 10,
-                        border: `1.5px solid ${hasOtherOffers === "yes" ? "rgba(194,65,12,0.35)" : C.border}`,
-                        background: hasOtherOffers === "yes" ? "rgba(194,65,12,0.08)" : "white",
-                        color: hasOtherOffers === "yes" ? C.brand : C.textPrimary,
-                        fontSize: 13, fontWeight: 600, cursor: "pointer",
-                        fontFamily: "Inter, sans-serif",
-                      }}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHasOtherOffers("no");
-                        setOfferCompany("");
-                        setOfferRole("");
-                      }}
-                      style={{
-                        flex: 1, padding: "10px 12px", borderRadius: 10,
-                        border: `1.5px solid ${hasOtherOffers === "no" ? "rgba(194,65,12,0.35)" : C.border}`,
-                        background: hasOtherOffers === "no" ? "rgba(194,65,12,0.08)" : "white",
-                        color: hasOtherOffers === "no" ? C.brand : C.textPrimary,
-                        fontSize: 13, fontWeight: 600, cursor: "pointer",
-                        fontFamily: "Inter, sans-serif",
-                      }}
-                    >
-                      No
-                    </button>
-                  </div>
-                </div>
-
-                {hasOtherOffers === "yes" && (
-                  <div className="flex flex-col gap-3">
-                    <Input
-                      label="Offer company"
-                      value={offerCompany}
-                      onChange={setOfferCompany}
-                      placeholder="e.g. Company name"
-                    />
-                    <Input
-                      label="Offer role"
-                      value={offerRole}
-                      onChange={setOfferRole}
-                      placeholder="e.g. Software Engineer"
-                    />
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -2207,98 +2175,6 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                 <OptionalSection
                   icon={(
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="2.2" y="3" width="11.6" height="10.6" rx="2" stroke={C.brand} strokeWidth="1.3" />
-                      <path d="M6 3V2.8c0-.44.36-.8.8-.8h2.4c.44 0 .8.36.8.8V3" stroke={C.brand} strokeWidth="1.3" strokeLinecap="round" />
-                      <path d="M2.2 7.4h11.6" stroke={C.brand} strokeWidth="1.15" />
-                    </svg>
-                  )}
-                  title="Upload your resume"
-                  subtitle="We will not parse it in this step."
-                  expanded={showResumeOptional}
-                  onToggle={() => setShowResumeOptional((prev) => !prev)}
-                >
-                  <input
-                    ref={resumeInputRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      handleResumeSelect(e.target.files?.[0] || null);
-                      e.target.value = "";
-                    }}
-                  />
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      {resumeFile ? (
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: C.textPrimary,
-                            lineHeight: 1.35,
-                            wordBreak: "break-word",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {resumeFile.name}
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 11, color: C.textSecondary }}>
-                          PDF, DOC, DOCX up to 10 MB
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => resumeInputRef.current?.click()}
-                        style={{
-                          border: "1px solid rgba(194,65,12,0.2)",
-                          background: "rgba(194,65,12,0.05)",
-                          color: C.brand,
-                          borderRadius: 10,
-                          padding: "8px 10px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          fontFamily: "Inter, sans-serif",
-                        }}
-                      >
-                        {resumeFile ? "Replace" : "Attach"}
-                      </button>
-                      {resumeFile ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResumeFile(null);
-                            setResumeError(null);
-                          }}
-                          style={{
-                            border: `1px solid ${C.border}`,
-                            background: "white",
-                            color: C.textMuted,
-                            borderRadius: 10,
-                            padding: "8px 10px",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            fontFamily: "Inter, sans-serif",
-                          }}
-                        >
-                          Remove
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                  {resumeError ? (
-                    <div style={{ marginTop: 7, fontSize: 11, fontWeight: 600, color: "#B91C1C" }}>
-                      {resumeError}
-                    </div>
-                  ) : null}
-                </OptionalSection>
-
-                <OptionalSection
-                  icon={(
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M7.2 2.2l1.8 1.8-2.2 2.2L5 4.4l2.2-2.2z" stroke={C.brand} strokeWidth="1.2" />
                       <path d="M8.9 4.1l3 3c1.1 1.1 1.1 2.9 0 4l-.8.8-4.1-4.1.8-.8c1.1-1.1 2.9-1.1 4 0z" stroke={C.brand} strokeWidth="1.2" />
                       <path d="M6.9 8.8L4.4 11.3" stroke={C.brand} strokeWidth="1.2" strokeLinecap="round" />
@@ -2374,20 +2250,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       }}>+ Add another</button>
                   </div>
                 </OptionalSection>
-          </div>
-        </div>
-        )}
 
-        {/* ── Optional (fresher only) ──────────────────────────────── */}
-        {profileType === "fresher" && (
-        <div>
-          <SectionLabel icon={
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <path d="M7 2v10M2 7h10" stroke={C.brand} strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-          }>Boost your profile (optional)</SectionLabel>
-
-          <div className="flex flex-col gap-5">
                 <OptionalSection
                   icon={(
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -2478,6 +2341,84 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                       {resumeError}
                     </div>
                   ) : null}
+                </OptionalSection>
+          </div>
+        </div>
+        )}
+
+        {/* ── Optional (fresher only) ──────────────────────────────── */}
+        {profileType === "fresher" && (
+        <div>
+          <SectionLabel icon={
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M7 2v10M2 7h10" stroke={C.brand} strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          }>Boost your profile (optional)</SectionLabel>
+
+          <div className="flex flex-col gap-5">
+                <OptionalSection
+                  icon={(
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M2.5 5.5h11M2.5 8h11M2.5 10.5h7.5" stroke={C.brand} strokeWidth="1.3" strokeLinecap="round" />
+                      <path d="M12.2 12.6l1.3 1.2 2.4-2.6" stroke={C.brand} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  title="Any other job offers currently?"
+                  subtitle="Share active offers if you have them"
+                  expanded={showOtherOffers}
+                  onToggle={() => setShowOtherOffers((prev) => !prev)}
+                >
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setHasOtherOffers("yes")}
+                      style={{
+                        flex: 1, padding: "10px 12px", borderRadius: 10,
+                        border: `1.5px solid ${hasOtherOffers === "yes" ? "rgba(194,65,12,0.35)" : C.border}`,
+                        background: hasOtherOffers === "yes" ? "rgba(194,65,12,0.08)" : "white",
+                        color: hasOtherOffers === "yes" ? C.brand : C.textPrimary,
+                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasOtherOffers("no");
+                        setOfferCompany("");
+                        setOfferRole("");
+                      }}
+                      style={{
+                        flex: 1, padding: "10px 12px", borderRadius: 10,
+                        border: `1.5px solid ${hasOtherOffers === "no" ? "rgba(194,65,12,0.35)" : C.border}`,
+                        background: hasOtherOffers === "no" ? "rgba(194,65,12,0.08)" : "white",
+                        color: hasOtherOffers === "no" ? C.brand : C.textPrimary,
+                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      No
+                    </button>
+                  </div>
+
+                  {hasOtherOffers === "yes" && (
+                    <div className="mt-3 flex flex-col gap-3">
+                      <Input
+                        label="Offer company"
+                        value={offerCompany}
+                        onChange={setOfferCompany}
+                        placeholder="e.g. Company name"
+                      />
+                      <Input
+                        label="Offer role"
+                        value={offerRole}
+                        onChange={setOfferRole}
+                        placeholder="e.g. Software Engineer"
+                      />
+                    </div>
+                  )}
                 </OptionalSection>
 
                 <OptionalSection
@@ -2638,6 +2579,98 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         fontFamily: "Inter, sans-serif", padding: "4px 0", textAlign: "left" as const,
                       }}>+ Add another</button>
                   </div>
+                </OptionalSection>
+
+                <OptionalSection
+                  icon={(
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2.2" y="3" width="11.6" height="10.6" rx="2" stroke={C.brand} strokeWidth="1.3" />
+                      <path d="M6 3V2.8c0-.44.36-.8.8-.8h2.4c.44 0 .8.36.8.8V3" stroke={C.brand} strokeWidth="1.3" strokeLinecap="round" />
+                      <path d="M2.2 7.4h11.6" stroke={C.brand} strokeWidth="1.15" />
+                    </svg>
+                  )}
+                  title="Upload your resume"
+                  subtitle="We will not parse it in this step."
+                  expanded={showResumeOptional}
+                  onToggle={() => setShowResumeOptional((prev) => !prev)}
+                >
+                  <input
+                    ref={resumeInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      handleResumeSelect(e.target.files?.[0] || null);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      {resumeFile ? (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.textPrimary,
+                            lineHeight: 1.35,
+                            wordBreak: "break-word",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {resumeFile.name}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 11, color: C.textSecondary }}>
+                          PDF, DOC, DOCX up to 10 MB
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => resumeInputRef.current?.click()}
+                        style={{
+                          border: "1px solid rgba(194,65,12,0.2)",
+                          background: "rgba(194,65,12,0.05)",
+                          color: C.brand,
+                          borderRadius: 10,
+                          padding: "8px 10px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        {resumeFile ? "Replace" : "Attach"}
+                      </button>
+                      {resumeFile ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResumeFile(null);
+                            setResumeError(null);
+                          }}
+                          style={{
+                            border: `1px solid ${C.border}`,
+                            background: "white",
+                            color: C.textMuted,
+                            borderRadius: 10,
+                            padding: "8px 10px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  {resumeError ? (
+                    <div style={{ marginTop: 7, fontSize: 11, fontWeight: 600, color: "#B91C1C" }}>
+                      {resumeError}
+                    </div>
+                  ) : null}
                 </OptionalSection>
           </div>
         </div>

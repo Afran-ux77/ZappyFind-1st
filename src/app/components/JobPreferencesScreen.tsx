@@ -127,16 +127,16 @@ const SUB_ROLES: Record<string, string[]> = {
 const MAX_JOB_CATEGORIES = 3;
 const MAX_ROLES_PER_CATEGORY = 3;
 const EXPERIENCE_LEVELS = [
-  { id: "entry", label: "Associate", subLabel: "0-2 years", emoji: "🌱" },
-  { id: "mid", label: "Mid-level", subLabel: "3-5 years", emoji: "📈" },
-  { id: "senior", label: "Senior", subLabel: "6-9 years", emoji: "🚀" },
-  { id: "lead", label: "Lead", subLabel: "10+ years", emoji: "🏆" },
+  { id: "entry", label: "Entry level", subLabel: "0-2 years", emoji: "🌱" },
+  { id: "mid", label: "Associate", subLabel: "1-3 years", emoji: "📈" },
+  { id: "senior", label: "Mid-level", subLabel: "3-6 years", emoji: "🚀" },
+  { id: "lead", label: "Senior level", subLabel: "5-10 years", emoji: "🏆" },
 ] as const;
 const EXPERIENCE_BADGE: Record<(typeof EXPERIENCE_LEVELS)[number]["id"], string> = {
   entry: "0-2y",
-  mid: "3-5y",
-  senior: "6-9y",
-  lead: "10+y",
+  mid: "1-3y",
+  senior: "3-6y",
+  lead: "5-10y",
 };
 
 function getCategoryMeta(id: string) {

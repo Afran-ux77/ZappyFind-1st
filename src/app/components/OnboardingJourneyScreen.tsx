@@ -295,6 +295,13 @@ export function OnboardingJourneyScreen({
     }
   }, [activeStep, onComplete]);
 
+  const handlePrevious = useCallback(() => {
+    if (activeStep > 0) {
+      setActiveStep((s) => s - 1);
+    }
+  }, [activeStep]);
+
+  const isFirstStep = activeStep === 0;
   const isLastStep = activeStep === CARDS.length - 1;
   const crossfadeTransition = reduceMotion
     ? { duration: 0.2, ease: "easeOut" as const }
@@ -990,59 +997,121 @@ export function OnboardingJourneyScreen({
           ))}
         </div>
 
-        <motion.button
-          whileTap={{ scale: 0.988, transition: { type: "spring", stiffness: 600, damping: 35 } }}
-          onClick={handleNext}
-          style={{
-            width: "100%",
-            height: 56,
-            borderRadius: 18,
-            border: "none",
-            background: BRAND_GRADIENT,
-            color: "white",
-            fontSize: 16,
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            cursor: "pointer",
-            fontFamily: "Inter, sans-serif",
-            boxShadow: "0 8px 28px rgba(234,88,12,0.38)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={isLastStep ? "start" : "next"}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: EASE }}
-              style={{ display: "flex", alignItems: "center", gap: 8 }}
-            >
-              {isLastStep ? "Get Started" : "Next"}
-              <ChevronRight size={18} strokeWidth={2.2} />
-            </motion.span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <AnimatePresence initial={false}>
+            {!isLastStep ? (
+              <motion.button
+                key="previous-card"
+                initial={{ opacity: 0, scale: 0.9, x: -6 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.85, x: -10, width: 0, marginRight: -4 }}
+                transition={{ duration: 0.26, ease: EASE }}
+                whileTap={{
+                  scale: isFirstStep ? 1 : 0.99,
+                  transition: { type: "spring", stiffness: 600, damping: 35 },
+                }}
+                onClick={handlePrevious}
+                disabled={isFirstStep}
+                aria-label="Previous card"
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 999,
+                  border: "1px solid rgba(28, 25, 23, 0.08)",
+                  background: isFirstStep ? "rgba(255, 255, 255, 0.42)" : "rgba(255, 255, 255, 0.68)",
+                  color: isFirstStep ? "#A8A29E" : "#78716C",
+                  cursor: isFirstStep ? "not-allowed" : "pointer",
+                  boxShadow: "0 1px 2px rgba(28, 25, 23, 0.04)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: isFirstStep ? 0.7 : 0.9,
+                  overflow: "hidden",
+                }}
+              >
+                <ChevronRight size={20} strokeWidth={2.2} style={{ transform: "rotate(180deg)" }} />
+              </motion.button>
+            ) : null}
           </AnimatePresence>
-        </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.988, transition: { type: "spring", stiffness: 600, damping: 35 } }}
+            onClick={handleNext}
+            aria-label={isLastStep ? "Get started" : "Next card"}
+            animate={{
+              width: isLastStep ? 162 : 52,
+              borderRadius: isLastStep ? 14 : 999,
+            }}
+            transition={{ type: "spring", stiffness: 280, damping: 28, mass: 0.9 }}
+            style={{
+              height: 52,
+              borderRadius: isLastStep ? 14 : 999,
+              border: "none",
+              background: isLastStep ? BRAND_GRADIENT : "#EA580C",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: isLastStep
+                ? "0 8px 28px rgba(234,88,12,0.38)"
+                : "0 4px 12px rgba(234,88,12,0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              padding: isLastStep ? "0 18px" : 0,
+            }}
+          >
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={isLastStep ? "get-started" : "next"}
+                initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                transition={{ duration: 0.24, ease: EASE }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                {isLastStep ? (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      letterSpacing: "-0.01em",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  >
+                    Get started
+                    <ChevronRight size={16} strokeWidth={2.4} />
+                  </span>
+                ) : (
+                  <ChevronRight size={20} strokeWidth={2.2} />
+                )}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
+        </div>
 
         <motion.button
           whileTap={{ scale: 0.99, transition: { type: "spring", stiffness: 650, damping: 38 } }}
           onClick={onComplete}
           style={{
             display: "block",
-            width: "fit-content",
+            width: "100px",
+            minHeight: 40,
             marginLeft: "auto",
             marginRight: "auto",
-            marginTop: 6,
+            marginTop: 14,
             padding: "6px 10px",
-            border: "none",
-            borderRadius: 8,
+            border: "1px solid rgba(28, 25, 23, 0.1)",
+            borderRadius: 14,
             background: "transparent",
-            color: "#A8A29E",
+            color: "#57534E",
             fontSize: 12.5,
-            fontWeight: 500,
+            fontWeight: 600,
             letterSpacing: "-0.01em",
             cursor: "pointer",
             fontFamily: "Inter, sans-serif",

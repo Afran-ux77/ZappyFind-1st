@@ -1130,7 +1130,6 @@ function MatchHeroCard({
   displayName,
   activeCompanies,
   totalJobs,
-  newJobs,
   savedJobs,
   recruiterViews,
   roleLabel,
@@ -1148,7 +1147,6 @@ function MatchHeroCard({
   displayName: string;
   activeCompanies: number;
   totalJobs: number;
-  newJobs: number;
   savedJobs: number;
   recruiterViews: number;
   roleLabel: string;
@@ -1240,7 +1238,7 @@ function MatchHeroCard({
                 </div>
               </div>
               <div style={{ fontSize: 12, color: T.textSec, letterSpacing: "-0.01em" }}>
-                Next: await a WhatsApp or email alert within a few hours when your curated matches are ready.
+                Next: await a WhatsApp or email alert within a few hours when your recommended matches are ready.
               </div>
             </div>
           ) : (
@@ -1506,14 +1504,14 @@ function MatchHeroCard({
                   icon: <Sparkles size={13} color="#D97706" strokeWidth={2.2} />,
                 },
                 {
-                  value: newJobs,
-                  label: "New this week",
-                  icon: <Zap size={13} color={T.success} strokeWidth={2.2} />,
-                },
-                {
                   value: 16,
                   label: "Applied",
                   icon: <Briefcase size={13} color={T.accent} strokeWidth={2.2} />,
+                },
+                {
+                  value: savedJobs,
+                  label: "Saved",
+                  icon: <Bookmark size={13} color="#7C3AED" strokeWidth={2.2} />,
                 },
               ].map((stat, i) => (
                 <div
@@ -1574,66 +1572,25 @@ function MatchHeroCard({
               transition={{ delay: 0.65, duration: 0.45, ease: EASE }}
               style={{
                 marginTop: 10,
-                display: "flex",
-                gap: 8,
               }}
             >
-              <button
-                onClick={onViewSaved}
+              <div
                 style={{
-                  flex: 1,
+                  width: "100%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 6,
                   padding: "9px 0",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.55)",
-                  border: "1px solid rgba(255,200,160,0.18)",
-                  cursor: "pointer",
-                  fontFamily: T.sans,
-                  fontSize: 12,
+                  background: "rgba(255,255,255,0.52)",
+                  fontSize: 11.5,
                   fontWeight: 500,
                   color: T.textSec,
                   letterSpacing: "-0.01em",
                 }}
               >
-                <Bookmark size={13} color={T.accent} strokeWidth={2} />
-                {savedJobs} saved
-              </button>
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: "9px 0",
-                  borderRadius: 10,
-                  background: "rgba(254,106,54,0.05)",
-                  border: "1px solid rgba(254,106,54,0.1)",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: "#FE6A36",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                <span style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <Users size={13} color="#FE6A36" strokeWidth={2} />
-                  <motion.span
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    style={{
-                      position: "absolute",
-                      top: -1,
-                      right: -3,
-                      width: 5,
-                      height: 5,
-                      borderRadius: "50%",
-                      background: "#FE6A36",
-                    }}
-                  />
-                </span>
+                <Users size={12} color="#71717A" strokeWidth={1.9} />
                 {recruiterViews} recruiter views
               </div>
             </motion.div>
@@ -2126,6 +2083,68 @@ function RetakeCallTipsCard({ onStart }: { onStart: () => void }) {
 }
 
 function InterviewAnalysisCard() {
+  const [showDetails, setShowDetails] = useState(false);
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
+  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
+
+  const performanceHighlights = [
+    {
+      tag: "Communication",
+      summary: "Clear and structured responses.",
+      detail:
+        "Clear and confident responses with practical examples and a structured flow.",
+    },
+    {
+      tag: "Domain depth",
+      summary: "Solid grasp of trade-offs and impact.",
+      detail:
+        "Strong grasp of your core responsibilities, trade-offs, and measurable impact.",
+    },
+    {
+      tag: "Role alignment",
+      summary: "Closely matches target roles.",
+      detail:
+        "Signals align closely with target roles and recruiter expectations.",
+    },
+    {
+      tag: "Confidence",
+      summary: "Poised, steady pacing throughout.",
+      detail:
+        "Poised, concise delivery with steady pacing and strong interview presence.",
+    },
+  ];
+
+  const interviewQuestions = [
+    {
+      id: "q1",
+      number: 1,
+      question: "Walk me through a product you shipped end-to-end.",
+      duration: "1:42",
+    },
+    {
+      id: "q2",
+      number: 2,
+      question: "How do you resolve disagreements with engineering on scope?",
+      duration: "1:18",
+    },
+    {
+      id: "q3",
+      number: 3,
+      question: "Describe a trade-off between speed and polish you navigated.",
+      duration: "2:04",
+    },
+    {
+      id: "q4",
+      number: 4,
+      question: "What signal tells you a design is working in production?",
+      duration: "1:36",
+    },
+  ];
+
+  const visibleQuestions = showAllQuestions
+    ? interviewQuestions
+    : interviewQuestions.slice(0, 2);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -2139,53 +2158,415 @@ function InterviewAnalysisCard() {
         boxShadow: T.shadow,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
         <Sparkles size={15} color={T.accent} fill={T.accent} strokeWidth={1.9} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: T.text, letterSpacing: "-0.01em" }}>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: T.text,
+            letterSpacing: "-0.01em",
+          }}
+        >
           AI performance snapshot
         </span>
       </div>
 
+      {/* Luxe hero panel */}
       <div
         style={{
-          borderRadius: 12,
+          position: "relative",
+          borderRadius: 16,
           border: "1px solid rgba(234,88,12,0.14)",
           background:
-            "linear-gradient(160deg, rgba(234,88,12,0.09) 0%, rgba(255,255,255,0.92) 42%, rgba(255,248,242,0.85) 100%)",
-          padding: "12px 13px",
-          fontSize: 12.5,
-          color: T.textSec,
-          lineHeight: 1.55,
-          letterSpacing: "-0.01em",
+            "linear-gradient(155deg, rgba(234,88,12,0.08) 0%, rgba(255,255,255,0.94) 45%, rgba(255,248,242,0.9) 100%)",
+          padding: "16px 16px 14px",
+          overflow: "hidden",
         }}
       >
-        <div style={{ fontWeight: 700, color: T.text, marginBottom: 8 }}>What went well</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-          {[
-            ["Communication", "Clear and confident responses with practical examples."],
-            ["Domain depth", "Strong understanding of your core responsibilities and impact."],
-            ["Role fit", "Signals align well with target roles and recruiter expectations."],
-          ].map(([label, value]) => (
-            <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <span style={{ color: T.accent, lineHeight: 1 }}>•</span>
-              <div>
-                <span style={{ fontWeight: 600, color: T.text }}>{label}: </span>
-                <span>{value}</span>
-              </div>
-            </div>
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: -44,
+            right: -44,
+            width: 140,
+            height: 140,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(234,88,12,0.18) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            fontSize: 11.5,
+            fontWeight: 600,
+            color: T.textSec,
+            letterSpacing: "-0.01em",
+            marginBottom: 12,
+          }}
+        >
+          Top interview highlights
+        </div>
+
+        {/* Competencies as tags/badges */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {performanceHighlights.map((item) => (
+            <span
+              key={item.tag}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "7px 11px",
+                borderRadius: 999,
+                border: "1px solid rgba(234,88,12,0.22)",
+                background: "rgba(255,255,255,0.92)",
+                color: "#9A3412",
+                fontSize: 11.5,
+                fontWeight: 650,
+                letterSpacing: "-0.01em",
+                boxShadow: "0 1px 4px rgba(234,88,12,0.08)",
+              }}
+            >
+              {item.tag}
+            </span>
           ))}
         </div>
+
+        {/* View details */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            marginTop: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowDetails((prev) => !prev)}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: T.accent,
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              height: 30,
+              padding: "6px 0",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {showDetails ? "Hide details" : "View details"}
+            <ChevronDown
+              size={13}
+              strokeWidth={2.3}
+              style={{
+                transform: showDetails ? "rotate(180deg)" : "none",
+                transition: "transform 0.2s ease",
+              }}
+            />
+          </button>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {showDetails && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.22, ease: EASE }}
+              style={{
+                marginTop: 8,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {performanceHighlights.map((item) => (
+                <div
+                  key={`${item.tag}-detail`}
+                  style={{
+                    borderRadius: 12,
+                    border: "1px solid rgba(234,88,12,0.14)",
+                    background: "rgba(255,255,255,0.94)",
+                    padding: "10px 12px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: T.text,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {item.tag}
+                  </span>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 11.75,
+                      color: T.textSec,
+                      lineHeight: 1.5,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {item.detail}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div style={{ marginTop: 10, fontSize: 11.5, color: T.textTer, fontWeight: 600 }}>
-        Listen to your full interview
-      </div>
-      <div style={{ marginTop: 6 }}>
-        <audio controls preload="none" style={{ width: "100%" }}>
-          <source src="" type="audio/mpeg" />
-        </audio>
-      </div>
+      {/* ── Interview recording ── */}
+      <div style={{ marginTop: 18 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            marginBottom: 10,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: T.text,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Listen to your answers
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: T.textTer,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {interviewQuestions.length} questions
+          </span>
+        </div>
 
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {visibleQuestions.map((q) => {
+            const isExpanded = expandedQuestionId === q.id;
+            return (
+              <div
+                key={q.id}
+                style={{
+                  borderRadius: 14,
+                  border: `1px solid ${
+                    isExpanded
+                      ? "rgba(234,88,12,0.22)"
+                      : "rgba(28,25,23,0.08)"
+                  }`,
+                  background: isExpanded
+                    ? "linear-gradient(160deg, rgba(234,88,12,0.05) 0%, rgba(255,255,255,0.96) 60%)"
+                    : T.cardBg,
+                  overflow: "hidden",
+                  transition: "background 0.2s ease, border-color 0.2s ease",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedQuestionId((prev) =>
+                      prev === q.id ? null : q.id
+                    )
+                  }
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "11px 12px",
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <div
+                    style={{
+                      flexShrink: 0,
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      background: isExpanded
+                        ? T.accentGradient
+                        : "rgba(234,88,12,0.09)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: isExpanded ? "#FFFFFF" : T.accent,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "-0.01em",
+                      boxShadow: isExpanded
+                        ? "0 2px 8px rgba(234,88,12,0.28)"
+                        : "none",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    Q{q.number}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: T.text,
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.4,
+                        display: "-webkit-box",
+                        WebkitLineClamp: isExpanded ? "unset" : 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {q.question}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      flexShrink: 0,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        border: `1px solid ${
+                          isExpanded
+                            ? "rgba(234,88,12,0.3)"
+                            : "rgba(28,25,23,0.12)"
+                        }`,
+                        background: isExpanded
+                          ? "rgba(234,88,12,0.1)"
+                          : "rgba(255,255,255,0.9)",
+                        color: isExpanded ? T.accent : T.textSec,
+                      }}
+                    >
+                      <Play
+                        size={10}
+                        strokeWidth={2.2}
+                        fill="currentColor"
+                        color="currentColor"
+                        style={{ marginLeft: 1 }}
+                      />
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        color: T.textTer,
+                        letterSpacing: "-0.01em",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {q.duration}
+                    </span>
+                  </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.22, ease: EASE }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div
+                        style={{
+                          padding: "0 12px 12px 12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: T.textTer,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Your answer
+                        </div>
+                        <audio
+                          controls
+                          preload="none"
+                          style={{ width: "100%", height: 36 }}
+                        >
+                          <source src="" type="audio/mpeg" />
+                        </audio>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+
+        {!showAllQuestions && interviewQuestions.length > 2 && (
+          <button
+            type="button"
+            onClick={() => setShowAllQuestions(true)}
+            style={{
+              marginTop: 10,
+              width: "100%",
+              border: "1px solid rgba(28,25,23,0.08)",
+              background: "transparent",
+              color: T.text,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              padding: "10px 12px",
+              borderRadius: 12,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            View all {interviewQuestions.length} questions
+            <ChevronDown size={13} strokeWidth={2.3} />
+          </button>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -4552,7 +4933,6 @@ export function DashboardPreviewScreen({
             displayName={displayName}
             activeCompanies={18}
             totalJobs={42}
-            newJobs={28}
             savedJobs={8}
             recruiterViews={14}
             roleLabel="Product Design"
@@ -4569,8 +4949,9 @@ export function DashboardPreviewScreen({
 
           {isCase1Dashboard && (
             <>
-              <SectionHeader title="Interview Analysis" delay={0.32} />
-              <InterviewAnalysisCard />
+              <div style={{ marginTop: 24 }}>
+                <InterviewAnalysisCard />
+              </div>
             </>
           )}
 
@@ -4585,7 +4966,13 @@ export function DashboardPreviewScreen({
             <>
               {/* Your Top Matches */}
               <SectionHeader
-                title={isCase4Dashboard ? "Curated Internet Roles" : "Your Top Matches"}
+                title={
+                  isCase4Dashboard
+                    ? "Curated Internet Roles"
+                    : isCase5Dashboard || isCase7Dashboard || isCase8Dashboard
+                    ? "Potential Matches"
+                    : "Your Top Matches"
+                }
                 subtitle={
                   isCase4Dashboard
                     ? "No ZappyFind matches yet. Apply these curated internet roles while we onboard roles for your preferences."

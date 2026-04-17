@@ -88,12 +88,27 @@ const MOCK_FULL: FullProfile = {
   email: "deepu.zappyhire@gmail.com",
   phone: "+918714977735",
   location: "Kochi, India",
-  headline: "Senior Product Designer · 4+ years crafting digital products",
-  skills: ["Figma", "React", "UI/UX Design", "Prototyping", "User Research", "Design Systems"],
+  headline: "Product Designer · 4+ years crafting digital products",
+  skills: [
+    "Figma",
+    "React",
+    "UI/UX Design",
+    "Prototyping",
+    "User Research",
+    "Design Systems",
+    "Wireframing",
+    "Interaction Design",
+    "Information Architecture",
+    "Usability Testing",
+    "Design Thinking",
+    "Visual Design",
+    "Responsive Design",
+    "Accessibility",
+  ],
   experiences: [
     {
       id: "e1", company: "Zappyhire",
-      role: "Senior Product Designer",
+      role: "Product Designer",
       duration: "Jan 2022 – Present",
       description: "Led end-to-end design for Payment Gateway 3.0, increasing conversion by 22%. Built and maintained the design system across 3 product teams.",
     },
@@ -603,14 +618,14 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -16, scale: 0.97 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-1 flex-col px-4"
+            className="flex flex-1 flex-col px-4 pt-4"
           >
 
               {/* ── Step indicator (step 6 of 6; steps 1–5 = JobPreferencesScreen) ── */}
               <div className="mb-7">
                 <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", gap: 6, flex: 1 }}>
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                    {[1, 2, 3, 4].map((n) => (
                       <div
                         key={n}
                         style={{
@@ -618,7 +633,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
                           height: 3,
                           borderRadius: 2,
                           background:
-                            n < 6
+                            n < 4
                               ? "rgba(234,88,12,0.55)"
                               : transparentSurface
                                 ? "#EA580C"
@@ -630,7 +645,7 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
                   <span style={{ fontSize: 11, color: C.textSecondary, letterSpacing: "0.02em" }}>
-                    Step 6 of 6
+                    Step 4 of 4
                   </span>
                 </div>
               </div>
@@ -788,28 +803,6 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
                       }}>
                         <motion.button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); handleViewResume(); }}
-                          whileTap={{ scale: 0.97 }}
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: 6,
-                            padding: "11px 18px", borderRadius: 12,
-                            border: "none",
-                            background: "rgba(234,88,12,0.1)",
-                            color: C.brand, fontSize: 13, fontWeight: 600,
-                            letterSpacing: "-0.01em", cursor: "pointer",
-                            fontFamily: "Inter, sans-serif",
-                            boxShadow: "none",
-                          }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M1.5 7s2.5-4 5.5-4 5.5 4 5.5 4-2.5 4-5.5 4S1.5 7 1.5 7z"
-                              stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.4" />
-                          </svg>
-                          View file
-                        </motion.button>
-                        <motion.button
-                          type="button"
                           onClick={(e) => { e.stopPropagation(); handleReplaceResume(); }}
                           whileTap={{ scale: 0.97 }}
                           style={{
@@ -827,6 +820,28 @@ export function WelcomeScreen({ onResumeUploaded, onManual, onBack, transparentS
                               strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                           Replace file
+                        </motion.button>
+                        <motion.button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleViewResume(); }}
+                          whileTap={{ scale: 0.97 }}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            padding: "11px 18px", borderRadius: 12,
+                            border: "none",
+                            background: "transparent",
+                            color: C.brand, fontSize: 13, fontWeight: 500,
+                            letterSpacing: "-0.01em", cursor: "pointer",
+                            fontFamily: "Inter, sans-serif",
+                            boxShadow: "none",
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M1.5 7s2.5-4 5.5-4 5.5 4 5.5 4-2.5 4-5.5 4S1.5 7 1.5 7z"
+                              stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.4" />
+                          </svg>
+                          View file
                         </motion.button>
                       </div>
                       <div style={{

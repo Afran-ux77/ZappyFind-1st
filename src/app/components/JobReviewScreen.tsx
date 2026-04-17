@@ -10,12 +10,14 @@ import {
   ChevronDown,
   Bell,
   Search,
+  ArrowUpDown,
   X,
   MapPin,
   Sparkles,
   Globe,
   CalendarClock,
   Send,
+  ThumbsDown,
 } from "lucide-react";
 
 export type Job = {
@@ -657,23 +659,42 @@ export function JobReviewScreen({
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSavedIds, setSearchSavedIds] = useState<Set<string>>(new Set());
+  const [sortMode, setSortMode] = useState<"most_recent" | "highest_score">("most_recent");
   const [quickApplyToast, setQuickApplyToast] = useState<{ id: string; title: string } | null>(null);
   const [appliedSheetJob, setAppliedSheetJob] = useState<Job | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isAnimating = useRef(false);
   const switcherRef = useRef<HTMLDivElement | null>(null);
 
-  const remaining = JOBS.length - currentIndex;
+  const sortedJobs = useMemo(() => {
+    const rankByRecency = (postedAgo: string) => {
+      const raw = postedAgo.trim().toLowerCase();
+      const m = raw.match(/^(\d+)\s*([dw])\s*ago$/);
+      if (!m) return Number.MAX_SAFE_INTEGER;
+      const value = Number(m[1]);
+      const unit = m[2];
+      return unit === "w" ? value * 7 : value;
+    };
+
+    return [...JOBS].sort((a, b) => {
+      if (sortMode === "highest_score") {
+        return (b.matchScore ?? 0) - (a.matchScore ?? 0);
+      }
+      return rankByRecency(a.postedAgo) - rankByRecency(b.postedAgo);
+    });
+  }, [sortMode]);
+
+  const remaining = sortedJobs.length - currentIndex;
   const visibleJobs = useMemo(
-    () => JOBS.slice(currentIndex, currentIndex + STACK_VISIBLE),
-    [currentIndex],
+    () => sortedJobs.slice(currentIndex, currentIndex + STACK_VISIBLE),
+    [currentIndex, sortedJobs],
   );
   const savedCount = savedIds.size;
   const appliedCount = appliedIds.size;
 
   const appliedJobs = useMemo(
-    () => JOBS.filter((job) => appliedIds.has(job.id)),
-    [appliedIds],
+    () => sortedJobs.filter((job) => appliedIds.has(job.id)),
+    [appliedIds, sortedJobs],
   );
 
   const filteredSearchJobs = useMemo(() => {
@@ -713,7 +734,7 @@ export function JobReviewScreen({
       if (isAnimating.current) return;
       isAnimating.current = true;
 
-      const job = JOBS[currentIndex];
+      const job = sortedJobs[currentIndex];
       if (job && direction === "right") {
         setSavedIds((prev) => {
           const next = new Set(prev);
@@ -749,7 +770,7 @@ export function JobReviewScreen({
         isAnimating.current = false;
       }, 300);
     },
-    [currentIndex, x],
+    [currentIndex, x, sortedJobs],
   );
 
   const handleDragEnd = useCallback(
@@ -761,10 +782,10 @@ export function JobReviewScreen({
     [handleAdvance],
   );
 
-  const hasMoreJobs = currentIndex < JOBS.length;
+  const hasMoreJobs = currentIndex < sortedJobs.length;
 
   const PENDING_DOTS_COUNT = 5;
-  const currentJob = JOBS[currentIndex];
+  const currentJob = sortedJobs[currentIndex];
   const isCurrentExternal = Boolean(currentJob?.externalUrl);
 
   useEffect(() => {
@@ -1050,104 +1071,151 @@ export function JobReviewScreen({
         )}
       </AnimatePresence>
 
-      {/* Search bar */}
+      {/* Search + sort */}
       <div style={{ padding: "10px 16px 0" }}>
-        <div
-          onClick={() => {
-            if (!searchMode) {
-              setSearchMode(true);
-              setTimeout(() => searchInputRef.current?.focus(), 50);
-            }
-          }}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 14px",
-            borderRadius: 14,
-            background: searchMode ? "#FFFFFF" : "rgba(0,0,0,0.03)",
-            border: searchMode
-              ? "1.5px solid rgba(234,88,12,0.22)"
-              : "1.5px solid transparent",
-            boxShadow: searchMode
-              ? "0 2px 12px rgba(234,88,12,0.06)"
-              : "none",
-            transition: "all 0.2s ease",
-            cursor: searchMode ? "default" : "pointer",
-          }}
-        >
-          <Search
-            size={16}
-            color="#9CA3AF"
-            strokeWidth={2}
-            style={{ flexShrink: 0 }}
-          />
-          <input
-            ref={searchInputRef}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setSearchMode(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") exitSearch();
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            onClick={() => {
+              if (!searchMode) {
+                setSearchMode(true);
+                setTimeout(() => searchInputRef.current?.focus(), 50);
+              }
             }}
-            placeholder="Search roles, companies, skills…"
             style={{
               flex: 1,
-              border: "none",
-              outline: "none",
-              background: "transparent",
-              fontSize: 14,
-              color: "#111827",
-              fontFamily: "Inter, sans-serif",
-              fontWeight: 500,
-              letterSpacing: "-0.01em",
+              minWidth: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 14px",
+              borderRadius: 14,
+              background: searchMode ? "#FFFFFF" : "rgba(0,0,0,0.03)",
+              border: searchMode
+                ? "1.5px solid rgba(234,88,12,0.22)"
+                : "1.5px solid transparent",
+              boxShadow: searchMode
+                ? "0 2px 12px rgba(234,88,12,0.06)"
+                : "none",
+              transition: "all 0.2s ease",
+              cursor: searchMode ? "default" : "pointer",
             }}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
+          >
+            <Search
+              size={16}
+              color="#9CA3AF"
+              strokeWidth={2}
+              style={{ flexShrink: 0 }}
+            />
+            <input
+              ref={searchInputRef}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchMode(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") exitSearch();
+              }}
+              placeholder="Search roles, companies, skills…"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 20,
-                height: 20,
-                padding: 0,
+                flex: 1,
+                minWidth: 0,
                 border: "none",
-                background: "rgba(0,0,0,0.06)",
-                borderRadius: 999,
-                cursor: "pointer",
-                flexShrink: 0,
+                outline: "none",
+                background: "transparent",
+                fontSize: 14,
+                color: "#111827",
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 500,
+                letterSpacing: "-0.01em",
               }}
-            >
-              <X size={11} color="#6B7280" strokeWidth={3} />
-            </button>
-          )}
-          {searchMode && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                exitSearch();
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 24,
-                height: 24,
-                padding: 0,
-                border: "none",
-                background: "rgba(0,0,0,0.05)",
-                borderRadius: 8,
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              <X size={13} color="#6B7280" strokeWidth={2.5} />
-            </button>
-          )}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 20,
+                  height: 20,
+                  padding: 0,
+                  border: "none",
+                  background: "rgba(0,0,0,0.06)",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <X size={11} color="#6B7280" strokeWidth={3} />
+              </button>
+            )}
+            {searchMode && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  exitSearch();
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 24,
+                  height: 24,
+                  padding: 0,
+                  border: "none",
+                  background: "rgba(0,0,0,0.05)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <X size={13} color="#6B7280" strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setSortMode((prev) =>
+                prev === "most_recent" ? "highest_score" : "most_recent"
+              )
+            }
+            style={{
+              flexShrink: 0,
+              height: 42,
+              padding: "0 10px",
+              borderRadius: 14,
+              border:
+                sortMode === "highest_score"
+                  ? "1.5px solid rgba(234,88,12,0.22)"
+                  : "1.5px solid transparent",
+              background:
+                sortMode === "highest_score"
+                  ? "#FFFFFF"
+                  : "rgba(0,0,0,0.03)",
+              color: sortMode === "highest_score" ? "#111827" : "#6B7280",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 11.5,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              boxShadow:
+                sortMode === "highest_score"
+                  ? "0 2px 12px rgba(234,88,12,0.06)"
+                  : "none",
+              transition: "all 0.2s ease",
+            }}
+            title={`Sort: ${
+              sortMode === "most_recent" ? "Most recent" : "Highest score"
+            }`}
+          >
+            <ArrowUpDown size={13} strokeWidth={2.1} />
+            {sortMode === "most_recent" ? "Most recent" : "Top score"}
+          </button>
         </div>
       </div>
 
@@ -1158,13 +1226,14 @@ export function JobReviewScreen({
             padding: "12px 16px 12px",
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 6,
           }}
         >
           <TabPill
             icon={<Briefcase size={14} strokeWidth={2} />}
-            label="New"
+            label="Recommended"
             count={remaining}
+            flexWeight={1.25}
             active={activeTab === "new"}
             onClick={() => setActiveTab("new")}
           />
@@ -1172,6 +1241,7 @@ export function JobReviewScreen({
             icon={<Eye size={14} strokeWidth={2} />}
             label="Saved"
             count={savedCount}
+            flexWeight={0.9}
             active={activeTab === "saved"}
             onClick={() => setActiveTab("saved")}
           />
@@ -1179,6 +1249,7 @@ export function JobReviewScreen({
             icon={<Check size={14} strokeWidth={2} />}
             label="Applied"
             count={appliedCount}
+            flexWeight={0.9}
             active={activeTab === "applied"}
             onClick={() => setActiveTab("applied")}
           />
@@ -1492,7 +1563,7 @@ export function JobReviewScreen({
               }}
               title="Skip"
             >
-              ✕
+              <ThumbsDown size={18} color="#374151" strokeWidth={2} />
             </motion.button>
 
             {activeTab === "new" && (
@@ -2132,6 +2203,28 @@ function formatJobExperienceRange(min: number, max: number): string {
   return `${min}\u2013${max} yrs required`;
 }
 
+function inferDepartmentFromTitle(title: string): string {
+  const t = title.toLowerCase();
+  if (
+    t.includes("ux") ||
+    t.includes("ui") ||
+    t.includes("product designer") ||
+    t.includes("design lead") ||
+    t.includes("design systems") ||
+    t.includes("staff product designer") ||
+    t.includes("researcher")
+  ) {
+    return "Product";
+  }
+  if (t.includes("engineer") || t.includes("developer")) {
+    return "Engineering";
+  }
+  if (t.includes("marketing") || t.includes("growth")) {
+    return "Growth";
+  }
+  return "General";
+}
+
 function JobCard({
   job,
   isTop,
@@ -2148,6 +2241,7 @@ function JobCard({
   const hiddenSkillsCount = Math.max(requiredSkills.length - visibleSkills.length, 0);
   const experienceMatches = (job.matchScore ?? 0) >= 85;
   const embedded = variant === "embedded";
+  const department = inferDepartmentFromTitle(job.title);
 
   return (
     <div
@@ -2223,8 +2317,6 @@ function JobCard({
             <span>{job.company}</span>
             <span style={{ color: "#D1D5DB" }}>·</span>
             <span>Posted {job.postedAgo}</span>
-            <span style={{ color: "#D1D5DB" }}>·</span>
-            <span style={{ fontSize: 12 }}>🌐</span>
           </div>
         </div>
       </div>
@@ -2273,6 +2365,24 @@ function JobCard({
           </span>
         </span>
 
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 13,
+            fontWeight: 500,
+            padding: "5px 12px",
+            borderRadius: 999,
+            backgroundColor: "#F0FDF4",
+            color: "#166534",
+            border: "1px solid rgba(22,163,74,0.18)",
+          }}
+        >
+          <Briefcase size={11} color="#166534" strokeWidth={2.1} />
+          {department}
+        </span>
+
         {/* Salary chip */}
         <span
           style={{
@@ -2306,14 +2416,6 @@ function JobCard({
         title="Why is this a fit"
         body={job.whyFit}
       />
-
-      {embedded && (
-        <SectionBlock
-          barColor="#EA580C"
-          title="What to watch out for"
-          body={job.watchOut}
-        />
-      )}
 
       {/* Required Skills */}
       <div style={{ marginBottom: 14 }}>
@@ -2537,12 +2639,14 @@ function TabPill({
   icon,
   label,
   count,
+  flexWeight = 1,
   active,
   onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   count: number;
+  flexWeight?: number;
   active: boolean;
   onClick: () => void;
 }) {
@@ -2553,15 +2657,19 @@ function TabPill({
       onClick={onClick}
       style={{
         display: "inline-flex",
+        flex: `${flexWeight} 1 0%`,
+        minWidth: 0,
         alignItems: "center",
-        gap: 6,
-        padding: "7px 14px",
+        justifyContent: "center",
+        gap: 4,
+        padding: "7px 8px",
         borderRadius: 999,
         border: active ? "1px solid rgba(0,0,0,0.12)" : "1px solid rgba(0,0,0,0.06)",
         backgroundColor: active ? "#FFFFFF" : "transparent",
         boxShadow: active ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
         cursor: "pointer",
         transition: "all 0.15s ease",
+        overflow: "hidden",
       }}
     >
       <span style={{ color: active ? "#111827" : "#9CA3AF", display: "flex" }}>
@@ -2569,23 +2677,25 @@ function TabPill({
       </span>
       <span
         style={{
-          fontSize: 13,
+          fontSize: 11,
           fontWeight: active ? 600 : 500,
           color: active ? "#111827" : "#6B7280",
           letterSpacing: "-0.01em",
+          whiteSpace: "nowrap",
+          minWidth: 0,
         }}
       >
         {label}
       </span>
       <span
         style={{
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 700,
           color: active ? "#111827" : "#9CA3AF",
           backgroundColor: active ? "#F3F4F6" : "rgba(0,0,0,0.04)",
           borderRadius: 6,
-          padding: "1px 6px",
-          minWidth: 20,
+          padding: "1px 5px",
+          minWidth: 18,
           textAlign: "center",
         }}
       >

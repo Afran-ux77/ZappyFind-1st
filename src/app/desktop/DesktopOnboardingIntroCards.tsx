@@ -177,11 +177,19 @@ export function DesktopOnboardingIntroCards({ firstName, onComplete }: DesktopOn
         <button
           type="button"
           onClick={handleNext}
-          className="inline-flex h-12 items-center justify-center rounded-2xl px-8 text-[15px] font-semibold text-white transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
-          style={{
-            background: "linear-gradient(135deg, #FB923C 0%, #EA580C 100%)",
-            boxShadow: "0 10px 28px rgba(234,88,12,0.36)",
-          }}
+          className={
+            isLast
+              ? "inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-8 text-[15px] font-semibold text-white transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
+              : "inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-stone-200/90 bg-white/85 px-8 text-[15px] font-semibold text-stone-600 shadow-[0_1px_3px_rgba(28,25,23,0.06)] backdrop-blur-sm transition-colors duration-200 hover:bg-stone-50/95 active:scale-[0.99]"
+          }
+          style={
+            isLast
+              ? {
+                  background: "linear-gradient(135deg, #FB923C 0%, #EA580C 100%)",
+                  boxShadow: "0 10px 28px rgba(234,88,12,0.36)",
+                }
+              : undefined
+          }
         >
           {isLast ? "Get Started" : "Next"}
           <ChevronRight className="h-[17px] w-[17px]" strokeWidth={2.2} />

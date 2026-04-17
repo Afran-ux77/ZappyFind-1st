@@ -49,7 +49,13 @@ const SETUP_LABELS: Record<string, string> = {
 };
 const TIMELINE_LABELS: Record<string, string> = {
   immediately: "Immediately", "1month": "Within 1 month",
-  "3months": "Within 3 months", exploring: "Just exploring",
+  "3months": "Around 3 months", exploring: "Just exploring",
+};
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  entry: "0-2y",
+  mid: "1-3y",
+  senior: "3-6y",
+  lead: "5-10y",
 };
 
 function isSyntheticPortfolioExp(e: any): boolean {
@@ -144,20 +150,30 @@ export function ProfileSummaryScreen({
   const selectedCategoryIds: string[] = Array.isArray(prefs.categories) && prefs.categories.length > 0
     ? prefs.categories
     : (prefs.category ? [prefs.category] : []);
+  const experienceLevelByCategory: Record<string, string> = prefs.experienceLevelByCategory || {};
+  const formatCategoryLabelWithExperience = (catId: string): string => {
+    const catLabel = CATEGORY_LABELS[catId] || catId;
+    const expId = experienceLevelByCategory[catId];
+    const expLabel = expId ? (EXPERIENCE_LEVEL_LABELS[expId] || expId) : "";
+    return expLabel ? `${catLabel} (${expLabel})` : catLabel;
+  };
   const categoryRolePairs = selectedCategoryIds
     .map((catId: string) => {
-      const catLabel = CATEGORY_LABELS[catId] || catId;
+      const catLabel = formatCategoryLabelWithExperience(catId);
       const roles = Array.isArray(prefs.rolesByCategory?.[catId])
         ? (prefs.rolesByCategory[catId] as string[]).filter(Boolean)
         : [];
       return roles.length > 0 ? `${catLabel}: ${roles.slice(0, 2).join(", ")}` : catLabel;
     })
     .slice(0, 2);
+  const fallbackCategoryLabel = selectedCategoryIds.length > 0
+    ? formatCategoryLabelWithExperience(selectedCategoryIds[0])
+    : categoryLabels[0];
   const lookingForText =
     categoryRolePairs.length > 0
       ? categoryRolePairs.join(" | ")
       : allRoles.length > 0 && categoryLabels.length > 0
-        ? `${categoryLabels[0]}: ${allRoles.slice(0, 2).join(", ")}`
+        ? `${fallbackCategoryLabel}: ${allRoles.slice(0, 2).join(", ")}`
         : allRoles.length > 0
           ? allRoles.slice(0, 3).join(", ")
           : categoryLabels.join(", ");
@@ -200,7 +216,7 @@ export function ProfileSummaryScreen({
   const isFresherProfile = workExperiences.length === 0;
   const currentExperience = workExperiences[0];
   const currentRoleCompany = currentExperience?.role && currentExperience?.company
-    ? `${currentExperience.role} @ ${currentExperience.company}`
+    ? `${String(currentExperience.role).replace(/^Senior\s+/i, "").trim()} @ ${String(currentExperience.company).trim().toLowerCase() === "zappyhire" ? "HR Tech Platform" : currentExperience.company}`
     : (headline || (isFresherProfile ? "Fresher" : "Professional"));
   const totalExperienceMeta =
     (() => {
@@ -209,7 +225,12 @@ export function ProfileSummaryScreen({
       return "";
     })();
   const highestQualificationMeta = String(topEdu?.degree || "").trim();
-  const topSkillChips = skills.slice(0, 5);
+  const INITIAL_PROFILE_SKILL_CHIPS = 5;
+  const INITIAL_SECTION_SKILLS = 8;
+  const visibleSkillChips = skills.slice(0, INITIAL_PROFILE_SKILL_CHIPS);
+  const [showAllSectionSkills, setShowAllSectionSkills] = useState(false);
+  const visibleSectionSkills = showAllSectionSkills ? skills : skills.slice(0, INITIAL_SECTION_SKILLS);
+  const hasMoreSectionSkills = skills.length > INITIAL_SECTION_SKILLS;
 
   const [ready, setReady] = useState(false);
   const [otpStage, setOtpStage] = useState<"idle" | "sending" | "sent" | "verifying" | "verified">("idle");
@@ -434,15 +455,26 @@ export function ProfileSummaryScreen({
                 </p>
               </div>
               {(totalExperienceMeta || highestQualificationMeta) && (
-                <p className="m-0 text-[12px] font-medium leading-snug tracking-[-0.01em] text-stone-500">
-                  {[totalExperienceMeta, highestQualificationMeta].filter(Boolean).join(" • ")}
-                </p>
+                <div className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-medium leading-snug tracking-[-0.01em] text-stone-500">
+                  {totalExperienceMeta && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Briefcase className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden />
+                      {totalExperienceMeta}
+                    </span>
+                  )}
+                  {highestQualificationMeta && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <GraduationCap className="h-[12px] w-[12px]" strokeWidth={2} aria-hidden />
+                      {highestQualificationMeta}
+                    </span>
+                  )}
+                </div>
               )}
-              {topSkillChips.length > 0 && (
+              {visibleSkillChips.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {topSkillChips.map((s) => (
+                  {visibleSkillChips.map((s, idx) => (
                     <span
-                      key={s}
+                      key={`${s}-${idx}`}
                       className="rounded-full border border-stone-200/90 bg-stone-100 px-3 py-1 text-[11.5px] font-medium tracking-[-0.01em] text-stone-600 shadow-[0_1px_0_rgba(255,255,255,0.45)_inset,0_1px_2px_rgba(28,25,23,0.05)] whitespace-nowrap"
                     >
                       {s}
@@ -738,7 +770,9 @@ export function ProfileSummaryScreen({
                         >
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.02em" }}>
-                              {exp.company || "Company"}
+                              {String(exp.company || "").trim().toLowerCase() === "hr tech platform"
+                                ? "Zappyhire"
+                                : exp.company || "Company"}
                             </span>
                             {exp.duration && (
                               <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", letterSpacing: "-0.01em", flexShrink: 0, marginLeft: 8 }}>
@@ -803,27 +837,50 @@ export function ProfileSummaryScreen({
                     onEdit={() => onEditProfile("skills")}
                     editAriaLabel="Edit skills"
                   >
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {skills.slice(0, 8).map((s, i) => (
-                        <motion.span
-                          key={s}
-                          initial={{ opacity: 0, scale: 0.85 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.25, delay: 0.28 + i * 0.025, ease: EASE }}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {visibleSectionSkills.map((s, i) => (
+                          <motion.span
+                            key={`${s}-${i}`}
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.25, delay: 0.28 + i * 0.025, ease: EASE }}
+                            style={{
+                              padding: "5px 11px",
+                              borderRadius: 8,
+                              background: "rgba(234,88,12,0.06)",
+                              border: "1px solid rgba(234,88,12,0.1)",
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: "#C2410C",
+                              letterSpacing: "-0.01em",
+                            }}
+                          >
+                            {s}
+                          </motion.span>
+                        ))}
+                      </div>
+                      {hasMoreSectionSkills && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllSectionSkills((prev) => !prev)}
                           style={{
+                            alignSelf: "flex-start",
                             padding: "5px 11px",
-                            borderRadius: 8,
-                            background: "rgba(234,88,12,0.06)",
-                            border: "1px solid rgba(234,88,12,0.1)",
-                            fontSize: 12,
-                            fontWeight: 500,
+                            minHeight: 40,
+                            borderRadius: 14,
+                            border: "1px solid rgba(234,88,12,0.18)",
+                            background: "rgba(255,255,255,0.9)",
                             color: "#C2410C",
+                            fontSize: 11.5,
+                            fontWeight: 500,
                             letterSpacing: "-0.01em",
+                            cursor: "pointer",
                           }}
                         >
-                          {s}
-                        </motion.span>
-                      ))}
+                          {showAllSectionSkills ? "Show less" : "Show more"}
+                        </button>
+                      )}
                     </div>
                   </Section>
                 )}
@@ -934,7 +991,7 @@ export function ProfileSummaryScreen({
                       {timeline && (
                         <PrefItem
                           icon={<Clock size={13} strokeWidth={2} />}
-                          label="Switch timeline"
+                          label="Notice period"
                           value={timeline}
                         />
                       )}
