@@ -29,12 +29,14 @@ type DesktopOnboardingChromeProps = {
   activeStep: number;
   steps?: Step[];
   children: ReactNode;
-  /** Tailwind min-height for intro glass card (default min-h-[700px]). */
+  /** Tailwind min-height for intro glass card (default min-h-[724px], paired with fixed h on the card). */
   cardMinHeightClass?: string;
   /** Min height + fit-content for steps 1–7 glass card (default min-h-[806px] h-fit). */
   cardHeightClass?: string;
   /** Optional extra classes on the inner flex column (non-intro). Prefer min-h-0 for fill layouts. */
   contentMinHeightClass?: string;
+  /** Bottom padding on the glass card for steps 1–7 (default pb-6). */
+  cardFooterPaddingClass?: string;
 };
 
 export function DesktopOnboardingChrome({
@@ -43,9 +45,10 @@ export function DesktopOnboardingChrome({
   activeStep,
   steps: _steps = DEFAULT_STEPS,
   children,
-  cardMinHeightClass = "min-h-[700px]",
+  cardMinHeightClass = "min-h-[724px]",
   cardHeightClass = "min-h-[806px] h-fit",
   contentMinHeightClass = "",
+  cardFooterPaddingClass = "pb-6",
 }: DesktopOnboardingChromeProps) {
   /** Steps 1–7: 880px max-width card, min height with content-driven height, 44px horizontal/top padding and 24px bottom; intro (0) is separate. */
   const isNarrowChrome = activeStep >= 1 && activeStep <= 7;
@@ -111,8 +114,8 @@ export function DesktopOnboardingChrome({
           }}
           className={`w-full rounded-[30px] border ${
             activeStep === 0
-              ? `${cardMinHeightClass} h-[700px] p-6 lg:px-8 lg:py-[70px]`
-              : `${cardHeightClass} flex flex-col overflow-hidden px-11 pt-11 pb-6`
+              ? `${cardMinHeightClass} h-[724px] p-6 lg:px-8 lg:pt-[70px] lg:pb-[44px]`
+              : `${cardHeightClass} flex flex-col overflow-hidden px-11 pt-11 ${cardFooterPaddingClass}`
           }`}
           style={{
             background: "linear-gradient(150deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.38) 100%)",

@@ -6,6 +6,8 @@ import {
   useRef,
   useCallback,
   useLayoutEffect,
+  cloneElement,
+  isValidElement,
 } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -147,7 +149,9 @@ export function CallInitiationScreen({
   return (
     <div
       style={{
-        minHeight: transparentSurface ? "100%" : "100dvh",
+        height: transparentSurface ? "100%" : undefined,
+        minHeight: transparentSurface ? 0 : "100dvh",
+        maxHeight: transparentSurface ? "100%" : undefined,
         flex: transparentSurface ? 1 : undefined,
         fontFamily: "Inter, sans-serif",
         display: "flex",
@@ -454,90 +458,235 @@ export function CallInitiationScreen({
                   marginBottom: transparentSurface ? 28 : 16,
                 }}
               >
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: C.textSec,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    margin: transparentSurface ? "4px 0 14px" : "0 0 10px",
-                    textAlign: "center",
-                  }}
-                >
-                  After your call
-                </p>
-
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: transparentSurface ? "repeat(3, minmax(0, 1fr))" : "1fr 1fr",
-                    gap: transparentSurface ? 14 : 8,
-                    gridTemplateRows: transparentSurface ? "auto" : "auto auto",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: transparentSurface ? 12 : 0,
+                    margin: transparentSurface ? "4px 0 18px" : "0 0 10px",
                   }}
                 >
-                  {OUTCOMES.slice(0, 2).map((o, i) => (
-                    <motion.div
-                      key={o.title}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3 + i * 0.06, ease: EASE }}
+                  {transparentSurface && (
+                    <span
+                      aria-hidden
                       style={{
-                        borderRadius: 14,
-                        padding: transparentSurface ? "16px 15px 14px" : "12px 12px 11px",
-                        background: transparentSurface ? "rgba(255,255,255,0.48)" : "rgba(255,255,255,0.7)",
-                        border: `1px solid ${C.border}`,
-                        minHeight: 0,
+                        height: 1,
+                        width: 28,
+                        background:
+                          "linear-gradient(90deg, transparent 0%, rgba(28,25,23,0.18) 100%)",
                       }}
-                    >
-                      <div style={{ marginBottom: transparentSurface ? 10 : 8, opacity: 0.9 }}>{o.icon}</div>
-                      <p
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: 600,
-                          color: C.primary,
-                          margin: 0,
-                          letterSpacing: "-0.02em",
-                          lineHeight: 1.28,
-                        }}
-                      >
-                        {o.title}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 11,
-                          color: C.textMuted,
-                          margin: "6px 0 0",
-                          lineHeight: 1.4,
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        {o.desc}
-                      </p>
-                    </motion.div>
-                  ))}
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.42, ease: EASE }}
+                    />
+                  )}
+                  <p
                     style={{
-                      gridColumn: transparentSurface ? "auto" : "1 / -1",
-                      borderRadius: 14,
-                      padding: transparentSurface ? "16px 15px 14px" : "12px 14px",
-                      background: transparentSurface
-                        ? "rgba(255,255,255,0.48)"
-                        : "linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(234,88,12,0.02) 100%)",
-                      border: transparentSurface ? `1px solid ${C.border}` : `1px solid rgba(234,88,12,0.12)`,
-                      minHeight: 0,
-                      display: transparentSurface ? "block" : "flex",
-                      alignItems: transparentSurface ? undefined : "flex-start",
-                      gap: transparentSurface ? undefined : 10,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: C.textSec,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      margin: 0,
+                      textAlign: "center",
                     }}
                   >
-                    {transparentSurface ? (
-                      <>
-                        <div style={{ marginBottom: 10, opacity: 0.9 }}>{OUTCOMES[2].icon}</div>
+                    After your call
+                  </p>
+                  {transparentSurface && (
+                    <span
+                      aria-hidden
+                      style={{
+                        height: 1,
+                        width: 28,
+                        background:
+                          "linear-gradient(90deg, rgba(28,25,23,0.18) 0%, transparent 100%)",
+                      }}
+                    />
+                  )}
+                </div>
+
+                {transparentSurface ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    {OUTCOMES.map((o, i) => (
+                      <motion.div
+                        key={o.title}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 + i * 0.09, ease: EASE }}
+                        whileHover={{ y: -3 }}
+                        style={{
+                          position: "relative",
+                          borderRadius: 18,
+                          padding: "22px 20px 20px",
+                          background:
+                            "linear-gradient(155deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.44) 100%)",
+                          border: "1px solid rgba(255,255,255,0.7)",
+                          boxShadow:
+                            "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(28,25,23,0.04), 0 12px 28px rgba(28,25,23,0.06)",
+                          overflow: "hidden",
+                          transition: "box-shadow 0.25s ease",
+                        }}
+                      >
+                        {/* ambient corner glow */}
+                        <div
+                          aria-hidden
+                          style={{
+                            position: "absolute",
+                            top: -32,
+                            right: -32,
+                            width: 110,
+                            height: 110,
+                            borderRadius: "50%",
+                            background:
+                              "radial-gradient(circle, rgba(234,88,12,0.14) 0%, rgba(234,88,12,0.04) 55%, transparent 75%)",
+                            pointerEvents: "none",
+                            filter: "blur(2px)",
+                          }}
+                        />
+
+                        {/* numbered accent */}
+                        <span
+                          aria-hidden
+                          style={{
+                            position: "absolute",
+                            top: 14,
+                            right: 16,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: "0.14em",
+                            color: C.textSec,
+                            fontFeatureSettings: '"tnum"',
+                          }}
+                        >
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+
+                        {/* icon chip */}
+                        <div
+                          style={{
+                            position: "relative",
+                            width: 42,
+                            height: 42,
+                            borderRadius: 13,
+                            background:
+                              "linear-gradient(145deg, rgba(234,88,12,0.16) 0%, rgba(234,88,12,0.04) 100%)",
+                            border: "1px solid rgba(234,88,12,0.2)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: 16,
+                            boxShadow:
+                              "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 10px rgba(234,88,12,0.1)",
+                          }}
+                        >
+                          {isValidElement(o.icon)
+                            ? cloneElement(
+                                o.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>,
+                                { size: 20, strokeWidth: 2 },
+                              )
+                            : o.icon}
+                        </div>
+
+                        <p
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: C.primary,
+                            margin: 0,
+                            letterSpacing: "-0.025em",
+                            lineHeight: 1.28,
+                          }}
+                        >
+                          {o.title}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 11.5,
+                            color: C.textMuted,
+                            margin: "8px 0 0",
+                            lineHeight: 1.5,
+                            letterSpacing: "-0.01em",
+                          }}
+                        >
+                          {o.desc}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 8,
+                      gridTemplateRows: "auto auto",
+                    }}
+                  >
+                    {OUTCOMES.slice(0, 2).map((o, i) => (
+                      <motion.div
+                        key={o.title}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.3 + i * 0.06, ease: EASE }}
+                        style={{
+                          borderRadius: 14,
+                          padding: "12px 12px 11px",
+                          background: "rgba(255,255,255,0.7)",
+                          border: `1px solid ${C.border}`,
+                          minHeight: 0,
+                        }}
+                      >
+                        <div style={{ marginBottom: 8, opacity: 0.9 }}>{o.icon}</div>
+                        <p
+                          style={{
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            color: C.primary,
+                            margin: 0,
+                            letterSpacing: "-0.02em",
+                            lineHeight: 1.28,
+                          }}
+                        >
+                          {o.title}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: C.textMuted,
+                            margin: "6px 0 0",
+                            lineHeight: 1.4,
+                            letterSpacing: "-0.01em",
+                          }}
+                        >
+                          {o.desc}
+                        </p>
+                      </motion.div>
+                    ))}
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.42, ease: EASE }}
+                      style={{
+                        gridColumn: "1 / -1",
+                        borderRadius: 14,
+                        padding: "12px 14px",
+                        background:
+                          "linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(234,88,12,0.02) 100%)",
+                        border: "1px solid rgba(234,88,12,0.12)",
+                        minHeight: 0,
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ opacity: 0.9, flexShrink: 0, lineHeight: 0 }}>{OUTCOMES[2].icon}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <p
                           style={{
                             fontSize: 12.5,
@@ -554,48 +703,17 @@ export function CallInitiationScreen({
                           style={{
                             fontSize: 11,
                             color: C.textMuted,
-                            margin: "6px 0 0",
-                            lineHeight: 1.4,
+                            margin: "5px 0 0",
+                            lineHeight: 1.45,
                             letterSpacing: "-0.01em",
                           }}
                         >
                           {OUTCOMES[2].desc}
                         </p>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ opacity: 0.9, flexShrink: 0, lineHeight: 0 }}>
-                          {OUTCOMES[2].icon}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            style={{
-                              fontSize: 12.5,
-                              fontWeight: 600,
-                              color: C.primary,
-                              margin: 0,
-                              letterSpacing: "-0.02em",
-                              lineHeight: 1.28,
-                            }}
-                          >
-                            {OUTCOMES[2].title}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: 11,
-                              color: C.textMuted,
-                              margin: "5px 0 0",
-                              lineHeight: 1.45,
-                              letterSpacing: "-0.01em",
-                            }}
-                          >
-                            {OUTCOMES[2].desc}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </motion.div>
-                </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

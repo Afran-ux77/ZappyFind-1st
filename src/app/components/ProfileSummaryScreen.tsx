@@ -19,6 +19,7 @@ import {
   JOB_PRIORITY_LABEL_BY_ID,
   type SalaryCurrencyCode,
 } from "./JobPreferencesScreen";
+import { JOB_DEPARTMENT_LABEL_BY_ID } from "./jobPrefDepartmentsData";
 import { cn } from "./ui/utils";
 
 const SALARY_CURR_SET = new Set<SalaryCurrencyCode>([
@@ -36,14 +37,8 @@ const PRIORITY_LABELS: Record<string, string> = {
   flexible: "Flexible hours", benefits: "Great benefits",
   remote: "Remote friendly", wlb: "Work-life balance",
 };
-const CATEGORY_LABELS: Record<string, string> = {
-  swe: "Software Engineering", design: "Design", data: "Data",
-  product: "Product", marketing: "Marketing", finance: "Finance",
-  sales: "Sales", hr: "Human Resources", consulting: "Consulting",
-  ops: "Operations & Strategy", cs: "Customer Success", legal: "Legal",
-  security: "Security", health: "Healthcare", misc: "Misc. Engineering",
-  other: "Other",
-};
+
+const CATEGORY_LABELS: Record<string, string> = { ...JOB_DEPARTMENT_LABEL_BY_ID };
 const SETUP_LABELS: Record<string, string> = {
   onsite: "Onsite", hybrid: "Hybrid", remote: "Remote",
 };
@@ -142,7 +137,10 @@ export function ProfileSummaryScreen({
   const categoryLabels = ((prefs.categories && prefs.categories.length > 0)
     ? prefs.categories
     : (prefs.category ? [prefs.category] : []))
-    .map((id: string) => CATEGORY_LABELS[id] || id)
+    .map((id: string) =>
+      id === "other" && String(prefs.otherDepartmentLabel || "").trim()
+        ? String(prefs.otherDepartmentLabel).trim()
+        : (CATEGORY_LABELS[id] || id))
     .slice(0, 3);
   const allRoles = Array.from(new Set((
     Object.values(prefs.rolesByCategory || {}).flat() as string[]
@@ -152,7 +150,10 @@ export function ProfileSummaryScreen({
     : (prefs.category ? [prefs.category] : []);
   const experienceLevelByCategory: Record<string, string> = prefs.experienceLevelByCategory || {};
   const formatCategoryLabelWithExperience = (catId: string): string => {
-    const catLabel = CATEGORY_LABELS[catId] || catId;
+    const catLabel =
+      catId === "other" && String(prefs.otherDepartmentLabel || "").trim()
+        ? String(prefs.otherDepartmentLabel).trim()
+        : CATEGORY_LABELS[catId] || catId;
     const expId = experienceLevelByCategory[catId];
     const expLabel = expId ? (EXPERIENCE_LEVEL_LABELS[expId] || expId) : "";
     return expLabel ? `${catLabel} (${expLabel})` : catLabel;
@@ -388,7 +389,7 @@ export function ProfileSummaryScreen({
       >
         <div
           style={{
-            padding: transparentSurface ? "20px 20px 24px" : "44px 20px 120px",
+            padding: transparentSurface ? "20px 40px 24px" : "44px 20px 120px",
             background: transparentSurface ? "transparent" : undefined,
           }}
         >
@@ -1041,7 +1042,7 @@ export function ProfileSummaryScreen({
                 : "14px 0 calc(14px + env(safe-area-inset-bottom))",
               background: "transparent",
               display: "flex",
-              justifyContent: "stretch",
+              justifyContent: "flex-end",
               alignItems: "center",
               gap: 12,
             }}
@@ -1065,10 +1066,11 @@ export function ProfileSummaryScreen({
                 });
               }}
               style={{
-                width: "100%",
+                width: "auto",
                 height: 50,
-                minWidth: 0,
-                padding: "0 16px",
+                minWidth: 148,
+                flexShrink: 0,
+                padding: "0 22px",
                 borderRadius: 14,
                 border: "none",
                 background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",

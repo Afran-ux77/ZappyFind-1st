@@ -1,6 +1,7 @@
 import { useState, useEffect, useId, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { FullProfile, WorkExp, Edu, JobPreferences } from "./WelcomeScreen";
+import { JOB_PREF_DEPARTMENTS_FOR_EDIT } from "./jobPrefDepartmentsData";
 import { FloatingLabelInput } from "./ui/FloatingLabelInput";
 
 // ── Design Tokens ─────────────────────────────────────────────────────────────
@@ -371,41 +372,11 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
 }
 
 // ── Preference options (mirrored from JobPreferencesScreen for editing) ───────
-const PREF_CATEGORIES = [
-  { id: "swe", label: "Software Engineering" },
-  { id: "design", label: "Design" },
-  { id: "data", label: "Data" },
-  { id: "product", label: "Product" },
-  { id: "marketing", label: "Marketing" },
-  { id: "finance", label: "Finance" },
-  { id: "sales", label: "Sales" },
-  { id: "hr", label: "Human Resources" },
-  { id: "consulting", label: "Consulting" },
-  { id: "ops", label: "Operations & Strategy" },
-  { id: "cs", label: "Customer Success" },
-  { id: "legal", label: "Legal" },
-  { id: "security", label: "Security" },
-  { id: "health", label: "Healthcare" },
-  { id: "misc", label: "Misc. Engineering" },
-];
+const PREF_CATEGORIES = JOB_PREF_DEPARTMENTS_FOR_EDIT.map(({ id, label }) => ({ id, label }));
 
-const PREF_SUB_ROLES: Record<string, string[]> = {
-  swe: ["Frontend Engineer", "Backend Engineer", "Full Stack Engineer", "Mobile Developer", "DevOps Engineer", "QA Engineer", "Platform Engineer"],
-  design: ["Product Designer", "UI Designer", "UX Designer", "Brand Designer", "Motion Designer", "Graphic Designer"],
-  data: ["Data Analyst", "Data Scientist", "ML Engineer", "Data Engineer", "BI Analyst"],
-  product: ["Product Manager", "Associate PM", "Growth PM", "Technical PM", "Senior PM"],
-  marketing: ["Growth Marketer", "Content Marketer", "SEO Specialist", "Performance Marketer", "Brand Marketer"],
-  finance: ["Financial Analyst", "Investment Analyst", "Accountant", "Controller", "CFO"],
-  sales: ["Account Executive", "SDR", "Enterprise Sales", "Inside Sales", "VP of Sales"],
-  hr: ["HR Manager", "Recruiter", "L&D Specialist", "HRBP", "Talent Acquisition"],
-  consulting: ["Strategy Consultant", "Management Consultant", "Associate Consultant", "Business Analyst"],
-  ops: ["Operations Manager", "Business Analyst", "Chief of Staff", "Strategy Analyst"],
-  cs: ["Customer Success Manager", "Account Manager", "Support Lead", "Onboarding Specialist"],
-  legal: ["Corporate Lawyer", "Paralegal", "Compliance Officer", "Legal Counsel"],
-  security: ["Security Engineer", "Security Analyst", "Penetration Tester", "CISO"],
-  health: ["Doctor", "Nurse", "Healthcare Analyst", "Medical Technologist", "Pharmacist"],
-  misc: ["Mechanical Engineer", "Electrical Engineer", "Civil Engineer", "Chemical Engineer"],
-};
+const PREF_SUB_ROLES: Record<string, string[]> = Object.fromEntries(
+  JOB_PREF_DEPARTMENTS_FOR_EDIT.map((d) => [d.id, d.roles]),
+);
 
 const PREF_WORK_SETUPS = ["Onsite", "Hybrid", "Remote"];
 const PREF_SWITCH_TIMELINE_OPTIONS = [

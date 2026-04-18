@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { Fragment, useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import type { ReactNode, ElementType, CSSProperties } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { JobPreferences } from "./WelcomeScreen";
 import {
   Heart, Crown, TrendingUp, Layers, Lightbulb, Zap, Rocket, Flame,
-  Building2, Cpu, Clock, Gift, Globe, Scale,
-  Code2, Palette, Database, Package, Megaphone, Landmark, ShoppingBag,
-  Users, Briefcase, Settings2, Headphones, ShieldCheck, Activity, Wrench,
+  Building2, Cpu, Clock, Globe, Scale,
+  Code2, Palette, Package, Megaphone, Landmark,
+  Users, Briefcase, Headphones, ShieldCheck, Wrench,
   FlaskConical, BarChart3, UserCheck, Handshake, HeartPulse, ChevronDown,
+  Car, Plane, HeartHandshake, HardHat, Newspaper, Fuel, UtensilsCrossed,
+  Clapperboard, Store, Truck, ClipboardList, BadgeCheck, AlertTriangle,
+  Shield, Anchor, Dumbbell, GraduationCap, Wallet, Leaf,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,6 +19,10 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import {
+  JOB_PREF_DEPARTMENTS,
+  LEGACY_DEPARTMENT_ID_MAP,
+} from "./jobPrefDepartmentsData";
 
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 const C = {
@@ -86,43 +93,85 @@ const PRIORITY_QUESTIONS = [
   },
 ] as const;
 
-/* ── Step 2 — Job categories & sub-roles ───────────────────────────────────── */
-const CATEGORIES = [
-  { id: "swe",        label: "Software Engineering",  icon: Code2       },
-  { id: "design",     label: "Design",                icon: Palette     },
-  { id: "data",       label: "Data",                  icon: BarChart3   },
-  { id: "product",    label: "Product",               icon: Package     },
-  { id: "marketing",  label: "Marketing",             icon: Megaphone   },
-  { id: "finance",    label: "Finance",               icon: Landmark    },
-  { id: "sales",      label: "Sales",                 icon: ShoppingBag },
-  { id: "hr",         label: "Human Resources",       icon: Users       },
-  { id: "consulting", label: "Consulting",            icon: Briefcase   },
-  { id: "ops",        label: "Operations & Strategy", icon: Settings2   },
-  { id: "cs",         label: "Customer Success",      icon: Headphones  },
-  { id: "legal",      label: "Legal",                 icon: Scale       },
-  { id: "security",   label: "Security",              icon: ShieldCheck },
-  { id: "health",     label: "Healthcare",            icon: HeartPulse  },
-  { id: "misc",       label: "Misc. Engineering",     icon: Wrench      },
-  { id: "other",      label: "Other",                 icon: FlaskConical },
-];
+/* ── Step 2 — Job categories & sub-roles (canonical list in jobPrefDepartmentsData) ─ */
 
-const SUB_ROLES: Record<string, string[]> = {
-  swe:        ["Frontend Engineer", "Backend Engineer", "Full Stack Engineer", "Mobile Developer", "DevOps Engineer", "QA Engineer", "Platform Engineer"],
-  design:     ["Product Designer", "UI Designer", "UX Designer", "Brand Designer", "Motion Designer", "Graphic Designer"],
-  data:       ["Data Analyst", "Data Scientist", "ML Engineer", "Data Engineer", "BI Analyst"],
-  product:    ["Product Manager", "Associate PM", "Growth PM", "Technical PM", "Senior PM"],
-  marketing:  ["Growth Marketer", "Content Marketer", "SEO Specialist", "Performance Marketer", "Brand Marketer"],
-  finance:    ["Financial Analyst", "Investment Analyst", "Accountant", "Controller", "CFO"],
-  sales:      ["Account Executive", "SDR", "Enterprise Sales", "Inside Sales", "VP of Sales"],
-  hr:         ["HR Manager", "Recruiter", "L&D Specialist", "HRBP", "Talent Acquisition"],
-  consulting: ["Strategy Consultant", "Management Consultant", "Associate Consultant", "Business Analyst"],
-  ops:        ["Operations Manager", "Business Analyst", "Chief of Staff", "Strategy Analyst"],
-  cs:         ["Customer Success Manager", "Account Manager", "Support Lead", "Onboarding Specialist"],
-  legal:      ["Corporate Lawyer", "Paralegal", "Compliance Officer", "Legal Counsel"],
-  security:   ["Security Engineer", "Security Analyst", "Penetration Tester", "CISO"],
-  health:     ["Doctor", "Nurse", "Healthcare Analyst", "Medical Technologist", "Pharmacist"],
-  misc:       ["Mechanical Engineer", "Electrical Engineer", "Civil Engineer", "Chemical Engineer"],
+type LucideIconComp = (typeof Code2);
+
+const DEPARTMENT_ICON_BY_ID: Record<string, LucideIconComp> = {
+  engineering_software_qa: Code2,
+  ux_design_architecture: Palette,
+  data_science_analytics: BarChart3,
+  product_management: Package,
+  it_information_security: ShieldCheck,
+  marketing_communication: Megaphone,
+  sales_business_development: TrendingUp,
+  finance_accounting: Landmark,
+  human_resources: Users,
+  consulting: Briefcase,
+  customer_success_service_operations: Headphones,
+  bfsi_investments_trading: Wallet,
+  project_program_management: ClipboardList,
+  healthcare_life_sciences: HeartPulse,
+  legal_regulatory: Scale,
+  teaching_training: GraduationCap,
+  content_editorial_journalism: Newspaper,
+  other: Layers,
+  administration_facilities: Building2,
+  automobile_auto_ancillary: Car,
+  aviation_aerospace: Plane,
+  csr_social_service: HeartHandshake,
+  construction_site_engineering: HardHat,
+  energy_mining: Fuel,
+  engineering_hardware_networks: Cpu,
+  environment_health_safety: Leaf,
+  food_beverage_hospitality: UtensilsCrossed,
+  media_production_entertainment: Clapperboard,
+  merchandising_retail_ecommerce: Store,
+  procurement_supply_chain: Truck,
+  production_manufacturing_engineering: Wrench,
+  quality_assurance: BadgeCheck,
+  research_development: FlaskConical,
+  risk_management_compliance: AlertTriangle,
+  security_services: Shield,
+  shipping_maritime: Anchor,
+  sports_fitness_personal_care: Dumbbell,
+  strategic_top_management: Crown,
 };
+
+const ALL_DEPARTMENT_CHIPS = JOB_PREF_DEPARTMENTS.map((row) => ({
+  id: row.id,
+  label: row.label,
+  showInitially: row.showInitially,
+  icon: DEPARTMENT_ICON_BY_ID[row.id] ?? Layers,
+}));
+
+/**
+ * Mobile: first 15 departments (14 highest-intent from desktop cohort + Other).
+ * Desktop still uses full `showInitially` set in jobPrefDepartmentsData.
+ */
+const MOBILE_FIRST_DEPARTMENT_IDS = [
+  "engineering_software_qa",
+  "ux_design_architecture",
+  "data_science_analytics",
+  "product_management",
+  "it_information_security",
+  "marketing_communication",
+  "sales_business_development",
+  "finance_accounting",
+  "human_resources",
+  "consulting",
+  "customer_success_service_operations",
+  "bfsi_investments_trading",
+  "project_program_management",
+  "healthcare_life_sciences",
+  "other",
+] as const;
+
+const MOBILE_FIRST_DEPARTMENT_ID_SET = new Set<string>(MOBILE_FIRST_DEPARTMENT_IDS);
+
+const SUB_ROLES: Record<string, string[]> = Object.fromEntries(
+  JOB_PREF_DEPARTMENTS.map((d) => [d.id, d.roles]),
+);
 
 const MAX_JOB_CATEGORIES = 3;
 const MAX_ROLES_PER_CATEGORY = 3;
@@ -139,8 +188,18 @@ const EXPERIENCE_BADGE: Record<(typeof EXPERIENCE_LEVELS)[number]["id"], string>
   lead: "5-10y",
 };
 
+function resolveDepartmentId(id: string) {
+  return LEGACY_DEPARTMENT_ID_MAP[id] ?? id;
+}
+
 function getCategoryMeta(id: string) {
-  return CATEGORIES.find((c) => c.id === id);
+  const resolved = resolveDepartmentId(id);
+  return ALL_DEPARTMENT_CHIPS.find((c) => c.id === resolved);
+}
+
+function getPresetRoles(catId: string): string[] {
+  const resolved = resolveDepartmentId(catId);
+  return SUB_ROLES[resolved] ?? SUB_ROLES[catId] ?? [];
 }
 
 /* ── Step 3 — Work setup ───────────────────────────────────────────────────── */
@@ -294,6 +353,36 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Gradient rule between step-3 sections. Rendered **outside** the narrow content
+ * column so it spans the onboarding card width and the bar centers in the glass pane.
+ */
+function PrefsStep3GradientRule() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        width: "100%",
+        alignSelf: "stretch",
+        margin: "8px 0 12px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "min(520px, 78%)",
+          height: 1,
+          borderRadius: 999,
+          background:
+            "linear-gradient(90deg, rgba(234,88,12,0) 0%, rgba(251,146,60,0.14) 22%, rgba(234,88,12,0.22) 48%, rgba(129,140,248,0.12) 74%, rgba(251,146,60,0.1) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 type Step = 1 | 2 | 3;
 
@@ -312,6 +401,16 @@ interface Props {
 export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transparentSurface = false }: Props) {
   /** Desktop onboarding: tighter, non-stretched controls inside glass chrome. */
   const isDesktopLayout = transparentSurface;
+  const prefsStep3ContentShell: CSSProperties = isDesktopLayout
+    ? {
+        maxWidth: 600,
+        marginLeft: 0,
+        marginRight: "auto",
+        width: "100%",
+        boxSizing: "border-box",
+        textAlign: "left",
+      }
+    : { textAlign: "left" };
   const [step,       setStep]       = useState<Step>(() => {
     if (resumeAtStep !== undefined && resumeAtStep >= 1 && resumeAtStep <= 3) return resumeAtStep;
     return 1;
@@ -325,7 +424,121 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   const [expandedExperienceCategory, setExpandedExperienceCategory] = useState<string | null>(null);
   const [customRoleByCategory, setCustomRoleByCategory] = useState<Record<string, string>>({});
   const [expandedRoleInputCategory, setExpandedRoleInputCategory] = useState<string | null>(null);
+  const [otherDepartmentLabel, setOtherDepartmentLabel] = useState("");
   const roleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const otherDepartmentInputRef = useRef<HTMLInputElement | null>(null);
+  const hadOtherCategoryRef = useRef(false);
+  const [showAllDepartments, setShowAllDepartments] = useState(false);
+  const visibleDepartments = useMemo(() => {
+    if (showAllDepartments) return ALL_DEPARTMENT_CHIPS;
+    if (isDesktopLayout) {
+      return ALL_DEPARTMENT_CHIPS.filter((d) => d.showInitially);
+    }
+    return MOBILE_FIRST_DEPARTMENT_IDS.map((id) => ALL_DEPARTMENT_CHIPS.find((c) => c.id === id)).filter(
+      (c): c is (typeof ALL_DEPARTMENT_CHIPS)[number] => Boolean(c),
+    );
+  }, [showAllDepartments, isDesktopLayout]);
+
+  const collapsedDepartmentCount = useMemo(() => {
+    if (isDesktopLayout) {
+      return ALL_DEPARTMENT_CHIPS.filter((d) => !d.showInitially).length;
+    }
+    return ALL_DEPARTMENT_CHIPS.length - MOBILE_FIRST_DEPARTMENT_IDS.length;
+  }, [isDesktopLayout]);
+
+  useEffect(() => {
+    if (showAllDepartments) return;
+    const hiddenIds = isDesktopLayout
+      ? new Set(ALL_DEPARTMENT_CHIPS.filter((d) => !d.showInitially).map((d) => d.id))
+      : new Set(ALL_DEPARTMENT_CHIPS.filter((d) => !MOBILE_FIRST_DEPARTMENT_ID_SET.has(d.id)).map((d) => d.id));
+    if (selectedCategories.some((id) => hiddenIds.has(resolveDepartmentId(id)))) {
+      setShowAllDepartments(true);
+    }
+  }, [showAllDepartments, selectedCategories, isDesktopLayout]);
+
+  /**
+   * Department chip row measurement.
+   * After layout, find the index of the LAST chip on the same visual row as the
+   * currently expanded chip. The "Target level" strip is inserted right after
+   * that chip with flex-basis:100%, so chips already on that row never reflow —
+   * only chips on rows below get pushed down.
+   */
+  const chipRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const chipRowRef = useRef<HTMLDivElement | null>(null);
+  const [stripInsertAfterIdx, setStripInsertAfterIdx] = useState<number>(-1);
+
+  useLayoutEffect(() => {
+    const compute = () => {
+      if (step !== 1) {
+        setStripInsertAfterIdx(-1);
+        return;
+      }
+      if (
+        !expandedExperienceCategory ||
+        expandedExperienceCategory === "other" ||
+        !selectedCategories.includes(expandedExperienceCategory)
+      ) {
+        setStripInsertAfterIdx(-1);
+        return;
+      }
+      const selectedIdx = visibleDepartments.findIndex(
+        (c) => c.id === expandedExperienceCategory,
+      );
+      if (selectedIdx === -1) {
+        setStripInsertAfterIdx(-1);
+        return;
+      }
+      const selectedEl = chipRefs.current[selectedIdx];
+      if (!selectedEl) {
+        setStripInsertAfterIdx(-1);
+        return;
+      }
+      // Use viewport-aligned tops (not offsetTop): on mobile, offsetParent can differ
+      // from the flex row, which breaks row grouping. getBoundingClientRect is stable.
+      const selectedTop = selectedEl.getBoundingClientRect().top;
+      let lastInRow = selectedIdx;
+      for (let i = selectedIdx + 1; i < visibleDepartments.length; i++) {
+        const el = chipRefs.current[i];
+        if (!el) break;
+        const top = el.getBoundingClientRect().top;
+        if (Math.abs(top - selectedTop) <= 2) {
+          lastInRow = i;
+        } else {
+          break;
+        }
+      }
+      setStripInsertAfterIdx(lastInRow);
+    };
+
+    /** Mobile Safari / Chrome sometimes need a frame after mount before chip rects are final. */
+    const schedule = () => {
+      compute();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(compute);
+      });
+    };
+
+    schedule();
+
+    const row = chipRowRef.current;
+    if (typeof ResizeObserver === "undefined" || !row) {
+      window.addEventListener("resize", schedule);
+      window.visualViewport?.addEventListener("resize", schedule);
+      return () => {
+        window.removeEventListener("resize", schedule);
+        window.visualViewport?.removeEventListener("resize", schedule);
+      };
+    }
+    const ro = new ResizeObserver(() => schedule());
+    ro.observe(row);
+    window.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("resize", schedule);
+    };
+  }, [expandedExperienceCategory, selectedCategories, step, visibleDepartments]);
   const [switchTimeline, setSwitchTimeline] = useState<string | null>(null);
   const [workSetups, setWorkSetups] = useState<string[]>([]);
   const [locQuery,   setLocQuery]   = useState("");
@@ -545,6 +758,38 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
     }
   }, [expandedExperienceCategory, selectedCategories]);
 
+  useEffect(() => {
+    const hasOther = selectedCategories.includes("other");
+    if (!hasOther) {
+      setOtherDepartmentLabel("");
+      hadOtherCategoryRef.current = false;
+      return;
+    }
+    setRolesByCategory((prev) => {
+      if (!prev.other) return prev;
+      const next = { ...prev };
+      delete next.other;
+      return next;
+    });
+    setExperienceLevelByCategory((prev) => {
+      if (!prev.other) return prev;
+      const next = { ...prev };
+      delete next.other;
+      return next;
+    });
+    setCustomRoleByCategory((prev) => {
+      if (prev.other === undefined) return prev;
+      const next = { ...prev };
+      delete next.other;
+      return next;
+    });
+    if (!hadOtherCategoryRef.current) {
+      const id = window.setTimeout(() => otherDepartmentInputRef.current?.focus(), 120);
+      hadOtherCategoryRef.current = true;
+      return () => clearTimeout(id);
+    }
+  }, [selectedCategories]);
+
   const toggleCategory = (id: string) => {
     setSelectedCategories((prev) => {
       if (prev.includes(id)) {
@@ -620,12 +865,15 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   const onsiteOrHybridSelected = workSetups.includes("onsite") || workSetups.includes("hybrid");
   const showLocationPicker = onsiteOrHybridSelected || (remoteSelected && workSetups.length > 1);
   const remoteOnly = remoteSelected && workSetups.length === 1;
-  const hasAtLeastOneRole = selectedCategories.some(
-    (cid) => (rolesByCategory[cid] ?? []).length > 0
-  );
-  const hasExperienceLevelForAllSelected = selectedCategories.every(
-    (cid) => !!experienceLevelByCategory[cid]
-  );
+  /** "Other" only stores a free-text department name — no roles. Other categories need ≥1 role. */
+  const hasAtLeastOneRole = selectedCategories.some((cid) => {
+    if (cid === "other") return otherDepartmentLabel.trim().length > 0;
+    return (rolesByCategory[cid] ?? []).length > 0;
+  });
+  const hasExperienceLevelForAllSelected = selectedCategories.every((cid) => {
+    if (cid === "other") return true;
+    return !!experienceLevelByCategory[cid];
+  });
   const liveSalMin =
     salMinEditing
       ? (() => {
@@ -690,17 +938,24 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
       const rbc: Record<string, string[]> = {};
       const expByCat: Record<string, "entry" | "mid" | "senior" | "lead"> = {};
       cats.forEach((cid) => {
+        if (cid === "other") return;
         const rs = rolesByCategory[cid];
         if (rs && rs.length) rbc[cid] = [...rs];
         const exp = experienceLevelByCategory[cid];
         if (exp) expByCat[cid] = exp;
       });
-      const flatRoles = cats.flatMap((cid) => rolesByCategory[cid] ?? []);
+      const flatRoles = cats.flatMap((cid) =>
+        cid === "other" ? [] : (rolesByCategory[cid] ?? [])
+      );
       const firstCat = cats[0];
       onComplete({
         categories: cats.length ? cats : undefined,
         rolesByCategory: Object.keys(rbc).length ? rbc : undefined,
         experienceLevelByCategory: Object.keys(expByCat).length ? expByCat : undefined,
+        otherDepartmentLabel:
+          cats.includes("other") && otherDepartmentLabel.trim()
+            ? otherDepartmentLabel.trim()
+            : undefined,
         category: firstCat,
         roles: flatRoles.length ? flatRoles : undefined,
         workSetups: workSetups.length ? workSetups : undefined,
@@ -791,19 +1046,43 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   </h2>
                 </div>
 
-                <SectionLabel>Departments</SectionLabel>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                  {CATEGORIES.map((cat) => {
+                <SectionLabel>Job categories</SectionLabel>
+                {/*
+                  Chips live in a single flex-wrap row. The "Target level" strip is
+                  inserted RIGHT AFTER the last chip on the same visual row as the
+                  selected chip (computed with getBoundingClientRect in a layout
+                  effect — reliable on mobile WebKit where offsetTop can disagree).
+                  Chips on that row never reflow; only rows below move when the strip
+                  opens (height animation).
+                */}
+                <div
+                  ref={chipRowRef}
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginBottom: 16,
+                  }}
+                >
+                  {visibleDepartments.map((cat, idx) => {
                     const selected = selectedCategories.includes(cat.id);
                     const atCap = selectedCategories.length >= MAX_JOB_CATEGORIES && !selected;
                     const exp = experienceLevelByCategory[cat.id];
                     const Icon = cat.icon;
-                    const showInlineExperience =
-                      expandedExperienceCategory === cat.id && selected && cat.id !== "other";
+                    const showStripAfter =
+                      idx === stripInsertAfterIdx &&
+                      expandedExperienceCategory &&
+                      expandedExperienceCategory !== "other" &&
+                      selectedCategories.includes(expandedExperienceCategory);
+                    const expCat = showStripAfter
+                      ? getCategoryMeta(expandedExperienceCategory!)
+                      : null;
                     return (
-                      <motion.div key={cat.id} layout style={{ display: "contents" }}>
+                      <Fragment key={cat.id}>
                         <motion.button
-                          layout
+                          ref={(el) => {
+                            chipRefs.current[idx] = el;
+                          }}
                           type="button"
                           whileTap={{ scale: 0.97 }}
                           onClick={() => toggleCategory(cat.id)}
@@ -827,7 +1106,11 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                             fontFamily: "Inter, sans-serif",
                           }}
                         >
-                          <Icon size={13} strokeWidth={selected ? 2.1 : 1.8} style={{ flexShrink: 0, opacity: selected ? 1 : 0.7 }} />
+                          <Icon
+                            size={13}
+                            strokeWidth={selected ? 2.1 : 1.8}
+                            style={{ flexShrink: 0, opacity: selected ? 1 : 0.7 }}
+                          />
                           {cat.label}
                           {exp && (
                             <span
@@ -835,14 +1118,14 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                                 position: "absolute",
                                 top: -7,
                                 right: -6,
-                              fontSize: 10,
+                                fontSize: 10,
                                 fontWeight: 700,
                                 lineHeight: 1,
-                              padding: "4px 6px",
+                                padding: "4px 6px",
                                 borderRadius: 999,
-                              background: "rgba(194,65,12,0.72)",
-                              color: "rgba(255,255,255,0.98)",
-                              border: "1px solid rgba(154,52,18,0.42)",
+                                background: "rgba(194,65,12,0.72)",
+                                color: "rgba(255,255,255,0.98)",
+                                border: "1px solid rgba(154,52,18,0.42)",
                                 letterSpacing: "0.01em",
                               }}
                             >
@@ -851,87 +1134,201 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                           )}
                         </motion.button>
                         <AnimatePresence initial={false}>
-                          {showInlineExperience && (
+                          {showStripAfter && expCat && (
                             <motion.div
-                              key={`exp-inline-after-${cat.id}`}
-                              initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                              key={`exp-strip-after-${expandedExperienceCategory}-${idx}`}
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
                               style={{
                                 flexBasis: "100%",
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 8,
-                                marginTop: -4,
-                                marginBottom: 2,
-                                padding: "2px 0 2px 6px",
-                                borderLeft: "2px solid rgba(234,88,12,0.22)",
+                                width: "100%",
+                                overflow: "hidden",
                               }}
                             >
                               <div
                                 style={{
-                                  flexBasis: "100%",
-                                  fontSize: 10.5,
-                                  fontWeight: 600,
-                                  color: "#78716C",
-                                  letterSpacing: "0.03em",
-                                  textTransform: "uppercase",
-                                  marginBottom: 2,
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 8,
+                                  padding: "2px 0 2px 6px",
+                                  borderLeft: "2px solid rgba(234,88,12,0.22)",
+                                  marginTop: 2,
                                 }}
                               >
-                                Target level for {cat.label}
+                                <div
+                                  style={{
+                                    flexBasis: "100%",
+                                    fontSize: 10.5,
+                                    fontWeight: 600,
+                                    color: "#78716C",
+                                    letterSpacing: "0.03em",
+                                    textTransform: "uppercase",
+                                    marginBottom: 2,
+                                  }}
+                                >
+                                  Target level for {expCat.label}
+                                </div>
+                                {EXPERIENCE_LEVELS.map((level) => {
+                                  const catId = expandedExperienceCategory!;
+                                  const selectedLevel =
+                                    experienceLevelByCategory[catId] === level.id;
+                                  return (
+                                    <motion.button
+                                      key={`${catId}-${level.id}`}
+                                      type="button"
+                                      whileTap={{ scale: 0.97 }}
+                                      onClick={() => {
+                                        setExperienceLevelByCategory((prev) => ({
+                                          ...prev,
+                                          [catId]: level.id,
+                                        }));
+                                        setExpandedExperienceCategory(null);
+                                      }}
+                                      style={{
+                                        minHeight: 34,
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 6,
+                                        padding: "7px 10px",
+                                        borderRadius: 999,
+                                        border: "none",
+                                        background: selectedLevel
+                                          ? "rgba(234,88,12,0.14)"
+                                          : "rgba(28,25,23,0.04)",
+                                        color: selectedLevel ? "#C2410C" : "#57534E",
+                                        fontSize: 11.5,
+                                        fontWeight: selectedLevel ? 700 : 600,
+                                        letterSpacing: "-0.01em",
+                                        cursor: "pointer",
+                                        transition:
+                                          "border-color 0.18s, background 0.18s, color 0.18s",
+                                        fontFamily: "Inter, sans-serif",
+                                        whiteSpace: "nowrap",
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      <span style={{ fontSize: 15, lineHeight: 1 }}>
+                                        {level.emoji}
+                                      </span>
+                                      {level.label} ({level.subLabel})
+                                    </motion.button>
+                                  );
+                                })}
                               </div>
-                              {EXPERIENCE_LEVELS.map((level) => {
-                                const selectedLevel = experienceLevelByCategory[cat.id] === level.id;
-                                return (
-                                  <motion.button
-                                    key={`${cat.id}-${level.id}`}
-                                    type="button"
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={() => {
-                                      setExperienceLevelByCategory((prev) => ({
-                                        ...prev,
-                                        [cat.id]: level.id,
-                                      }));
-                                      setExpandedExperienceCategory(null);
-                                    }}
-                                    style={{
-                                      minHeight: 34,
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      gap: 6,
-                                      padding: "7px 10px",
-                                      borderRadius: 999,
-                                      border: "none",
-                                      background: selectedLevel ? "rgba(234,88,12,0.14)" : "rgba(28,25,23,0.04)",
-                                      color: selectedLevel ? "#C2410C" : "#57534E",
-                                      fontSize: 11.5,
-                                      fontWeight: selectedLevel ? 700 : 600,
-                                      letterSpacing: "-0.01em",
-                                      cursor: "pointer",
-                                      transition: "border-color 0.18s, background 0.18s, color 0.18s",
-                                      fontFamily: "Inter, sans-serif",
-                                      whiteSpace: "nowrap",
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <span style={{ fontSize: 15, lineHeight: 1 }}>{level.emoji}</span>
-                                    {level.label} ({level.subLabel})
-                                  </motion.button>
-                                );
-                              })}
                             </motion.div>
                           )}
                         </AnimatePresence>
-                      </motion.div>
+                      </Fragment>
                     );
                   })}
+
+                  <AnimatePresence initial={false}>
+                    {selectedCategories.includes("other") && (
+                      <motion.div
+                        key="other-dept-panel"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                        style={{
+                          flexBasis: "100%",
+                          width: "100%",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            marginTop: 2,
+                            padding: "14px 14px 16px",
+                            borderRadius: 14,
+                            border: `1.5px solid rgba(194,65,12,0.12)`,
+                            background: "white",
+                            boxShadow: "0 1px 8px rgba(0,0,0,0.03)",
+                          }}
+                        >
+                          <label
+                            htmlFor="other-department-name"
+                            style={{
+                              display: "block",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: C.textMuted,
+                              letterSpacing: "-0.01em",
+                              lineHeight: 1.35,
+                              marginBottom: 6,
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            Specify department
+                          </label>
+                          <input
+                            ref={otherDepartmentInputRef}
+                            id="other-department-name"
+                            type="text"
+                            value={otherDepartmentLabel}
+                            onChange={(e) => setOtherDepartmentLabel(e.target.value)}
+                            placeholder="e.g. Education, Research"
+                            autoComplete="off"
+                            style={{
+                              width: "100%",
+                              boxSizing: "border-box",
+                              padding: "11px 12px",
+                              borderRadius: 12,
+                              border: `1.5px solid ${C.border}`,
+                              fontSize: 14,
+                              fontWeight: 500,
+                              color: C.textPrimary,
+                              fontFamily: "Inter, sans-serif",
+                              letterSpacing: "-0.01em",
+                              background: "rgba(255,255,255,0.95)",
+                            }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
+                {collapsedDepartmentCount > 0 ? (
+                  <div style={{ margin: "0 0 16px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllDepartments((v) => !v)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "8px 0",
+                        border: "none",
+                        background: "transparent",
+                        color: C.brand,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        letterSpacing: "-0.01em",
+                        cursor: "pointer",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={2}
+                        style={{
+                          transform: showAllDepartments ? "rotate(180deg)" : "none",
+                          transition: "transform 0.2s ease",
+                        }}
+                      />
+                      {showAllDepartments
+                        ? "Show fewer departments"
+                        : `Show all ${collapsedDepartmentCount} more departments`}
+                    </button>
+                  </div>
+                ) : null}
+
                 <AnimatePresence>
-                  {selectedCategories.length > 0 && (
+                  {selectedCategories.some((c) => c !== "other") && (
                     <motion.div
                       key="roles-by-category"
                       initial={{ opacity: 0, y: 14 }}
@@ -942,12 +1339,14 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                       <div style={{ height: 1, background: C.border, marginBottom: 20 }} />
                       <SectionLabel>Roles by department</SectionLabel>
                       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                        {selectedCategories.map((catId) => {
+                        {selectedCategories
+                          .filter((id) => id !== "other")
+                          .map((catId, deptIdx, deptList) => {
                           const meta = getCategoryMeta(catId);
                           const Icon = meta?.icon;
                           const title = meta?.label ?? "Department";
                           const picked = rolesByCategory[catId] ?? [];
-                          const preset = SUB_ROLES[catId];
+                          const preset = getPresetRoles(catId);
                           const capReached = picked.length >= MAX_ROLES_PER_CATEGORY;
 
                           return (
@@ -989,7 +1388,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                                 </div>
                               </div>
 
-                              {preset && (
+                              {preset.length > 0 && (
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                                   {preset.map((r) => {
                                     const sel = picked.includes(r);
@@ -1016,7 +1415,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                                 </div>
                               )}
 
-                              {!preset && (
+                              {preset.length === 0 && picked.length > 0 && (
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                                   {picked.map((r) => (
                                     <Pill
@@ -1252,7 +1651,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                               })()}
 
                               </div>
-                              {selectedCategories.indexOf(catId) < selectedCategories.length - 1 && (
+                              {deptIdx < deptList.length - 1 && (
                                 <div style={{ height: 1, background: C.border, margin: "0 0 12px" }} />
                               )}
                             </div>
@@ -1343,9 +1742,32 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   </p>
                 </div>
 
-                <div style={{ border: "1px solid rgba(28,25,23,0.06)", borderRadius: 16, background: "rgba(255,255,255,0.7)", padding: "14px 14px 12px", marginBottom: 12 }}>
+                <div style={{ ...prefsStep3ContentShell }}>
+                <div style={{ paddingTop: 4, paddingBottom: 4 }}>
                   <SectionLabel>Notice period</SectionLabel>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+                  <div
+                    style={
+                      isDesktopLayout
+                        ? {
+                            display: "flex",
+                            flexDirection: "row",
+                            flexWrap: "nowrap",
+                            gap: 8,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: "100%",
+                            overflowX: "auto",
+                            overflowY: "hidden",
+                            WebkitOverflowScrolling: "touch",
+                            paddingBottom: 2,
+                          }
+                        : {
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                            gap: 8,
+                          }
+                    }
+                  >
                     {([
                       { id: "immediately", label: "Immediately", emoji: "🚀" },
                       { id: "1month", label: "Around 1 month", emoji: "⏳" },
@@ -1360,13 +1782,15 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                           whileTap={{ scale: 0.97 }}
                           onClick={() => setSwitchTimeline(opt.id)}
                           style={{
-                            width: "100%",
+                            ...(isDesktopLayout
+                              ? { width: "auto", flex: "0 0 auto" }
+                              : { width: "100%" }),
                             minHeight: 40,
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
                             gap: 6,
-                            padding: "9px 12px",
+                            padding: isDesktopLayout ? "8px 10px" : "9px 12px",
                             borderRadius: 999,
                             border: `1.5px solid ${sel ? C.brandBorder : C.border}`,
                             background: sel ? C.brandBg : "white",
@@ -1387,8 +1811,12 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                     })}
                   </div>
                 </div>
+                </div>
 
-                <div style={{ border: "1px solid rgba(28,25,23,0.06)", borderRadius: 16, background: "rgba(255,255,255,0.7)", padding: "14px 14px 12px", marginBottom: 12 }}>
+                <PrefsStep3GradientRule />
+
+                <div style={{ ...prefsStep3ContentShell }}>
+                <div style={{ paddingTop: 6, paddingBottom: 6 }}>
                   <SectionLabel>Expected salary range</SectionLabel>
                   <div style={{
                     marginBottom: 8,
@@ -1461,12 +1889,13 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   <div
                     style={{
                       display: "flex",
-                      justifyContent: "space-between",
+                      justifyContent: isDesktopLayout ? "flex-start" : "space-between",
                       alignItems: "flex-end",
-                      gap: 12,
+                      gap: isDesktopLayout ? 20 : 12,
                       marginBottom: 8,
-                      flexWrap: "nowrap",
-                      width: "100%",
+                      flexWrap: isDesktopLayout ? "wrap" : "nowrap",
+                      width: isDesktopLayout ? "auto" : "100%",
+                      maxWidth: "100%",
                     }}
                   >
                   <div
@@ -1624,8 +2053,12 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                     </p>
                   )}
                 </div>
+                </div>
 
-                <div style={{ border: "1px solid rgba(28,25,23,0.06)", borderRadius: 16, background: "rgba(255,255,255,0.7)", padding: "14px 14px 12px", marginBottom: 14 }}>
+                <PrefsStep3GradientRule />
+
+                <div style={{ ...prefsStep3ContentShell }}>
+                <div style={{ paddingTop: 6, paddingBottom: 4 }}>
                   <SectionLabel>Preferred work setup</SectionLabel>
                   <div
                     style={{
@@ -1894,6 +2327,7 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                       </motion.div>
                     )}
                   </AnimatePresence>
+                </div>
                 </div>
               </motion.div>
             )}

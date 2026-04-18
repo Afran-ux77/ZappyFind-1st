@@ -70,11 +70,14 @@ export const FloatingLabelInput = React.forwardRef<
   const describedById = `${stableId}-desc`;
   const hasError = Boolean(errorText);
 
+  const isMultiline = "multiline" in props && props.multiline;
+
   const fieldDataAttrs = {
     "data-zf-disabled": disabled ? "true" : undefined,
     "data-zf-error": hasError ? "true" : undefined,
     "data-zf-has-left": leftAdornment ? "true" : undefined,
     "data-zf-has-right": rightAdornment ? "true" : undefined,
+    "data-zf-multiline": isMultiline ? "true" : undefined,
   } as const;
 
   const mergedFieldStyle: React.CSSProperties | undefined = {

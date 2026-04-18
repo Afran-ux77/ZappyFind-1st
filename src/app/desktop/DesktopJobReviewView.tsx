@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -7,27 +7,56 @@ import {
   Check,
   ExternalLink,
   MapPin,
+  Send,
   Sparkles,
 } from "lucide-react";
 import type { Job } from "../components/JobReviewScreen";
 import { JOBS } from "../components/JobReviewScreen";
 import { DT } from "./desktop-tokens";
 
+/** Sidebar tabs for desktop job workspace (also used by App / DesktopAppRoot for deep links). */
+export type JobWorkspaceTab = "recommended" | "applied" | "saved";
+
 type DesktopJobReviewViewProps = {
-  initialTab?: "new" | "saved";
+  initialTab?: JobWorkspaceTab;
 };
 
-export function DesktopJobReviewView({ initialTab = "new" }: DesktopJobReviewViewProps) {
+const TAB_CONFIG: {
+  id: JobWorkspaceTab;
+  label: string;
+  icon: ComponentType<{ className?: string; style?: object; strokeWidth?: number }>;
+}[] = [
+  { id: "recommended", label: "Recommended", icon: Sparkles },
+  { id: "applied", label: "Applied", icon: Send },
+  { id: "saved", label: "Saved", icon: Bookmark },
+];
+
+export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobReviewViewProps) {
   const [selectedId, setSelectedId] = useState(JOBS[0]?.id ?? "");
   const [saved, setSaved] = useState<Set<string>>(new Set());
-  const [tab, setTab] = useState<"new" | "saved">(initialTab);
+  const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<JobWorkspaceTab>(initialTab);
 
-  const selected = useMemo(() => JOBS.find((j) => j.id === selectedId) ?? JOBS[0], [selectedId]);
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
 
   const listJobs = useMemo(() => {
     if (tab === "saved") return JOBS.filter((j) => saved.has(j.id));
+    if (tab === "applied") return JOBS.filter((j) => applied.has(j.id));
     return JOBS;
-  }, [tab, saved]);
+  }, [tab, saved, applied]);
+
+  useEffect(() => {
+    if (listJobs.length === 0) return;
+    if (!listJobs.some((j) => j.id === selectedId)) setSelectedId(listJobs[0].id);
+  }, [listJobs, selectedId]);
+
+  const selected = useMemo(() => {
+    const fromList = listJobs.find((j) => j.id === selectedId);
+    if (fromList) return fromList;
+    return listJobs[0] ?? null;
+  }, [listJobs, selectedId]);
 
   const toggleSave = (id: string) => {
     setSaved((prev) => {
@@ -36,6 +65,10 @@ export function DesktopJobReviewView({ initialTab = "new" }: DesktopJobReviewVie
       else next.add(id);
       return next;
     });
+  };
+
+  const markApplied = (id: string) => {
+    setApplied((prev) => new Set(prev).add(id));
   };
 
   return (
@@ -50,30 +83,55 @@ export function DesktopJobReviewView({ initialTab = "new" }: DesktopJobReviewVie
             <Briefcase className="h-4 w-4" style={{ color: DT.textMuted }} strokeWidth={1.75} />
             <span className="text-[14px] font-semibold">Job workspace</span>
           </div>
-          <div className="flex gap-1 rounded-lg p-0.5" style={{ background: "rgba(0,0,0,0.04)" }}>
-            {(["new", "saved"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                className="flex-1 rounded-md py-1.5 text-[12px] font-semibold capitalize transition-colors"
-                style={{
-                  background: tab === t ? DT.surface : "transparent",
-                  color: tab === t ? DT.text : DT.textMuted,
-                  boxShadow: tab === t ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                }}
-              >
-                {t === "new" ? "For you" : "Saved"}
-                {t === "saved" && saved.size > 0 ? ` (${saved.size})` : ""}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-1 rounded-xl p-1" style={{ background: "rgba(0,0,0,0.04)" }}>
+            {TAB_CONFIG.map(({ id, label, icon: TabIcon }) => {
+              const count =
+                id === "saved" ? saved.size : id === "applied" ? applied.size : undefined;
+              const active = tab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTab(id)}
+                  className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors"
+                  style={{
+                    background: active ? DT.surface : "transparent",
+                    color: active ? DT.text : DT.textMuted,
+                    boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  }}
+                >
+                  <TabIcon
+                    className="h-3.5 w-3.5 shrink-0"
+                    strokeWidth={active ? 2.25 : 2}
+                    style={{ color: active ? DT.accent : DT.textMuted }}
+                  />
+                  <span className="w-full truncate text-center text-[10.5px] font-semibold leading-tight">
+                    {label}
+                  </span>
+                  {count != null && count > 0 ? (
+                    <span
+                      className="tabular-nums text-[10px] font-bold"
+                      style={{ color: DT.textSubtle }}
+                    >
+                      {count}
+                    </span>
+                  ) : (
+                    <span className="h-3" aria-hidden />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {listJobs.length === 0 ? (
             <div className="p-6 text-center text-[13px]" style={{ color: DT.textMuted }}>
-              No saved jobs yet. Star roles from the &quot;For you&quot; list.
+              {tab === "saved"
+                ? "No saved jobs yet. Tap the bookmark on a role in Recommended to save it."
+                : tab === "applied"
+                  ? "No applied jobs yet. Use Apply or Mark interested on a role to track it here."
+                  : "No roles in this list."}
             </div>
           ) : (
             listJobs.map((job) => (
@@ -153,6 +211,7 @@ export function DesktopJobReviewView({ initialTab = "new" }: DesktopJobReviewVie
                       href={selected.externalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => markApplied(selected.id)}
                       className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-semibold text-white"
                       style={{ background: DT.accentGradient }}
                     >
@@ -162,6 +221,7 @@ export function DesktopJobReviewView({ initialTab = "new" }: DesktopJobReviewVie
                   ) : (
                     <button
                       type="button"
+                      onClick={() => markApplied(selected.id)}
                       className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-semibold text-white opacity-90"
                       style={{ background: DT.accentGradient }}
                     >
@@ -202,7 +262,14 @@ export function DesktopJobReviewView({ initialTab = "new" }: DesktopJobReviewVie
                 </p>
               </div>
             </motion.div>
-          ) : null}
+          ) : (
+            <div
+              className="flex min-h-[280px] flex-1 items-center justify-center px-8 py-12 text-center text-[14px]"
+              style={{ color: DT.textMuted }}
+            >
+              Select a job from the list, or switch tabs to browse Recommended, Applied, or Saved.
+            </div>
+          )}
         </AnimatePresence>
       </div>
     </div>

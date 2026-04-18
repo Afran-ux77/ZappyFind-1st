@@ -40,6 +40,8 @@ export interface JobPreferences {
   rolesByCategory?: Record<string, string[]>;
   /** Target experience level keyed by department id. */
   experienceLevelByCategory?: Record<string, "entry" | "mid" | "senior" | "lead">;
+  /** When `categories` includes `"other"`, free-text name for that department. */
+  otherDepartmentLabel?: string;
   workSetups?: string[];
   locations?: string[];
   priorities?: string[];
@@ -129,10 +131,10 @@ const MOCK_FULL: FullProfile = {
     },
   ],
   preferences: {
-    categories: ["design", "product"],
+    categories: ["ux_design_architecture", "product_management"],
     rolesByCategory: {
-      design: ["Product Designer", "UI Designer"],
-      product: ["Product Manager"],
+      ux_design_architecture: ["Product Designer", "UI Designer"],
+      product_management: ["Product Manager"],
     },
     workSetups: ["hybrid", "remote"],
     locations: ["Bangalore", "Mumbai", "Remote"],

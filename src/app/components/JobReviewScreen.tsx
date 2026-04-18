@@ -648,7 +648,7 @@ const SKIP_REASON_OPTIONS = [
 
 interface JobReviewScreenProps {
   firstName: string;
-  initialTab?: "new" | "saved";
+  initialTab?: "new" | "saved" | "applied";
   onNavigateHome: () => void;
   onNavigateJobs: () => void;
   onNavigateProfile: () => void;
@@ -666,7 +666,9 @@ export function JobReviewScreen({
   const [appliedIds, setAppliedIds] = useState<Set<string>>(() => new Set());
   const [appliedMetaById, setAppliedMetaById] = useState<Record<string, AppliedMeta>>({});
   const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(null);
-  const [activeTab, setActiveTab] = useState<"new" | "saved" | "applied">(initialTab);
+  const [activeTab, setActiveTab] = useState<"new" | "saved" | "applied">(
+    initialTab === "saved" ? "saved" : initialTab === "applied" ? "applied" : "new",
+  );
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

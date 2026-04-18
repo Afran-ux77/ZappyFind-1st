@@ -173,26 +173,28 @@ export function DesktopOnboardingIntroCards({ firstName, onComplete }: DesktopOn
         ))}
       </div>
 
-      <div className="mt-5 flex justify-center">
-        <button
+      {/* Stacked CTAs: one dominant path, secondary as quiet text (clearer hierarchy than a row of two buttons). */}
+      <div className="mx-auto mt-5 flex w-full max-w-[min(100%,320px)] flex-col items-stretch gap-1 pb-1">
+        <motion.button
           type="button"
           onClick={handleNext}
-          className={
-            isLast
-              ? "inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-8 text-[15px] font-semibold text-white transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99]"
-              : "inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-stone-200/90 bg-white/85 px-8 text-[15px] font-semibold text-stone-600 shadow-[0_1px_3px_rgba(28,25,23,0.06)] backdrop-blur-sm transition-colors duration-200 hover:bg-stone-50/95 active:scale-[0.99]"
-          }
-          style={
-            isLast
-              ? {
-                  background: "linear-gradient(135deg, #FB923C 0%, #EA580C 100%)",
-                  boxShadow: "0 10px 28px rgba(234,88,12,0.36)",
-                }
-              : undefined
-          }
+          whileTap={{ scale: 0.985 }}
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 22 }}
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-8 text-[15px] font-semibold text-white shadow-[0_10px_28px_rgba(234,88,12,0.36)] transition-[box-shadow] duration-200 hover:shadow-[0_12px_32px_rgba(234,88,12,0.42)]"
+          style={{
+            background: "linear-gradient(135deg, #FB923C 0%, #EA580C 100%)",
+          }}
         >
           {isLast ? "Get Started" : "Next"}
           <ChevronRight className="h-[17px] w-[17px]" strokeWidth={2.2} />
+        </motion.button>
+        <button
+          type="button"
+          onClick={onComplete}
+          className="py-2.5 text-center text-[13.5px] font-medium text-stone-500 underline decoration-stone-300/80 underline-offset-[5px] transition-colors hover:text-stone-800 hover:decoration-stone-400 active:scale-[0.99]"
+        >
+          Skip intro
         </button>
       </div>
     </div>

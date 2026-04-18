@@ -62,6 +62,10 @@ interface JobSeekerProfileScreenProps {
   onNavigateJobs: () => void;
   onNavigateProfile: () => void;
   onEditProfile: () => void;
+  /** Settings → Account: sign out (clears session and returns to login). */
+  onLogout?: () => void;
+  /** After delete confirmation; prototype clears session like sign-out. */
+  onDeleteAccount?: () => void;
   layout?: "mobile" | "desktop";
 }
 
@@ -73,6 +77,8 @@ export function JobSeekerProfileScreen({
   onNavigateJobs,
   onNavigateProfile,
   onEditProfile,
+  onLogout,
+  onDeleteAccount,
   layout = "mobile",
 }: JobSeekerProfileScreenProps) {
   const isDesktop = layout === "desktop";
@@ -189,6 +195,7 @@ export function JobSeekerProfileScreen({
     <div
       style={{
         minHeight: "100dvh",
+        ...(!isDesktop ? { height: "100dvh", maxHeight: "100dvh" } : {}),
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",
@@ -213,8 +220,11 @@ export function JobSeekerProfileScreen({
       <div
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: "auto",
           overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-y",
           position: "relative",
           zIndex: 1,
         }}
@@ -631,6 +641,8 @@ export function JobSeekerProfileScreen({
         open={settingsOpen}
         displayName={displayName}
         onClose={() => setSettingsOpen(false)}
+        onLogout={onLogout}
+        onDeleteAccount={onDeleteAccount}
       />
     </div>
   );

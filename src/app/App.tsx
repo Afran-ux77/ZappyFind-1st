@@ -18,6 +18,8 @@ import { CallInitiationScreen } from "./components/CallInitiationScreen";
 import { OnboardingJourneyScreen } from "./components/OnboardingJourneyScreen";
 import { useIsDesktop } from "./hooks/use-desktop";
 import { DesktopAppRoot } from "./desktop/DesktopAppRoot";
+import type { JobWorkspaceTab } from "./desktop/DesktopJobReviewView";
+import { JOB_DEPARTMENT_LABEL_BY_ID } from "./components/jobPrefDepartmentsData";
 
 type Screen =
   | "login"
@@ -73,7 +75,7 @@ export default function App() {
     [parsedProfile],
   );
   const [hasCompletedInterview, setHasCompletedInterview] = useState(false);
-  const [jobReviewInitialTab, setJobReviewInitialTab] = useState<"new" | "saved">("new");
+  const [jobReviewInitialTab, setJobReviewInitialTab] = useState<JobWorkspaceTab>("recommended");
 
   const STORAGE_KEY = "zappyfind.session.v1";
   const readSession = () => {
@@ -135,6 +137,27 @@ export default function App() {
     setScreen(s);
   };
 
+  const handleLogout = () => {
+    setEmail("");
+    setSignupFullName("");
+    setParsedProfile(null);
+    setPendingPrefs(null);
+    setHasCompletedInterview(false);
+    setJobPrefsResumeStep(undefined);
+    setPrefPrev("profileReview");
+    setProfileReturnScreen("welcome");
+    setProfileEditSection(undefined);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    setDirection("back");
+    setScreen("login");
+  };
+
   const enterFrom = (dir: "forward" | "back") =>
     dir === "forward" ? slide.fromRight : slide.fromLeft;
 
@@ -149,27 +172,9 @@ export default function App() {
   const isDesktop = useIsDesktop();
 
   const jobCategoryLabels = useMemo(() => {
-    const labelMap: Record<string, string> = {
-      swe: "Software Engineering",
-      design: "Design",
-      data: "Data",
-      product: "Product Management",
-      marketing: "Marketing",
-      finance: "Finance",
-      sales: "Sales",
-      hr: "Human Resources",
-      consulting: "Consulting",
-      ops: "Operations & Strategy",
-      cs: "Customer Success",
-      legal: "Legal",
-      security: "Security",
-      health: "Healthcare",
-      misc: "Misc. Engineering",
-      other: "Other",
-    };
     const cats = parsedProfile?.preferences?.categories;
     if (!cats?.length) return ["your expertise"];
-    return cats.map((id) => labelMap[id] || id);
+    return cats.map((id) => JOB_DEPARTMENT_LABEL_BY_ID[id] || id);
   }, [parsedProfile]);
 
   if (isDesktop) {
@@ -216,7 +221,7 @@ export default function App() {
       style={{ background: "#FDFBF8", fontFamily: "Inter, sans-serif" }}
     >
       <div
-        className="relative mx-auto overflow-hidden"
+        className="relative mx-auto min-h-0 overflow-x-hidden"
         style={{ maxWidth: "390px", minHeight: "100vh" }}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -474,7 +479,7 @@ export default function App() {
                 hasCompletedInterview={hasCompletedInterview}
                 onStartInterview={() => goTo("voiceCall", "forward")}
                 onReviewJobs={() => {
-                  setJobReviewInitialTab("new");
+                  setJobReviewInitialTab("recommended");
                   goTo("jobReview", "forward");
                 }}
                 onViewSavedJobs={() => {
@@ -482,6 +487,8 @@ export default function App() {
                   goTo("jobReview", "forward");
                 }}
                 onViewProfile={() => goTo("jobSeekerProfile", "forward")}
+                onLogout={handleLogout}
+                onDeleteAccount={handleLogout}
               />
             </motion.div>
           )}
@@ -501,7 +508,7 @@ export default function App() {
                 profile={parsedProfile}
                 onNavigateHome={() => goTo("dashboardPreview", "back")}
                 onNavigateJobs={() => {
-                  setJobReviewInitialTab("new");
+                  setJobReviewInitialTab("recommended");
                   goTo("jobReview", "forward");
                 }}
                 onNavigateProfile={() => {}}
@@ -510,6 +517,8 @@ export default function App() {
                   setProfileEditSection(undefined);
                   goTo("profileEdit", "forward");
                 }}
+                onLogout={handleLogout}
+                onDeleteAccount={handleLogout}
               />
             </motion.div>
           )}
@@ -545,7 +554,13 @@ export default function App() {
             >
               <JobReviewScreen
                 firstName={firstName || "Alex"}
-                initialTab={jobReviewInitialTab}
+                initialTab={
+                  jobReviewInitialTab === "recommended"
+                    ? "new"
+                    : jobReviewInitialTab === "applied"
+                      ? "applied"
+                      : "saved"
+                }
                 onNavigateHome={() => goTo("dashboardPreview", "back")}
                 onNavigateJobs={() => goTo("jobReview", "forward")}
                 onNavigateProfile={() => goTo("jobSeekerProfile", "forward")}

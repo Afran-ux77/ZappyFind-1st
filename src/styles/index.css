@@ -167,6 +167,31 @@ textarea.zf-float__control {
   color: var(--zf-muted);
 }
 
+/* Multiline: keep label at top-left (not vertically centered in tall textareas) */
+.zf-float__field[data-zf-multiline="true"] {
+  align-items: flex-start;
+  height: auto;
+  max-height: none;
+  min-height: 52px;
+}
+
+.zf-float__field[data-zf-multiline="true"] .zf-float__label {
+  top: 14px;
+  transform: translateY(0) scale(1);
+  transform-origin: left top;
+}
+
+.zf-float__field[data-zf-multiline="true"]:focus-within .zf-float__label,
+.zf-float__field[data-zf-multiline="true"] .zf-float__control:not(:placeholder-shown) + .zf-float__label {
+  top: 8px;
+  transform: translateY(0) scale(0.78);
+}
+
+.zf-float__field[data-zf-multiline="true"] .zf-float__right {
+  top: 14px;
+  transform: none;
+}
+
 /* Error */
 .zf-float__field[data-zf-error="true"] {
   border-color: var(--zf-error-border);

@@ -31,6 +31,7 @@ import {
   Lock,
   Zap,
   Clock3,
+  LogOut,
 } from "lucide-react";
 
 // ── Design Tokens ────────────────────────────────────────────────────────────
@@ -795,18 +796,26 @@ function ToggleSwitch({
   );
 }
 
+type AccountConfirmKind = "logout" | "delete";
+
 export function SettingsBottomSheet({
   open,
   displayName,
   onClose,
+  onLogout,
+  onDeleteAccount,
 }: {
   open: boolean;
   displayName: string;
   onClose: () => void;
+  onLogout?: () => void;
+  /** After delete confirmation; defaults to same as sign-out in this prototype. */
+  onDeleteAccount?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [whatsAppNotifications, setWhatsAppNotifications] = useState(true);
+  const [accountConfirm, setAccountConfirm] = useState<AccountConfirmKind | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -816,6 +825,27 @@ export function SettingsBottomSheet({
       document.body.style.overflow = prevOverflow;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) setAccountConfirm(null);
+  }, [open]);
+
+  const runDeleteAccount = () => {
+    const fn = onDeleteAccount ?? onLogout;
+    if (!fn) {
+      setAccountConfirm(null);
+      return;
+    }
+    fn();
+    onClose();
+    setAccountConfirm(null);
+  };
+
+  const runLogout = () => {
+    onLogout?.();
+    onClose();
+    setAccountConfirm(null);
+  };
 
   const tabItems: Array<{ key: SettingsTab; label: string; icon: React.ReactNode }> = [
     { key: "profile", label: "Profile", icon: <User size={15} strokeWidth={2} /> },
@@ -1097,42 +1127,223 @@ export function SettingsBottomSheet({
                   >
                     <h3 style={{ margin: 0, fontSize: 25, fontFamily: T.serif, fontWeight: 400, color: T.text }}>Account</h3>
                     <p style={{ margin: "4px 0 16px", color: T.textSec, fontSize: 13 }}>Manage your account settings</p>
-                    <div
-                      style={{
-                        marginTop: 16,
-                        borderRadius: 14,
-                        border: "1px solid rgba(220,38,38,0.2)",
-                        background: "rgba(220,38,38,0.04)",
-                        padding: 14,
-                      }}
-                    >
-                      <div style={{ color: "#B91C1C", fontSize: 14, fontWeight: 700 }}>Danger zone</div>
-                      <div style={{ marginTop: 4, color: "#7F1D1D", fontSize: 12.5, lineHeight: 1.45 }}>
-                        Permanently delete your account and all personal data.
-                      </div>
-                      <button
-                        type="button"
+                    {onLogout && (
+                      <div
                         style={{
-                          marginTop: 10,
-                          height: 40,
-                          padding: "0 14px",
-                          borderRadius: 10,
-                          border: "none",
-                          background: "linear-gradient(135deg, #F87171 0%, #EF4444 100%)",
-                          color: "#FFFFFF",
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: "pointer",
+                          borderRadius: 14,
+                          border: `1px solid ${T.borderStrong}`,
+                          background: "#FFFFFF",
+                          padding: 14,
                         }}
                       >
-                        Delete account
-                      </button>
-                    </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Sign out</div>
+                        <div style={{ marginTop: 4, fontSize: 12.5, color: T.textSec, lineHeight: 1.45 }}>
+                          End your session on this device.
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 12,
+                            display: "flex",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setAccountConfirm("logout")}
+                            style={{
+                              width: 124,
+                              height: 42,
+                              borderRadius: 10,
+                              border: `1px solid ${T.borderStrong}`,
+                              background: "#FFFFFF",
+                              color: T.text,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 4,
+                              fontFamily: T.sans,
+                              flexShrink: 0,
+                              boxSizing: "border-box",
+                              padding: "0 6px",
+                            }}
+                          >
+                            <LogOut size={14} strokeWidth={2} aria-hidden />
+                            Log out
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {(onDeleteAccount ?? onLogout) && (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          borderRadius: 14,
+                          border: "1px solid rgba(220,38,38,0.2)",
+                          background: "rgba(220,38,38,0.04)",
+                          padding: 14,
+                        }}
+                      >
+                        <div style={{ color: "#B91C1C", fontSize: 14, fontWeight: 700 }}>Danger zone</div>
+                        <div style={{ marginTop: 4, color: "#7F1D1D", fontSize: 12.5, lineHeight: 1.45 }}>
+                          Permanently delete your account and all personal data.
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 10,
+                            display: "flex",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setAccountConfirm("delete")}
+                            style={{
+                              width: 124,
+                              height: 40,
+                              borderRadius: 10,
+                              border: "none",
+                              background: "linear-gradient(135deg, #F87171 0%, #EF4444 100%)",
+                              color: "#FFFFFF",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              flexShrink: 0,
+                              boxSizing: "border-box",
+                              padding: "0 8px",
+                            }}
+                          >
+                            Delete account
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </motion.div>
+
+          {accountConfirm && (
+            <div
+              role="presentation"
+              onClick={() => setAccountConfirm(null)}
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 220,
+                background: "rgba(28,25,23,0.55)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 16,
+                fontFamily: T.sans,
+              }}
+            >
+              <div
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="account-confirm-title"
+                aria-describedby="account-confirm-desc"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: "100%",
+                  maxWidth: 340,
+                  borderRadius: 16,
+                  background: "#FFFFFF",
+                  padding: 20,
+                  boxShadow: "0 12px 40px rgba(28,25,23,0.2)",
+                }}
+              >
+                <h2
+                  id="account-confirm-title"
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: accountConfirm === "delete" ? "#991B1B" : T.text,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  {accountConfirm === "logout" ? "Sign out?" : "Delete account permanently?"}
+                </h2>
+                <p
+                  id="account-confirm-desc"
+                  style={{
+                    margin: "12px 0 0",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: T.textSec,
+                  }}
+                >
+                  {accountConfirm === "logout" ? (
+                    <>
+                      You will be <strong style={{ color: T.text }}>signed out on this device</strong>. You will need
+                      your email or phone to sign in again. If you have this app open elsewhere, refresh after signing
+                      back in.
+                    </>
+                  ) : (
+                    <>
+                      This <strong style={{ color: "#991B1B" }}>permanently deletes</strong> your ZappyFind account and
+                      all profile data stored here. This cannot be undone. You will be taken to the login screen and
+                      must start fresh or sign in with another account.
+                    </>
+                  )}
+                </p>
+                <div
+                  style={{
+                    marginTop: 20,
+                    display: "flex",
+                    gap: 10,
+                    justifyContent: "flex-end",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setAccountConfirm(null)}
+                    style={{
+                      height: 40,
+                      padding: "0 16px",
+                      borderRadius: 10,
+                      border: `1px solid ${T.borderStrong}`,
+                      background: "#FFFFFF",
+                      color: T.text,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontFamily: T.sans,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={accountConfirm === "logout" ? runLogout : runDeleteAccount}
+                    style={{
+                      height: 40,
+                      padding: "0 16px",
+                      borderRadius: 10,
+                      border: "none",
+                      background:
+                        accountConfirm === "logout"
+                          ? "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)"
+                          : "linear-gradient(135deg, #F87171 0%, #DC2626 100%)",
+                      color: "#FFFFFF",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: T.sans,
+                    }}
+                  >
+                    {accountConfirm === "logout" ? "Sign out" : "Yes, delete forever"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </AnimatePresence>
@@ -4828,6 +5039,8 @@ interface DashboardPreviewScreenProps {
   onReviewJobs: () => void;
   onViewSavedJobs: () => void;
   onViewProfile: () => void;
+  onLogout?: () => void;
+  onDeleteAccount?: () => void;
 }
 
 export function DashboardPreviewScreen({
@@ -4838,6 +5051,8 @@ export function DashboardPreviewScreen({
   onReviewJobs,
   onViewSavedJobs,
   onViewProfile,
+  onLogout,
+  onDeleteAccount,
 }: DashboardPreviewScreenProps) {
   const displayName = firstName || "Alex";
   const greeting = getTimeGreeting();
@@ -5215,6 +5430,8 @@ export function DashboardPreviewScreen({
         open={settingsOpen}
         displayName={displayName}
         onClose={() => setSettingsOpen(false)}
+        onLogout={onLogout}
+        onDeleteAccount={onDeleteAccount}
       />
     </div>
   );

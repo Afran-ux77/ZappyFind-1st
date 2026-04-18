@@ -14,7 +14,7 @@ import { CallInitiationScreen } from "../components/CallInitiationScreen";
 import { DesktopAuthLayout } from "./DesktopAuthLayout";
 import { DesktopAppShell, type DesktopNavId } from "./DesktopAppShell";
 import { DesktopDashboardView } from "./DesktopDashboardView";
-import { DesktopJobReviewView } from "./DesktopJobReviewView";
+import { DesktopJobReviewView, type JobWorkspaceTab } from "./DesktopJobReviewView";
 import { DesktopOnboardingChrome } from "./DesktopOnboardingChrome";
 import { DesktopOnboardingIntroCards } from "./DesktopOnboardingIntroCards";
 import { DT } from "./desktop-tokens";
@@ -96,8 +96,8 @@ export type DesktopAppRootProps = {
   profileForEdit: FullProfile | null;
   hasCompletedInterview: boolean;
   setHasCompletedInterview: (v: boolean) => void;
-  jobReviewInitialTab: "new" | "saved";
-  setJobReviewInitialTab: React.Dispatch<React.SetStateAction<"new" | "saved">>;
+  jobReviewInitialTab: JobWorkspaceTab;
+  setJobReviewInitialTab: React.Dispatch<React.SetStateAction<JobWorkspaceTab>>;
   firstName: string;
   jobCategoryLabels: string[];
   goTo: (s: Screen, dir?: "forward" | "back") => void;
@@ -150,10 +150,30 @@ export function DesktopAppRoot({
 
   const displayName = firstName || "Alex";
 
+  const handleLogout = () => {
+    setEmail("");
+    setSignupFullName("");
+    setParsedProfile(null);
+    setPendingPrefs(null);
+    setHasCompletedInterview(false);
+    setJobPrefsResumeStep(undefined);
+    setPrefPrev("profileReview");
+    setProfileReturnScreen("welcome");
+    setProfileEditSection(undefined);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("zappyfind.session.v1");
+      } catch {
+        // ignore
+      }
+    }
+    goTo("login", "back");
+  };
+
   const desktopNav = (id: DesktopNavId) => {
     if (id === "home") goTo("dashboardPreview", "forward");
     if (id === "jobs") {
-      setJobReviewInitialTab("new");
+      setJobReviewInitialTab("recommended");
       goTo("jobReview", "forward");
     }
     if (id === "profile") goTo("jobSeekerProfile", "forward");
@@ -172,6 +192,7 @@ export function DesktopAppRoot({
       cardMinHeightClass?: string;
       cardHeightClass?: string;
       contentMinHeightClass?: string;
+      cardFooterPaddingClass?: string;
     },
   ) => {
     const meta = onboardingMeta(s);
@@ -460,6 +481,7 @@ export function DesktopAppRoot({
               />
             </motion.div>,
             "matchCelebration",
+            { cardFooterPaddingClass: "pb-[44px]" },
           )}
 
         {screen === "callInitiation" &&
@@ -486,7 +508,7 @@ export function DesktopAppRoot({
             </motion.div>,
             "callInitiation",
             {
-              cardHeightClass: "min-h-[806px] h-fit",
+              cardHeightClass: "min-h-[883px] h-fit",
             },
           )}
 
@@ -541,7 +563,7 @@ export function DesktopAppRoot({
                 hasCompletedInterview={hasCompletedInterview}
                 onStartInterview={() => goTo("voiceCall", "forward")}
                 onReviewJobs={() => {
-                  setJobReviewInitialTab("new");
+                  setJobReviewInitialTab("recommended");
                   goTo("jobReview", "forward");
                 }}
                 onViewSavedJobs={() => {
@@ -570,7 +592,7 @@ export function DesktopAppRoot({
                 profile={parsedProfile}
                 onNavigateHome={() => goTo("dashboardPreview", "back")}
                 onNavigateJobs={() => {
-                  setJobReviewInitialTab("new");
+                  setJobReviewInitialTab("recommended");
                   goTo("jobReview", "forward");
                 }}
                 onNavigateProfile={() => {}}
@@ -579,6 +601,8 @@ export function DesktopAppRoot({
                   setProfileEditSection(undefined);
                   goTo("profileEdit", "forward");
                 }}
+                onLogout={handleLogout}
+                onDeleteAccount={handleLogout}
               />,
             )}
           </motion.div>

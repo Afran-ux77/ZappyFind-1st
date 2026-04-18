@@ -697,10 +697,14 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
   const [isCurrent, setIsCurrent] = useState(true);
   const [endMonth, setEndMonth] = useState("");
   const [endYear, setEndYear] = useState("");
+  const [primaryRoleHighlights, setPrimaryRoleHighlights] = useState("");
+  const [primaryHighlightsOpen, setPrimaryHighlightsOpen] = useState(false);
+  const [moreExpHighlightsOpen, setMoreExpHighlightsOpen] = useState<Record<number, boolean>>({});
   const [moreExp, setMoreExp] = useState<Array<{
     company: string; title: string;
     startMonth: string; startYear: string;
     endMonth: string; endYear: string;
+    highlights: string;
   }>>([]);
 
   // Optionals
@@ -820,7 +824,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
         const dur = fromLabel || toLabel ? `${fromLabel || "—"} – ${toLabel || "—"}` : "";
         experiences.push({
           id: "exp-0", company: company.trim(), role: jobTitle.trim(),
-          duration: dur, description: "",
+          duration: dur, description: primaryRoleHighlights.trim(),
         });
       }
       moreExp.forEach((e, i) => {
@@ -830,7 +834,7 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
           experiences.push({
             id: `exp-${i + 1}`, company: e.company.trim(), role: e.title.trim(),
             duration: fromLabel || toLabel ? `${fromLabel || "—"} – ${toLabel || "—"}` : "",
-            description: "",
+            description: (e.highlights ?? "").trim(),
           });
         }
       });
@@ -1628,6 +1632,42 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                         To date will be saved as Present.
                       </div>
                     )}
+
+                    <div style={{ marginTop: 6 }}>
+                      {!primaryHighlightsOpen ? (
+                        <button
+                          type="button"
+                          onClick={() => setPrimaryHighlightsOpen(true)}
+                          style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            borderRadius: 11,
+                            border: "1.5px solid rgba(28,25,23,0.12)",
+                            background: "rgba(255,255,255,0.9)",
+                            cursor: "pointer",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            color: C.textMuted,
+                            textAlign: "center",
+                          }}
+                        >
+                          {primaryRoleHighlights.trim()
+                            ? "Edit role highlights"
+                            : "Add role highlights (optional)"}
+                        </button>
+                      ) : (
+                        <Input
+                          label="Role highlights"
+                          value={primaryRoleHighlights}
+                          onChange={setPrimaryRoleHighlights}
+                          placeholder="What you owned, shipped, or improved—tools, scope, impact (optional)."
+                          multiline
+                          multilineRows={5}
+                          multilineHeight={120}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -1655,7 +1695,10 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           Previous role
                         </span>
                         <button
-                          onClick={() => setMoreExp((prev) => prev.filter((_, i) => i !== idx))}
+                          onClick={() => {
+                            setMoreExp((prev) => prev.filter((_, i) => i !== idx));
+                            setMoreExpHighlightsOpen({});
+                          }}
                           style={{
                             background: "none", border: "none", cursor: "pointer",
                             fontSize: 11, fontWeight: 600, color: C.textSecondary,
@@ -1704,6 +1747,47 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                           }}
                         />
                       </div>
+                      <div style={{ marginTop: 10 }}>
+                        {!moreExpHighlightsOpen[idx] ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setMoreExpHighlightsOpen((prev) => ({ ...prev, [idx]: true }))
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "10px 12px",
+                              borderRadius: 11,
+                              border: "1.5px solid rgba(28,25,23,0.12)",
+                              background: "rgba(255,255,255,0.9)",
+                              cursor: "pointer",
+                              fontFamily: "Inter, sans-serif",
+                              fontSize: 12.5,
+                              fontWeight: 600,
+                              color: C.textMuted,
+                              textAlign: "center",
+                            }}
+                          >
+                            {(exp.highlights ?? "").trim()
+                              ? "Edit role highlights"
+                              : "Add role highlights (optional)"}
+                          </button>
+                        ) : (
+                          <Input
+                            label="Role highlights"
+                            value={exp.highlights ?? ""}
+                            onChange={(v) => {
+                              const n = [...moreExp];
+                              n[idx] = { ...n[idx], highlights: v };
+                              setMoreExp(n);
+                            }}
+                            placeholder="Responsibilities, wins, stack—optional."
+                            multiline
+                            multilineRows={4}
+                            multilineHeight={100}
+                          />
+                        )}
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -1712,7 +1796,15 @@ export function OnboardingProfileScreen({ email, signupFullName, onComplete, onB
                   onClick={() =>
                     setMoreExp((prev) => [
                       ...prev,
-                      { company: "", title: "", startMonth: "", startYear: "", endMonth: "", endYear: "" },
+                      {
+                        company: "",
+                        title: "",
+                        startMonth: "",
+                        startYear: "",
+                        endMonth: "",
+                        endYear: "",
+                        highlights: "",
+                      },
                     ])
                   }
                   style={{
