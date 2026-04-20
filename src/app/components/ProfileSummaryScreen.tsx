@@ -6,6 +6,8 @@ import {
   cloneElement,
   type ReactElement,
   type ReactNode,
+  type KeyboardEvent,
+  type ClipboardEvent,
 } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -244,7 +246,55 @@ export function ProfileSummaryScreen({
   const phoneVerified = otpStage === "verified";
   const canContinue = hasPhone && phoneVerified;
   const phoneVerificationRef = useRef<HTMLDivElement>(null);
+  const otpDigitRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [continueGateHint, setContinueGateHint] = useState<string | null>(null);
+
+  const updateOtpDigits = (next: string) => {
+    setOtp(next.replace(/\D/g, "").slice(0, 4));
+  };
+
+  const handleOtpDigitChange = (index: number, raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) {
+      const current = otp.padEnd(4, " ").split("");
+      current[index] = " ";
+      updateOtpDigits(current.join("").trim());
+      return;
+    }
+
+    if (digits.length === 1) {
+      const current = otp.padEnd(4, " ").split("");
+      current[index] = digits;
+      updateOtpDigits(current.join(""));
+      if (index < 3) otpDigitRefs.current[index + 1]?.focus();
+      return;
+    }
+
+    // Handle autofill/paste into a single box.
+    const current = otp.padEnd(4, " ").split("");
+    for (let i = index; i < 4; i += 1) {
+      current[i] = digits[i - index] ?? current[i];
+    }
+    updateOtpDigits(current.join(""));
+    const focusIdx = Math.min(index + digits.length, 3);
+    otpDigitRefs.current[focusIdx]?.focus();
+  };
+
+  const handleOtpDigitKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Backspace") return;
+    const digit = otp[index] ?? "";
+    if (digit) return;
+    if (index === 0) return;
+    otpDigitRefs.current[index - 1]?.focus();
+  };
+
+  const handleOtpPaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    if (!pasted) return;
+    e.preventDefault();
+    updateOtpDigits(pasted);
+    otpDigitRefs.current[Math.min(pasted.length - 1, 3)]?.focus();
+  };
 
   const sendOtp = async () => {
     if (!isLikelyValidPhone(phoneDisplay) || otpStage === "sending" || otpStage === "verifying" || phoneVerified) return;
@@ -707,28 +757,37 @@ export function ProfileSummaryScreen({
                     </button>
                   </div>
                   {(otpStage === "sent" || otpStage === "verifying") && !phoneVerified && (
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                        placeholder="Enter 4-digit OTP"
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          height: 34,
-                          borderRadius: 8,
-                          border: "1px solid rgba(28,25,23,0.12)",
-                          background: "white",
-                          padding: "0 10px",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#1C1917",
-                          fontFamily: "Inter, sans-serif",
-                          outline: "none",
-                        }}
-                      />
+                    <div className="flex items-center gap-1.5" onPaste={handleOtpPaste}>
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <input
+                          key={`otp-${i}`}
+                          ref={(el) => {
+                            otpDigitRefs.current[i] = el;
+                          }}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={1}
+                          value={otp[i] ?? ""}
+                          onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                          onKeyDown={(e) => handleOtpDigitKeyDown(i, e)}
+                          aria-label={`OTP digit ${i + 1}`}
+                          style={{
+                            width: 34,
+                            minWidth: 34,
+                            height: 34,
+                            borderRadius: 8,
+                            border: "1px solid rgba(28,25,23,0.12)",
+                            background: "white",
+                            textAlign: "center",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#1C1917",
+                            fontFamily: "Inter, sans-serif",
+                            outline: "none",
+                          }}
+                        />
+                      ))}
                     </div>
                   )}
                   {otpError && (

@@ -214,8 +214,6 @@ export function DesktopDashboardView({
   const savedJobs = 8;
   const applied = 16;
   const recruiterViews = 14;
-  const topPercentile = 12;
-  const totalCandidates = 2340;
 
   const savedPreview = SAVED_PREVIEW_IDS
     .map((id) => ROW_JOBS.find((j) => j.id === id))
@@ -228,8 +226,6 @@ export function DesktopDashboardView({
         <HeroStandingCard
           name={name}
           roleLabel={roleLabel}
-          topPercentile={topPercentile}
-          totalCandidates={totalCandidates}
           hasCompletedInterview={hasCompletedInterview}
           onStartInterview={onStartInterview}
         />
@@ -307,15 +303,11 @@ export function DesktopDashboardView({
 function HeroStandingCard({
   name,
   roleLabel,
-  topPercentile,
-  totalCandidates,
   hasCompletedInterview,
   onStartInterview,
 }: {
   name: string;
   roleLabel: string;
-  topPercentile: number;
-  totalCandidates: number;
   hasCompletedInterview: boolean;
   onStartInterview: () => void;
 }) {
@@ -393,19 +385,33 @@ function HeroStandingCard({
           >
             {hasCompletedInterview ? (
               <>
-                You're in the{" "}
-                <strong style={{ color: DT.accent, fontWeight: 700 }}>
-                  top {topPercentile}%
-                </strong>{" "}
-                of {totalCandidates.toLocaleString()} {roleLabel} candidates on
-                ZappyFind — review fresh matches, or refine preferences to
-                sharpen what surfaces next.
+                Fresh matches are ready for your 
+                <strong
+                  style={{
+                    color: "rgba(28,25,23,0.86)",
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {roleLabel}
+                </strong>
+                 preferences. Review new openings, save strong fits, and
+                apply in minutes while recruiter activity is still warm.
               </>
             ) : (
               <>
-                One last step to see where you stand among {roleLabel}{" "}
-                candidates on ZappyFind — and unlock top matches + recruiter
-                introductions.
+                Complete your interview to unlock tailored 
+                <strong
+                  style={{
+                    color: "rgba(28,25,23,0.86)",
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {roleLabel}
+                </strong>
+                 matches, stronger fit signals, and faster recruiter
+                shortlisting.
               </>
             )}
           </p>

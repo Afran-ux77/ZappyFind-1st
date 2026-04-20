@@ -10,7 +10,7 @@ import {
   FlaskConical, BarChart3, UserCheck, Handshake, HeartPulse, ChevronDown,
   Car, Plane, HeartHandshake, HardHat, Newspaper, Fuel, UtensilsCrossed,
   Clapperboard, Store, Truck, ClipboardList, BadgeCheck, AlertTriangle,
-  Shield, Anchor, Dumbbell, GraduationCap, Wallet, Leaf,
+  Shield, Anchor, Dumbbell, GraduationCap, Wallet, Leaf, Search, X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -146,7 +146,7 @@ const ALL_DEPARTMENT_CHIPS = JOB_PREF_DEPARTMENTS.map((row) => ({
 }));
 
 /**
- * Mobile: first 15 departments (14 highest-intent from desktop cohort + Other).
+ * Mobile: first 8 highest-intent departments.
  * Desktop still uses full `showInitially` set in jobPrefDepartmentsData.
  */
 const MOBILE_FIRST_DEPARTMENT_IDS = [
@@ -154,17 +154,10 @@ const MOBILE_FIRST_DEPARTMENT_IDS = [
   "ux_design_architecture",
   "data_science_analytics",
   "product_management",
-  "it_information_security",
   "marketing_communication",
   "sales_business_development",
   "finance_accounting",
   "human_resources",
-  "consulting",
-  "customer_success_service_operations",
-  "bfsi_investments_trading",
-  "project_program_management",
-  "healthcare_life_sciences",
-  "other",
 ] as const;
 
 const MOBILE_FIRST_DEPARTMENT_ID_SET = new Set<string>(MOBILE_FIRST_DEPARTMENT_IDS);
@@ -429,7 +422,10 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
   const otherDepartmentInputRef = useRef<HTMLInputElement | null>(null);
   const hadOtherCategoryRef = useRef(false);
   const [showAllDepartments, setShowAllDepartments] = useState(false);
-  const visibleDepartments = useMemo(() => {
+  const [departmentQuery, setDepartmentQuery] = useState("");
+  const [departmentHintIdx, setDepartmentHintIdx] = useState(0);
+
+  const baseDepartments = useMemo(() => {
     if (showAllDepartments) return ALL_DEPARTMENT_CHIPS;
     if (isDesktopLayout) {
       return ALL_DEPARTMENT_CHIPS.filter((d) => d.showInitially);
@@ -439,12 +435,41 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
     );
   }, [showAllDepartments, isDesktopLayout]);
 
+  const searchableDepartmentHints = useMemo(
+    () => [
+      "Engineering – Software & QA",
+      "Product Management",
+      "Data Science & Analytics",
+      "Finance & Accounting",
+      "Sales & Business Development",
+      "Human Resources",
+      "Marketing & Communication",
+      "Project & Program Management",
+    ],
+    [],
+  );
+
+  const visibleDepartments = useMemo(() => {
+    const q = departmentQuery.trim().toLowerCase();
+    if (!q) return baseDepartments;
+    return ALL_DEPARTMENT_CHIPS.filter((d) => d.label.toLowerCase().includes(q));
+  }, [departmentQuery, baseDepartments]);
+
   const collapsedDepartmentCount = useMemo(() => {
     if (isDesktopLayout) {
       return ALL_DEPARTMENT_CHIPS.filter((d) => !d.showInitially).length;
     }
     return ALL_DEPARTMENT_CHIPS.length - MOBILE_FIRST_DEPARTMENT_IDS.length;
   }, [isDesktopLayout]);
+
+  useEffect(() => {
+    if (step !== 1) return;
+    if (departmentQuery.trim().length > 0) return;
+    const intervalId = window.setInterval(() => {
+      setDepartmentHintIdx((prev) => (prev + 1) % searchableDepartmentHints.length);
+    }, 1800);
+    return () => window.clearInterval(intervalId);
+  }, [step, departmentQuery, searchableDepartmentHints.length]);
 
   useEffect(() => {
     if (showAllDepartments) return;
@@ -1046,7 +1071,77 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   </h2>
                 </div>
 
-                <SectionLabel>Job categories</SectionLabel>
+                <SectionLabel>Department</SectionLabel>
+                <div style={{ marginBottom: 12 }}>
+                  <div
+                    style={{
+                      position: "relative",
+                      borderRadius: 12,
+                      border: "1.5px solid rgba(28,25,23,0.03)",
+                      background: "rgba(28,25,23,0.028)",
+                      boxShadow: "none",
+                      transition: "border-color 0.18s, background 0.18s",
+                    }}
+                  >
+                    <Search
+                      size={14}
+                      strokeWidth={2}
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: C.textSec,
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <input
+                      className="placeholder:text-stone-500"
+                      type="text"
+                      value={departmentQuery}
+                      onChange={(e) => setDepartmentQuery(e.target.value)}
+                      placeholder="Seach job categories"
+                      style={{
+                        width: "100%",
+                        boxSizing: "border-box",
+                        height: 38,
+                        borderRadius: 12,
+                        border: "none",
+                        background: "transparent",
+                        padding: "0 34px 0 34px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "#292524",
+                        letterSpacing: "-0.01em",
+                        fontFamily: "Inter, sans-serif",
+                        outline: "none",
+                      }}
+                    />
+                    {departmentQuery.trim().length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setDepartmentQuery("")}
+                        aria-label="Clear department search"
+                        style={{
+                          position: "absolute",
+                          right: 8,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          border: "none",
+                          background: "transparent",
+                          color: C.textSec,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          padding: 2,
+                        }}
+                      >
+                        <X size={14} strokeWidth={2.2} />
+                      </button>
+                    )}
+                  </div>
+                </div>
                 {/*
                   Chips live in a single flex-wrap row. The "Target level" strip is
                   inserted RIGHT AFTER the last chip on the same visual row as the
@@ -1055,7 +1150,16 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   Chips on that row never reflow; only rows below move when the strip
                   opens (height animation).
                 */}
-                <div
+                <motion.div
+                  layout
+                  transition={{
+                    layout: {
+                      type: "spring",
+                      stiffness: 145,
+                      damping: 24,
+                      mass: 1.08,
+                    },
+                  }}
                   ref={chipRowRef}
                   style={{
                     display: "flex",
@@ -1064,26 +1168,42 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                     marginBottom: 16,
                   }}
                 >
-                  {visibleDepartments.map((cat, idx) => {
-                    const selected = selectedCategories.includes(cat.id);
-                    const atCap = selectedCategories.length >= MAX_JOB_CATEGORIES && !selected;
-                    const exp = experienceLevelByCategory[cat.id];
-                    const Icon = cat.icon;
-                    const showStripAfter =
-                      idx === stripInsertAfterIdx &&
-                      expandedExperienceCategory &&
-                      expandedExperienceCategory !== "other" &&
-                      selectedCategories.includes(expandedExperienceCategory);
-                    const expCat = showStripAfter
-                      ? getCategoryMeta(expandedExperienceCategory!)
-                      : null;
-                    return (
-                      <Fragment key={cat.id}>
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {visibleDepartments.map((cat, idx) => {
+                      const selected = selectedCategories.includes(cat.id);
+                      const atCap = selectedCategories.length >= MAX_JOB_CATEGORIES && !selected;
+                      const exp = experienceLevelByCategory[cat.id];
+                      const Icon = cat.icon;
+                      const showStripAfter =
+                        idx === stripInsertAfterIdx &&
+                        expandedExperienceCategory &&
+                        expandedExperienceCategory !== "other" &&
+                        selectedCategories.includes(expandedExperienceCategory);
+                      const expCat = showStripAfter
+                        ? getCategoryMeta(expandedExperienceCategory!)
+                        : null;
+                      return (
+                        <Fragment key={cat.id}>
                         <motion.button
+                          layout="position"
                           ref={(el) => {
                             chipRefs.current[idx] = el;
                           }}
                           type="button"
+                          initial={{ opacity: 0, y: 8, scale: 0.985 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                          transition={{
+                            duration: 0.4,
+                            delay: Math.min(idx, 8) * 0.018,
+                            ease: [0.16, 1, 0.3, 1],
+                            layout: {
+                              type: "spring",
+                              stiffness: 120,
+                              damping: 22,
+                              mass: 1.05,
+                            },
+                          }}
                           whileTap={{ scale: 0.97 }}
                           onClick={() => toggleCategory(cat.id)}
                           disabled={atCap}
@@ -1133,14 +1253,17 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                             </span>
                           )}
                         </motion.button>
-                        <AnimatePresence initial={false}>
+                        <AnimatePresence initial={false} mode="wait">
                           {showStripAfter && expCat && (
                             <motion.div
                               key={`exp-strip-after-${expandedExperienceCategory}-${idx}`}
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: "auto" }}
                               exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                              transition={{
+                                height: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+                                opacity: { duration: 0.36, delay: 0.08, ease: [0.22, 1, 0.36, 1] },
+                              }}
                               style={{
                                 flexBasis: "100%",
                                 width: "100%",
@@ -1184,7 +1307,11 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                                           ...prev,
                                           [catId]: level.id,
                                         }));
-                                        setExpandedExperienceCategory(null);
+                                        // Stage close slightly so container height changes
+                                        // feel progressive instead of an abrupt jump.
+                                        window.setTimeout(() => {
+                                          setExpandedExperienceCategory(null);
+                                        }, 260);
                                       }}
                                       style={{
                                         minHeight: 34,
@@ -1221,9 +1348,10 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                             </motion.div>
                           )}
                         </AnimatePresence>
-                      </Fragment>
-                    );
-                  })}
+                        </Fragment>
+                      );
+                    })}
+                  </AnimatePresence>
 
                   <AnimatePresence initial={false}>
                     {selectedCategories.includes("other") && (
@@ -1290,9 +1418,9 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                </motion.div>
 
-                {collapsedDepartmentCount > 0 ? (
+                {collapsedDepartmentCount > 0 && departmentQuery.trim().length === 0 ? (
                   <div style={{ margin: "0 0 16px" }}>
                     <button
                       type="button"
@@ -1327,20 +1455,53 @@ export function JobPreferencesScreen({ onComplete, onBack, resumeAtStep, transpa
                   </div>
                 ) : null}
 
-                <AnimatePresence>
-                  {selectedCategories.some((c) => c !== "other") && (
+                {departmentQuery.trim().length > 0 && visibleDepartments.length === 0 ? (
+                  <div
+                    style={{
+                      margin: "2px 0 16px",
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      background: "rgba(28,25,23,0.03)",
+                      border: `1px dashed ${C.border}`,
+                      fontSize: 12.5,
+                      color: C.textMuted,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    No departments found for &quot;{departmentQuery.trim()}&quot;.
+                  </div>
+                ) : null}
+
+                <AnimatePresence initial={false} mode="popLayout">
+                  {selectedCategories.some(
+                    (c) => c !== "other" && Boolean(experienceLevelByCategory[resolveDepartmentId(c)]),
+                  ) && (
                     <motion.div
+                      layout
                       key="roles-by-category"
-                      initial={{ opacity: 0, y: 14 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{
+                        duration: 0.52,
+                        ease: [0.16, 1, 0.3, 1],
+                        layout: {
+                          type: "spring",
+                          stiffness: 135,
+                          damping: 22,
+                          mass: 1.12,
+                        },
+                      }}
                     >
                       <div style={{ height: 1, background: C.border, marginBottom: 20 }} />
                       <SectionLabel>Roles by department</SectionLabel>
                       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                         {selectedCategories
-                          .filter((id) => id !== "other")
+                          .filter(
+                            (id) =>
+                              id !== "other" &&
+                              Boolean(experienceLevelByCategory[resolveDepartmentId(id)]),
+                          )
                           .map((catId, deptIdx, deptList) => {
                           const meta = getCategoryMeta(catId);
                           const Icon = meta?.icon;

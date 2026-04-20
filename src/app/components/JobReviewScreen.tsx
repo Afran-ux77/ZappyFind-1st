@@ -15,7 +15,6 @@ import {
   X,
   MapPin,
   Sparkles,
-  Globe,
   CalendarClock,
   Send,
   ThumbsDown,
@@ -381,7 +380,7 @@ export const JOBS: Job[] = [
   },
 ];
 
-const REQUIRED_SKILLS_BY_JOB: Record<string, string[]> = {
+export const REQUIRED_SKILLS_BY_JOB: Record<string, string[]> = {
   "1": ["Figma", "Design Systems", "B2B SaaS UX", "Stakeholder Management", "Interaction Design", "Accessibility"],
   "2": ["Experimentation", "A/B Testing", "Funnel Analysis", "Growth UX", "Product Analytics"],
   "3": ["AI UX", "Information Architecture", "Enterprise Workflows", "Prototyping", "Data-heavy UI"],
@@ -412,6 +411,11 @@ type SearchJob = {
   summary: string;
   tags: string[];
   externalUrl?: string;
+  experience?: string;
+  department?: string;
+  whyFit?: string;
+  requiredSkills?: string[];
+  jobDescription?: string;
 };
 
 const SEARCH_JOBS: SearchJob[] = [
@@ -429,6 +433,20 @@ const SEARCH_JOBS: SearchJob[] = [
     matchScore: 78,
     summary: "Design checkout and payment flows for India's largest e-commerce platform. Work on high-impact surfaces across mobile and web.",
     tags: ["E-commerce", "Mobile", "Payments"],
+    experience: "3–5 yrs",
+    department: "Product Design",
+    whyFit:
+      "Your mobile-first commerce work maps cleanly to the checkout surfaces this team owns. Seniority and Bangalore-hybrid match your saved preferences.",
+    requiredSkills: [
+      "Figma",
+      "Mobile-first design",
+      "Checkout UX",
+      "Design systems",
+      "Prototyping",
+      "A/B testing",
+    ],
+    jobDescription:
+      "As a Product Designer on Checkout, you'll own end-to-end flows for payments, address, and order review across web and app. You'll partner with PMs, engineers, and researchers to reduce drop-off on high-traffic surfaces. Expect to ship weekly, run lightweight usability tests, and contribute components back to the shared design system.",
   },
   {
     id: "s2",
@@ -445,6 +463,20 @@ const SEARCH_JOBS: SearchJob[] = [
     summary: "Shape the future of collaborative workspaces. Work across desktop, mobile, and API surfaces for millions of users.",
     tags: ["Productivity", "SaaS", "Remote"],
     externalUrl: "https://careers.zappydocs.dev",
+    experience: "5–8 yrs",
+    department: "Product Design",
+    whyFit:
+      "Your SaaS depth and systems thinking align with cross-platform tools at scale. Fully remote role fits your location preferences.",
+    requiredSkills: [
+      "Figma",
+      "Design systems",
+      "Cross-platform UX",
+      "Interaction design",
+      "Research partnership",
+      "Product strategy",
+    ],
+    jobDescription:
+      "You'll lead design on one of the core collaboration surfaces — owning strategy and execution across desktop, mobile, and web. Partner closely with engineering and research to define patterns that scale across the product. Ideal for someone who enjoys shaping ambiguous problems into shipped experiences.",
   },
   {
     id: "s3",
@@ -461,6 +493,20 @@ const SEARCH_JOBS: SearchJob[] = [
     summary: "Lead design for AI-powered products that reach billions. Partner with researchers and engineers to translate complex ML into clear interfaces.",
     tags: ["AI", "Leadership", "Enterprise"],
     externalUrl: "https://careers.zappymind.dev",
+    experience: "8+ yrs",
+    department: "Design Leadership",
+    whyFit:
+      "Leadership scope matches your current level, and your AI-product exposure is exactly what this role is hiring for.",
+    requiredSkills: [
+      "Design leadership",
+      "AI / ML product design",
+      "Team building",
+      "Design strategy",
+      "Cross-functional collaboration",
+      "Mentoring",
+    ],
+    jobDescription:
+      "You'll lead a small, senior design team shaping AI-native products across assistants, reasoning tools, and creative surfaces. The role is equal parts craft and people leadership: setting vision, coaching ICs, and partnering with research and engineering to ship thoughtful, responsible AI experiences.",
   },
   {
     id: "s4",
@@ -476,6 +522,20 @@ const SEARCH_JOBS: SearchJob[] = [
     matchScore: 72,
     summary: "Drive mixed-methods research for India's leading fintech platform. Shape payments, lending, and banking experiences.",
     tags: ["Fintech", "Research", "Remote"],
+    experience: "3–6 yrs",
+    department: "UX Research",
+    whyFit:
+      "Your mixed-methods background and fintech interest line up well. Remote + India-based is a direct match with your preferences.",
+    requiredSkills: [
+      "Generative research",
+      "Usability testing",
+      "Survey design",
+      "Data synthesis",
+      "Stakeholder workshops",
+      "Journey mapping",
+    ],
+    jobDescription:
+      "You'll lead research across payments, lending, and banking — from foundational studies to rapid evaluative work. Expect to own study design end-to-end, partner deeply with product and design, and synthesize findings into insights teams can act on quickly.",
   },
   {
     id: "s5",
@@ -492,6 +552,20 @@ const SEARCH_JOBS: SearchJob[] = [
     summary: "Own core editor and collaboration experiences used by millions of designers worldwide. Define design direction for the platform.",
     tags: ["Design Tools", "SaaS", "Remote"],
     externalUrl: "https://careers.zappystudio.dev",
+    experience: "7–10 yrs",
+    department: "Product Design",
+    whyFit:
+      "Staff-level scope matches your trajectory and your systems-led approach translates directly to design-tool product work.",
+    requiredSkills: [
+      "Interaction design",
+      "Design systems",
+      "Tooling UX",
+      "Prototyping",
+      "Cross-functional leadership",
+      "Design craft",
+    ],
+    jobDescription:
+      "You'll set direction on the core editor — canvas, tools, and collaboration primitives used by millions. This is a hands-on Staff role: you'll ship craft-level work, pair with engineering on novel interactions, and partner with other senior designers to shape the product narrative.",
   },
   {
     id: "s6",
@@ -507,6 +581,20 @@ const SEARCH_JOBS: SearchJob[] = [
     matchScore: 81,
     summary: "Design activation, onboarding, and retention flows for India's largest stock broker. Data-driven, high-velocity work.",
     tags: ["Fintech", "Growth", "Mobile"],
+    experience: "3–5 yrs",
+    department: "Product Design",
+    whyFit:
+      "Your growth-oriented mobile experience matches the team's focus on activation and retention funnels.",
+    requiredSkills: [
+      "Growth design",
+      "Mobile UX",
+      "Experimentation",
+      "Data literacy",
+      "Funnel optimization",
+      "Figma",
+    ],
+    jobDescription:
+      "You'll design onboarding, activation, and retention flows for millions of retail investors. Expect tight loops with data and product — running frequent experiments, learning from funnels, and shipping focused improvements across Android, iOS, and web.",
   },
   {
     id: "s7",
@@ -523,6 +611,20 @@ const SEARCH_JOBS: SearchJob[] = [
     summary: "Scale and evolve the design system used across Jira, Confluence, and 10+ products. Define patterns, tokens, and accessibility standards.",
     tags: ["Design Systems", "Accessibility", "Remote"],
     externalUrl: "https://careers.zappyatlas.dev",
+    experience: "5–7 yrs",
+    department: "Design Systems",
+    whyFit:
+      "Your design systems and accessibility experience align with a high-scope, cross-product DS role. Remote-India friendly.",
+    requiredSkills: [
+      "Design systems",
+      "Component architecture",
+      "Tokens",
+      "Accessibility (WCAG)",
+      "Documentation",
+      "Figma libraries",
+    ],
+    jobDescription:
+      "You'll evolve the foundation used by 10+ products — owning components, tokens, and accessibility guidelines. Expect close partnership with engineering on implementation and with product teams on adoption, governance, and contribution models.",
   },
   {
     id: "s8",
@@ -538,6 +640,20 @@ const SEARCH_JOBS: SearchJob[] = [
     matchScore: 75,
     summary: "Design conversational AI experiences for customer support. Work on assistant experiences across the full ZappyDesk product suite.",
     tags: ["AI", "Conversational", "SaaS"],
+    experience: "3–6 yrs",
+    department: "Product Design",
+    whyFit:
+      "Your SaaS background plus any conversational / assistant exposure is a strong fit for the AI assistant team.",
+    requiredSkills: [
+      "Conversational UX",
+      "AI product design",
+      "SaaS workflows",
+      "Interaction design",
+      "Prototyping",
+      "Research collaboration",
+    ],
+    jobDescription:
+      "You'll design AI assistant experiences across the ZappyDesk support suite — from ticket triage and drafting to agent-assist and self-service flows. Expect to prototype with real model outputs, collaborate with ML teams, and define interaction patterns for emerging AI surfaces.",
   },
   {
     id: "s9",
@@ -554,6 +670,20 @@ const SEARCH_JOBS: SearchJob[] = [
     summary: "Design developer-facing tools, dashboards, and documentation for the platform behind Next.js.",
     tags: ["DevTools", "Remote", "Startup"],
     externalUrl: "https://careers.zappydeploy.dev",
+    experience: "3–6 yrs",
+    department: "Product Design",
+    whyFit:
+      "Your product-tool experience and comfort with technical users map well onto developer surfaces and dashboards.",
+    requiredSkills: [
+      "Developer UX",
+      "Dashboard design",
+      "Documentation patterns",
+      "Information architecture",
+      "Interaction design",
+      "Technical empathy",
+    ],
+    jobDescription:
+      "You'll design dashboards, CLI companions, and docs for a platform used by millions of developers. Expect to work closely with PMs and engineers who are also the target users — shipping thoughtful, dense, keyboard-friendly interfaces built for daily workflows.",
   },
   {
     id: "s10",
@@ -569,6 +699,20 @@ const SEARCH_JOBS: SearchJob[] = [
     matchScore: 70,
     summary: "Design discovery, search, and transaction experiences for India's largest social commerce platform.",
     tags: ["E-commerce", "Mobile", "Consumer"],
+    experience: "2–5 yrs",
+    department: "Product Design",
+    whyFit:
+      "Consumer mobile commerce experience is a direct match with the team's focus on Tier-2/3 India marketplaces.",
+    requiredSkills: [
+      "Consumer mobile UX",
+      "E-commerce flows",
+      "Search & discovery",
+      "Regional / vernacular UX",
+      "Figma",
+      "Iteration velocity",
+    ],
+    jobDescription:
+      "You'll design discovery, search, and buyer-journey surfaces for a fast-growing social commerce platform. Expect frequent field insights, strong product instincts required, and an environment that rewards shipping and learning quickly.",
   },
   {
     id: "s11",
@@ -585,6 +729,20 @@ const SEARCH_JOBS: SearchJob[] = [
     summary: "Own brand expression and product craft for one of India's most design-forward fintech companies.",
     tags: ["Fintech", "Brand", "Leadership"],
     externalUrl: "https://careers.zappyorbit.dev",
+    experience: "8+ yrs",
+    department: "Design Leadership",
+    whyFit:
+      "Your leadership scope and cross-brand/product sensibility align with a role that owns both narrative and craft.",
+    requiredSkills: [
+      "Brand strategy",
+      "Product craft",
+      "Design leadership",
+      "Visual systems",
+      "Team coaching",
+      "Cross-functional partnership",
+    ],
+    jobDescription:
+      "You'll lead a small, multidisciplinary team spanning brand and product. Expect to set visual direction, mentor senior ICs, and partner with marketing and product leadership on cohesive expression across surfaces — from the app to out-of-home.",
   },
   {
     id: "s12",
@@ -600,6 +758,20 @@ const SEARCH_JOBS: SearchJob[] = [
     matchScore: 83,
     summary: "Design payment flows, merchant experiences, and financial products used by 500M+ Indians.",
     tags: ["Fintech", "Payments", "Mobile"],
+    experience: "3–6 yrs",
+    department: "Product Design",
+    whyFit:
+      "Payments and fintech experience on consumer mobile aligns tightly with the scope of this role.",
+    requiredSkills: [
+      "Payments UX",
+      "Consumer mobile UX",
+      "Trust & safety patterns",
+      "Accessibility",
+      "Figma",
+      "Research collaboration",
+    ],
+    jobDescription:
+      "You'll design payment flows, merchant experiences, and financial surfaces used by hundreds of millions. Expect to work with regulated constraints, partner with risk and compliance, and ship interfaces that make complex finance feel simple on mobile.",
   },
 ];
 
@@ -1135,8 +1307,14 @@ export function JobReviewScreen({
 
       {/* Search + sort */}
       <div style={{ padding: "10px 16px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div
+        <motion.div
+          layout
+          transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
+          style={{ display: "flex", alignItems: "center", gap: 8 }}
+        >
+          <motion.div
+            layout
+            transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
             onClick={() => {
               if (!searchMode) {
                 setSearchMode(true);
@@ -1190,32 +1368,15 @@ export function JobReviewScreen({
                 letterSpacing: "-0.01em",
               }}
             />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 20,
-                  height: 20,
-                  padding: 0,
-                  border: "none",
-                  background: "rgba(0,0,0,0.06)",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  flexShrink: 0,
-                }}
-              >
-                <X size={11} color="#6B7280" strokeWidth={3} />
-              </button>
-            )}
-            {searchMode && (
+            {(searchMode || searchQuery) && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (searchQuery) {
+                    setSearchQuery("");
+                    return;
+                  }
                   exitSearch();
                 }}
                 style={{
@@ -1235,50 +1396,60 @@ export function JobReviewScreen({
                 <X size={13} color="#6B7280" strokeWidth={2.5} />
               </button>
             )}
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              setSortMode((prev) =>
-                prev === "most_recent" ? "highest_score" : "most_recent"
-              )
-            }
-            style={{
-              flexShrink: 0,
-              height: 42,
-              padding: "0 10px",
-              borderRadius: 14,
-              border:
-                sortMode === "highest_score"
-                  ? "1.5px solid rgba(234,88,12,0.22)"
-                  : "1.5px solid transparent",
-              background:
-                sortMode === "highest_score"
-                  ? "#FFFFFF"
-                  : "rgba(0,0,0,0.03)",
-              color: sortMode === "highest_score" ? "#111827" : "#6B7280",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 11.5,
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              boxShadow:
-                sortMode === "highest_score"
-                  ? "0 2px 12px rgba(234,88,12,0.06)"
-                  : "none",
-              transition: "all 0.2s ease",
-            }}
-            title={`Sort: ${
-              sortMode === "most_recent" ? "Most recent" : "Highest score"
-            }`}
-          >
-            <ArrowUpDown size={13} strokeWidth={2.1} />
-            {sortMode === "most_recent" ? "Most recent" : "Top score"}
-          </button>
-        </div>
+          </motion.div>
+          <AnimatePresence initial={false}>
+            {!searchMode && (
+              <motion.button
+                key="sort-button"
+                layout
+                initial={{ opacity: 0, width: 0, x: 8, paddingLeft: 0, paddingRight: 0 }}
+                animate={{ opacity: 1, width: "auto", x: 0, paddingLeft: 10, paddingRight: 10 }}
+                exit={{ opacity: 0, width: 0, x: 8, paddingLeft: 0, paddingRight: 0 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                type="button"
+                onClick={() =>
+                  setSortMode((prev) =>
+                    prev === "most_recent" ? "highest_score" : "most_recent"
+                  )
+                }
+                style={{
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  height: 42,
+                  borderRadius: 14,
+                  border:
+                    sortMode === "highest_score"
+                      ? "1.5px solid rgba(234,88,12,0.22)"
+                      : "1.5px solid transparent",
+                  background:
+                    sortMode === "highest_score"
+                      ? "#FFFFFF"
+                      : "rgba(0,0,0,0.03)",
+                  color: sortMode === "highest_score" ? "#111827" : "#6B7280",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow:
+                    sortMode === "highest_score"
+                      ? "0 2px 12px rgba(234,88,12,0.06)"
+                      : "none",
+                  transition: "all 0.2s ease",
+                }}
+                title={`Sort: ${
+                  sortMode === "most_recent" ? "Most recent" : "Highest score"
+                }`}
+              >
+                <ArrowUpDown size={13} strokeWidth={2.1} />
+                {sortMode === "most_recent" ? "Most recent" : "Top score"}
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       {/* Tab bar */}
@@ -2486,14 +2657,14 @@ function getScoreBadgeStyle(score: number): {
   };
 }
 
-function formatJobExperienceRange(min: number, max: number): string {
+export function formatJobExperienceRange(min: number, max: number): string {
   if (max <= min) {
     return `${min}+ yrs required`;
   }
   return `${min}\u2013${max} yrs required`;
 }
 
-function inferDepartmentFromTitle(title: string): string {
+export function inferDepartmentFromTitle(title: string): string {
   const t = title.toLowerCase();
   if (
     t.includes("ux") ||
@@ -3010,14 +3181,6 @@ function SearchContent({
   onToggleSave: (id: string) => void;
   onSelectSuggestion: (s: string) => void;
 }) {
-  const BROWSE_CATEGORIES = [
-    { label: "Remote in India", emoji: "🏠", query: "Remote" },
-    { label: "AI & Machine Learning", emoji: "🤖", query: "AI" },
-    { label: "Leadership roles", emoji: "👑", query: "Lead" },
-    { label: "Fintech companies", emoji: "💳", query: "Fintech" },
-    { label: "Startups", emoji: "🚀", query: "Startup" },
-  ];
-
   if (!query.trim()) {
     return (
       <div style={{ width: "100%", maxWidth: 380, paddingTop: 4 }}>
@@ -3058,71 +3221,6 @@ function SearchContent({
           ))}
         </div>
 
-        <div
-          style={{
-            padding: "22px 0 8px",
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#9CA3AF",
-            letterSpacing: "0.04em",
-            textTransform: "uppercase" as const,
-          }}
-        >
-          Browse by department
-        </div>
-        <div
-          style={{
-            borderRadius: 16,
-            background: "#FFFFFF",
-            border: "1px solid rgba(0,0,0,0.05)",
-            overflow: "hidden",
-          }}
-        >
-          {BROWSE_CATEGORIES.map((cat, i) => (
-            <button
-              key={cat.query}
-              type="button"
-              onClick={() => onSelectSuggestion(cat.query)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "13px 14px",
-                borderBottom:
-                  i < BROWSE_CATEGORIES.length - 1
-                    ? "1px solid rgba(0,0,0,0.04)"
-                    : "none",
-                border: "none",
-                borderBottomStyle: i < BROWSE_CATEGORIES.length - 1 ? "solid" : "none",
-                borderBottomWidth: 1,
-                borderBottomColor: "rgba(0,0,0,0.04)",
-                background: "transparent",
-                cursor: "pointer",
-                fontFamily: "Inter, sans-serif",
-                transition: "background 0.12s",
-              }}
-            >
-              <span style={{ fontSize: 17, lineHeight: 1 }}>{cat.emoji}</span>
-              <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "#374151",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {cat.label}
-              </span>
-              <ChevronDown
-                size={14}
-                color="#C4C4C4"
-                strokeWidth={2}
-                style={{ marginLeft: "auto", transform: "rotate(-90deg)" }}
-              />
-            </button>
-          ))}
-        </div>
       </div>
     );
   }
@@ -3237,36 +3335,64 @@ function SearchResultCard({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  return (
-    <div
-      onClick={() => setExpanded((v) => !v)}
+  const metaChipStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: 11.5,
+    fontWeight: 500,
+    color: "#6B7280",
+    letterSpacing: "-0.01em",
+    lineHeight: "16px",
+    whiteSpace: "nowrap",
+  };
+
+  const dividerDot = (
+    <span
+      aria-hidden
       style={{
-        borderRadius: 18,
-        padding: 16,
+        width: 2,
+        height: 2,
+        borderRadius: 999,
+        background: "#D1D5DB",
+        flexShrink: 0,
+      }}
+    />
+  );
+
+  return (
+    <motion.div
+      layout
+      onClick={() => setExpanded((v) => !v)}
+      transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
+      style={{
+        borderRadius: 16,
+        padding: "12px 14px",
         background: "#FFFFFF",
         border: expanded
-          ? "1px solid rgba(234,88,12,0.12)"
+          ? "1px solid rgba(234,88,12,0.14)"
           : "1px solid rgba(0,0,0,0.06)",
         boxShadow: expanded
-          ? "0 4px 16px rgba(0,0,0,0.06)"
-          : "0 1px 4px rgba(0,0,0,0.03)",
+          ? "0 6px 22px rgba(0,0,0,0.06)"
+          : "0 1px 3px rgba(0,0,0,0.03)",
         cursor: "pointer",
         transition: "border-color 0.2s, box-shadow 0.2s",
       }}
     >
-      {/* Collapsed header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      {/* Compact row */}
+      <motion.div layout="position" style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={jobLogoAvatarStyle(job.logoColor)}>{job.logoLetter}</div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {/* Title + match */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div
               style={{
-                fontSize: 14.5,
+                fontSize: 14,
                 fontWeight: 600,
                 color: "#111827",
                 letterSpacing: "-0.02em",
-                lineHeight: "19px",
+                lineHeight: "18px",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -3275,102 +3401,12 @@ function SearchResultCard({
             >
               {job.title}
             </div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                padding: "3px 8px",
-                borderRadius: 999,
-                background:
-                  job.source === "zappyfind"
-                    ? "rgba(234,88,12,0.08)"
-                    : "rgba(0,0,0,0.04)",
-                flexShrink: 0,
-              }}
-            >
-              {job.source === "zappyfind" ? (
-                <Sparkles size={10} color="#EA580C" strokeWidth={2.5} />
-              ) : (
-                <Globe size={10} color="#6B7280" strokeWidth={2} />
-              )}
-              <span
-                style={{
-                  fontSize: 10.5,
-                  fontWeight: 600,
-                  color:
-                    job.source === "zappyfind" ? "#EA580C" : "#6B7280",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {job.source === "zappyfind"
-                  ? "ZappyFind"
-                  : job.sourceName || "External"}
-              </span>
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: 3,
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 12.5,
-                color: "#6B7280",
-                fontWeight: 500,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {job.company}
-            </span>
-            <span style={{ color: "#D1D5DB", fontSize: 10 }}>·</span>
-            <span
-              style={{
-                fontSize: 12.5,
-                color: "#9CA3AF",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {job.postedAgo}
-            </span>
-          </div>
-
-          <div
-            style={{
-              marginTop: 7,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                fontSize: 12,
-                fontWeight: 500,
-                padding: "3px 9px",
-                borderRadius: 999,
-                background: "rgba(0,0,0,0.03)",
-                color: "#6B7280",
-              }}
-            >
-              <MapPin size={10} strokeWidth={2.5} />
-              {job.location} · {job.locationType}
-            </span>
             {typeof job.matchScore === "number" && (
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: 700,
-                  padding: "3px 7px",
+                  padding: "2px 7px",
                   borderRadius: 999,
                   background:
                     job.matchScore >= 80
@@ -3378,19 +3414,90 @@ function SearchResultCard({
                       : "rgba(217,119,6,0.1)",
                   color: job.matchScore >= 80 ? "#047857" : "#B45309",
                   letterSpacing: "-0.02em",
+                  flexShrink: 0,
+                  lineHeight: "14px",
                 }}
               >
-                {job.matchScore}% match
+                {job.matchScore}%
               </span>
             )}
           </div>
+
+          {/* Company · posted */}
+          <div
+            style={{
+              marginTop: 2,
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: 12,
+              color: "#9CA3AF",
+              letterSpacing: "-0.01em",
+              lineHeight: "16px",
+            }}
+          >
+            <span style={{ color: "#6B7280", fontWeight: 500 }}>{job.company}</span>
+            {dividerDot}
+            <span>{job.postedAgo}</span>
+          </div>
+
+          {/* Essentials row */}
+          <div
+            style={{
+              marginTop: 7,
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              rowGap: 4,
+              columnGap: 8,
+            }}
+          >
+            <span style={metaChipStyle}>
+              <MapPin size={10.5} strokeWidth={2.2} color="#9CA3AF" />
+              {job.location} · {job.locationType}
+            </span>
+            {job.experience && (
+              <>
+                {dividerDot}
+                <span style={metaChipStyle}>
+                  <Briefcase size={10.5} strokeWidth={2.2} color="#9CA3AF" />
+                  {job.experience}
+                </span>
+              </>
+            )}
+            {job.department && (
+              <>
+                {dividerDot}
+                <span style={metaChipStyle}>{job.department}</span>
+              </>
+            )}
+            {dividerDot}
+            <span
+              style={{
+                ...metaChipStyle,
+                color: "#111827",
+                fontWeight: 600,
+              }}
+            >
+              {job.salary}
+            </span>
+          </div>
         </div>
-      </div>
+
+        <motion.div
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ flexShrink: 0, alignSelf: "center", marginLeft: 4 }}
+        >
+          <ChevronDown size={14} color="#C4C4C4" strokeWidth={2} />
+        </motion.div>
+      </motion.div>
 
       {/* Expanded details */}
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
+            key="expanded"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -3401,66 +3508,99 @@ function SearchResultCard({
               style={{
                 paddingTop: 14,
                 borderTop: "1px solid rgba(0,0,0,0.05)",
-                marginTop: 14,
+                marginTop: 12,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  marginBottom: 10,
-                }}
-              >
-                <span style={{ fontSize: 12 }}>💰</span>
-                <span
-                  style={{
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                    color: "#374151",
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  {job.salary}
-                </span>
-              </div>
+              {/* The Headlines */}
+              <SectionBlock
+                barColor="#78909C"
+                title="The Headlines"
+                body={job.summary}
+              />
 
-              <p
-                style={{
-                  margin: "0 0 12px",
-                  fontSize: 13,
-                  lineHeight: "21px",
-                  color: "#4B5563",
-                }}
-              >
-                {job.summary}
-              </p>
+              {/* Why is this a fit */}
+              {job.whyFit && (
+                <SectionBlock
+                  barColor="#66A36E"
+                  title="Why is this a fit"
+                  body={job.whyFit}
+                />
+              )}
 
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  marginBottom: 14,
-                }}
-              >
-                {job.tags.map((tag) => (
-                  <span
-                    key={tag}
+              {/* Required skills */}
+              {(job.requiredSkills?.length ?? 0) > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div
                     style={{
-                      fontSize: 11.5,
-                      fontWeight: 500,
-                      padding: "3px 10px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(0,0,0,0.06)",
-                      color: "#6B7280",
-                      background: "#FAFAF9",
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      color: "#111827",
+                      marginBottom: 7,
+                      letterSpacing: "-0.01em",
                     }}
                   >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+                    Required skills
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {job.requiredSkills!.map((skill) => (
+                      <span
+                        key={skill}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "4px 10px",
+                          borderRadius: 999,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          color: "#4B5563",
+                          background: "#F8FAFC",
+                          border: "1px solid rgba(148,163,184,0.3)",
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div
+                style={{
+                  height: 1,
+                  backgroundColor: "rgba(0,0,0,0.05)",
+                  margin: "4px 0 12px",
+                }}
+              />
+
+              {/* Job Description */}
+              {job.jobDescription && (
+                <div style={{ marginBottom: 14 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "#111827",
+                      letterSpacing: "-0.01em",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Job Description
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12.5,
+                      lineHeight: "20px",
+                      color: "#4B5563",
+                      letterSpacing: "-0.005em",
+                    }}
+                  >
+                    {job.jobDescription}
+                  </p>
+                </div>
+              )}
 
               {/* Actions */}
               <div
@@ -3472,7 +3612,7 @@ function SearchResultCard({
                   whileTap={{ scale: 0.95 }}
                   onClick={onToggleSave}
                   style={{
-                    height: 40,
+                    height: 38,
                     padding: "0 14px",
                     borderRadius: 12,
                     border: saved
@@ -3480,7 +3620,7 @@ function SearchResultCard({
                       : "1px solid rgba(0,0,0,0.08)",
                     background: saved ? "rgba(234,88,12,0.06)" : "#FFFFFF",
                     color: saved ? "#EA580C" : "#374151",
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
@@ -3519,13 +3659,13 @@ function SearchResultCard({
                   }}
                   style={{
                     flex: 1,
-                    height: 40,
+                    height: 38,
                     borderRadius: 12,
                     border: "none",
                     background:
                       "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
                     color: "#FFFFFF",
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
@@ -3550,22 +3690,6 @@ function SearchResultCard({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Expand indicator */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          paddingTop: 6,
-        }}
-      >
-        <motion.div
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronDown size={14} color="#C4C4C4" strokeWidth={2} />
-        </motion.div>
-      </div>
-    </div>
+    </motion.div>
   );
 }
