@@ -19,3 +19,24 @@ export const DT = {
   sans: "'Inter', system-ui, sans-serif",
   serif: "'DM Serif Display', Georgia, serif",
 } as const;
+
+/** Staggered enter for desktop hub main panes (Home / Jobs / Profile). */
+export const desktopHubStagger = {
+  container: {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.07,
+        delayChildren: 0.05,
+      },
+    },
+  },
+  item: {
+    hidden: { opacity: 0, y: 14 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] as const },
+    },
+  },
+} as const;

@@ -20,6 +20,7 @@ import {
   ThumbsDown,
   User,
 } from "lucide-react";
+import { DT } from "../desktop/desktop-tokens";
 
 export type Job = {
   id: string;
@@ -2920,7 +2921,7 @@ function JobCard({
               style={{
                 border: "none",
                 background: "rgba(234,88,12,0.10)",
-                color: "#C2410C",
+                color: DT.accent,
                 padding: "5px 10px",
                 borderRadius: 999,
                 fontSize: 12,

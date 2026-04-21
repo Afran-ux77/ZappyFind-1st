@@ -225,3 +225,36 @@ textarea.zf-float__control {
 .zf-float__help--error {
   color: #b91c1c;
 }
+
+/* Desktop profile: “Your journey” column — own scroll; scrollbar only while scrolling */
+.journey-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+.journey-scroll.journey-scroll--scrollbar-visible {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 113, 108, 0.45) transparent;
+}
+
+.journey-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.journey-scroll.journey-scroll--scrollbar-visible::-webkit-scrollbar {
+  width: 6px;
+}
+
+.journey-scroll.journey-scroll--scrollbar-visible::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.35);
+  border-radius: 999px;
+}
+
+.journey-scroll.journey-scroll--scrollbar-visible::-webkit-scrollbar-track {
+  background: transparent;
+}

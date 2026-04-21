@@ -23,6 +23,7 @@ import {
 } from "./JobPreferencesScreen";
 import { JOB_DEPARTMENT_LABEL_BY_ID } from "./jobPrefDepartmentsData";
 import { cn } from "./ui/utils";
+import { DT } from "../desktop/desktop-tokens";
 
 const SALARY_CURR_SET = new Set<SalaryCurrencyCode>([
   "INR", "USD", "EUR", "GBP", "AED", "SGD", "CAD", "AUD",
@@ -674,7 +675,7 @@ export function ProfileSummaryScreen({
                         border: "1px solid rgba(234,88,12,0.16)",
                         fontSize: 11,
                         fontWeight: 600,
-                        color: "#C2410C",
+                        color: DT.accent,
                         letterSpacing: "-0.01em",
                         lineHeight: 1.35,
                         display: "flex",
@@ -912,7 +913,7 @@ export function ProfileSummaryScreen({
                               border: "1px solid rgba(234,88,12,0.1)",
                               fontSize: 12,
                               fontWeight: 500,
-                              color: "#C2410C",
+                              color: DT.accent,
                               letterSpacing: "-0.01em",
                             }}
                           >
@@ -931,7 +932,7 @@ export function ProfileSummaryScreen({
                             borderRadius: 14,
                             border: "1px solid rgba(234,88,12,0.18)",
                             background: "rgba(255,255,255,0.9)",
-                            color: "#C2410C",
+                            color: DT.accent,
                             fontSize: 11.5,
                             fontWeight: 500,
                             letterSpacing: "-0.01em",
@@ -1002,7 +1003,7 @@ export function ProfileSummaryScreen({
                               borderRadius: 8,
                               border: "1px solid rgba(28,25,23,0.1)",
                               background: "white",
-                              color: "#78716C",
+                              color: DT.accent,
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -1074,7 +1075,7 @@ export function ProfileSummaryScreen({
                                   border: "1px solid rgba(234,88,12,0.1)",
                                   fontSize: 11,
                                   fontWeight: 500,
-                                  color: "#C2410C",
+                                  color: DT.accent,
                                 }}
                               >
                                 {pr}
@@ -1237,7 +1238,7 @@ function Section({
                 borderRadius: 8,
                 border: "1px solid rgba(28,25,23,0.1)",
                 background: "white",
-                color: "#78716C",
+                color: DT.accent,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",

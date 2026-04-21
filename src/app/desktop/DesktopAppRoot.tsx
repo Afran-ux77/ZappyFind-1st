@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { LoginScreen } from "../components/LoginScreen";
 import { OTPScreen } from "../components/OTPScreen";
@@ -45,6 +45,17 @@ const slide = {
   toRight: { x: "1.5%", opacity: 0 },
 };
 const SPRING = { duration: 0.32, ease: [0.16, 1, 0.3, 1] as const };
+
+type DesktopHubScreen = "dashboardPreview" | "jobReview" | "jobSeekerProfile";
+const DESKTOP_HUB_ORDER: Record<DesktopHubScreen, number> = {
+  dashboardPreview: 0,
+  jobReview: 1,
+  jobSeekerProfile: 2,
+};
+const DESKTOP_HUB_CROSSFADE = {
+  duration: 0.26,
+  ease: [0.16, 1, 0.3, 1] as const,
+};
 
 /** Right-column only: login ↔ OTP inside a stable `DesktopAuthLayout`. */
 const AUTH_PANEL_SPRING = { type: "spring" as const, stiffness: 220, damping: 30, mass: 0.95 };
@@ -150,6 +161,15 @@ export function DesktopAppRoot({
 
   const displayName = firstName || "Alex";
 
+  const prevDesktopHubScreen = useRef<DesktopHubScreen | null>(null);
+  useEffect(() => {
+    if (screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") {
+      prevDesktopHubScreen.current = screen;
+    } else {
+      prevDesktopHubScreen.current = null;
+    }
+  }, [screen]);
+
   const handleLogout = () => {
     setEmail("");
     setSignupFullName("");
@@ -185,6 +205,24 @@ export function DesktopAppRoot({
     return "home";
   };
 
+  let hubEnter = { x: 0, y: 10 };
+  let hubExitX = 0;
+  if (screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") {
+    const prevHub = prevDesktopHubScreen.current;
+    if (prevHub && prevHub !== screen) {
+      const delta = DESKTOP_HUB_ORDER[screen] - DESKTOP_HUB_ORDER[prevHub];
+      if (delta > 0) {
+        hubEnter = { x: 16, y: 7 };
+        hubExitX = -14;
+      } else if (delta < 0) {
+        hubEnter = { x: -16, y: 7 };
+        hubExitX = 14;
+      } else {
+        hubEnter = { x: 0, y: 8 };
+      }
+    }
+  }
+
   const wrapOnboarding = (
     children: ReactNode,
     s: Screen,
@@ -193,6 +231,7 @@ export function DesktopAppRoot({
       cardHeightClass?: string;
       contentMinHeightClass?: string;
       cardFooterPaddingClass?: string;
+      scrollColumnGrow?: boolean;
     },
   ) => {
     const meta = onboardingMeta(s);
@@ -492,7 +531,7 @@ export function DesktopAppRoot({
               animate={slide.center}
               exit={exitTo(direction)}
               transition={SPRING}
-              className="flex min-h-0 w-full flex-1 flex-col"
+              className="flex min-h-0 w-full h-fit flex-col"
             >
               <CallInitiationScreen
                 transparentSurface
@@ -508,7 +547,9 @@ export function DesktopAppRoot({
             </motion.div>,
             "callInitiation",
             {
-              cardHeightClass: "min-h-[883px] h-fit",
+              cardHeightClass: "h-fit",
+              scrollColumnGrow: false,
+              cardFooterPaddingClass: "pb-[28px]",
             },
           )}
 
@@ -547,63 +588,87 @@ export function DesktopAppRoot({
           </motion.div>
         )}
 
-        {screen === "dashboardPreview" && (
+        {(screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") && (
           <motion.div
-            key="dash-d"
+            key="desktop-app"
             initial={enterFrom(direction)}
             animate={slide.center}
             exit={exitTo(direction)}
             transition={SPRING}
-            className="min-h-screen"
+            className="min-h-screen w-full"
           >
             {appShell(
-              <DesktopDashboardView
-                firstName={firstName}
-                profile={parsedProfile}
-                hasCompletedInterview={hasCompletedInterview}
-                onStartInterview={() => goTo("voiceCall", "forward")}
-                onReviewJobs={() => {
-                  setJobReviewInitialTab("recommended");
-                  goTo("jobReview", "forward");
-                }}
-                onViewSavedJobs={() => {
-                  setJobReviewInitialTab("saved");
-                  goTo("jobReview", "forward");
-                }}
-              />,
-            )}
-          </motion.div>
-        )}
-
-        {screen === "jobSeekerProfile" && (
-          <motion.div
-            key="jsp-d"
-            initial={enterFrom(direction)}
-            animate={slide.center}
-            exit={exitTo(direction)}
-            transition={SPRING}
-            className="min-h-screen"
-          >
-            {appShell(
-              <JobSeekerProfileScreen
-                layout="desktop"
-                firstName={firstName || "Alex"}
-                email={email}
-                profile={parsedProfile}
-                onNavigateHome={() => goTo("dashboardPreview", "back")}
-                onNavigateJobs={() => {
-                  setJobReviewInitialTab("recommended");
-                  goTo("jobReview", "forward");
-                }}
-                onNavigateProfile={() => {}}
-                onEditProfile={() => {
-                  setProfileReturnScreen("jobSeekerProfile");
-                  setProfileEditSection(undefined);
-                  goTo("profileEdit", "forward");
-                }}
-                onLogout={handleLogout}
-                onDeleteAccount={handleLogout}
-              />,
+              <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-1 [&>*]:min-h-0">
+                <AnimatePresence mode="sync" initial={false}>
+                  {screen === "dashboardPreview" && (
+                    <motion.div
+                      key="dashboardPreview"
+                      className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-auto"
+                      initial={{ opacity: 0, x: hubEnter.x, y: hubEnter.y }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, x: hubExitX, y: -6 }}
+                      transition={DESKTOP_HUB_CROSSFADE}
+                    >
+                      <DesktopDashboardView
+                        firstName={firstName}
+                        profile={parsedProfile}
+                        hasCompletedInterview={hasCompletedInterview}
+                        onStartInterview={() => goTo("voiceCall", "forward")}
+                        onReviewJobs={() => {
+                          setJobReviewInitialTab("recommended");
+                          goTo("jobReview", "forward");
+                        }}
+                        onViewSavedJobs={() => {
+                          setJobReviewInitialTab("saved");
+                          goTo("jobReview", "forward");
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                  {screen === "jobReview" && (
+                    <motion.div
+                      key="jobReview"
+                      className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-auto"
+                      initial={{ opacity: 0, x: hubEnter.x, y: hubEnter.y }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, x: hubExitX, y: -6 }}
+                      transition={DESKTOP_HUB_CROSSFADE}
+                    >
+                      <DesktopJobReviewView initialTab={jobReviewInitialTab} />
+                    </motion.div>
+                  )}
+                  {screen === "jobSeekerProfile" && (
+                    <motion.div
+                      key="jobSeekerProfile"
+                      className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-auto"
+                      initial={{ opacity: 0, x: hubEnter.x, y: hubEnter.y }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, x: hubExitX, y: -6 }}
+                      transition={DESKTOP_HUB_CROSSFADE}
+                    >
+                      <JobSeekerProfileScreen
+                        layout="desktop"
+                        firstName={firstName || "Alex"}
+                        email={email}
+                        profile={parsedProfile}
+                        onNavigateHome={() => goTo("dashboardPreview", "back")}
+                        onNavigateJobs={() => {
+                          setJobReviewInitialTab("recommended");
+                          goTo("jobReview", "forward");
+                        }}
+                        onNavigateProfile={() => {}}
+                        onEditProfile={() => {
+                          setProfileReturnScreen("jobSeekerProfile");
+                          setProfileEditSection(undefined);
+                          goTo("profileEdit", "forward");
+                        }}
+                        onLogout={handleLogout}
+                        onDeleteAccount={handleLogout}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>,
             )}
           </motion.div>
         )}
@@ -634,18 +699,6 @@ export function DesktopAppRoot({
           </motion.div>
         )}
 
-        {screen === "jobReview" && (
-          <motion.div
-            key="jr-d"
-            initial={enterFrom(direction)}
-            animate={slide.center}
-            exit={exitTo(direction)}
-            transition={SPRING}
-            className="min-h-screen"
-          >
-            {appShell(<DesktopJobReviewView initialTab={jobReviewInitialTab} />)}
-          </motion.div>
-        )}
       </AnimatePresence>
     </div>
   );

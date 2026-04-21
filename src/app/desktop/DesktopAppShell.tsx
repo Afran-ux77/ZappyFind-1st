@@ -5,7 +5,6 @@ import {
   Search,
   User,
   Bell,
-  Sparkles,
 } from "lucide-react";
 import { DT } from "./desktop-tokens";
 
@@ -41,7 +40,7 @@ export function DesktopAppShell({
 
   return (
     <div
-      className="flex min-h-screen w-full"
+      className="flex h-dvh max-h-dvh min-h-0 w-full"
       style={{ background: DT.pageBg, fontFamily: DT.sans, color: DT.text }}
     >
       {!hideSidebar && (
@@ -108,7 +107,7 @@ export function DesktopAppShell({
         </aside>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {!hideHeader && (
           <header
             className="flex h-14 shrink-0 items-center justify-between gap-4 border-b px-6"
@@ -137,22 +136,15 @@ export function DesktopAppShell({
               >
                 <Bell className="h-4 w-4" style={{ color: DT.textMuted }} strokeWidth={1.75} />
               </button>
-              <div
-                className="hidden items-center gap-1.5 rounded-full px-2.5 py-1 sm:flex"
-                style={{ background: DT.accentSoft }}
-              >
-                <Sparkles className="h-3.5 w-3.5" style={{ color: DT.accent }} />
-                <span className="text-[11px] font-medium" style={{ color: DT.accent }}>
-                  AI match
-                </span>
-              </div>
             </div>
           </header>
         )}
 
         {topBanner}
 
-        <main className="min-h-0 flex-1 overflow-auto">{children}</main>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto [&>*]:min-h-0">
+          {children}
+        </main>
       </div>
     </div>
   );

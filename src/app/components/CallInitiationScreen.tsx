@@ -44,17 +44,17 @@ const OUTCOMES = [
   {
     icon: <BarChart3 size={15} color={C.brand} strokeWidth={2} />,
     title: "5× more visibility",
-    desc: "Your profile gets surfaced to recruiters actively hiring",
+    desc: "Your profile gets surfaced to recruiters actively hiring.",
   },
   {
     icon: <Users size={15} color={C.brand} strokeWidth={2} />,
     title: "Direct recruiter intros",
-    desc: "Zappy pitches you to hiring managers, no cold applications",
+    desc: "Zappy pitches you to hiring managers, no cold applications.",
   },
   {
     icon: <Eye size={15} color={C.brand} strokeWidth={2} />,
     title: "Smarter matches",
-    desc: "We learn what makes you unique to refine your job recommendations",
+    desc: "We learn what makes you unique to refine your job recommendations.",
   },
 ];
 
@@ -108,7 +108,14 @@ export function CallInitiationScreen({
     const el = focusButtonRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setFocusDropdownLayout({ top: r.bottom + 6, left: r.left, width: r.width });
+    const width = 280;
+    const margin = 8;
+    let left = r.right - width;
+    if (left < margin) left = margin;
+    if (left + width > window.innerWidth - margin) {
+      left = Math.max(margin, window.innerWidth - width - margin);
+    }
+    setFocusDropdownLayout({ top: r.bottom + 8, left, width });
   }, []);
 
   useLayoutEffect(() => {
@@ -149,15 +156,14 @@ export function CallInitiationScreen({
   return (
     <div
       style={{
-        height: transparentSurface ? "100%" : undefined,
-        minHeight: transparentSurface ? 0 : "100dvh",
-        maxHeight: transparentSurface ? "100%" : undefined,
-        flex: transparentSurface ? 1 : undefined,
+        minHeight: transparentSurface ? undefined : "100dvh",
+        flex: transparentSurface ? "0 1 auto" : undefined,
+        width: "100%",
         fontFamily: "Inter, sans-serif",
         display: "flex",
         flexDirection: "column",
         position: "relative",
-        overflow: "hidden",
+        overflow: transparentSurface ? "visible" : "hidden",
         background: transparentSurface ? "transparent" : C.bg,
       }}
     >
@@ -212,7 +218,8 @@ export function CallInitiationScreen({
       {/* ── Scrollable content ──────────────────────────────────────── */}
       <div
         style={{
-          flex: 1,
+          flex: transparentSurface ? undefined : 1,
+          height: transparentSurface ? "fit-content" : undefined,
           overflowY: "auto",
           overscrollBehavior: "contain",
           position: "relative",
@@ -225,7 +232,7 @@ export function CallInitiationScreen({
         <div
           style={{
             padding: transparentSurface
-              ? "44px 28px 96px"
+              ? "44px 28px 44px"
               : "48px 22px 140px",
           }}
         >
@@ -237,7 +244,7 @@ export function CallInitiationScreen({
             transition={{ duration: 0.55, delay: 0.05, ease: EASE }}
             style={{
               textAlign: "center",
-              marginBottom: transparentSurface ? 40 : 32,
+              marginBottom: transparentSurface ? 28 : 24,
               maxWidth: transparentSurface ? 620 : undefined,
               marginLeft: transparentSurface ? "auto" : undefined,
               marginRight: transparentSurface ? "auto" : 0,
@@ -248,7 +255,7 @@ export function CallInitiationScreen({
               style={{
                 display: "flex",
                 justifyContent: "center",
-                marginBottom: transparentSurface ? 28 : 22,
+                marginBottom: transparentSurface ? 22 : 18,
               }}
             >
               <motion.div
@@ -262,8 +269,8 @@ export function CallInitiationScreen({
                 }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
                 style={{
-                  width: 64,
-                  height: 64,
+                  width: 60,
+                  height: 60,
                   borderRadius: 20,
                   background: "linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(255,245,238,0.8) 100%)",
                   border: "1.5px solid rgba(234,88,12,0.14)",
@@ -272,17 +279,17 @@ export function CallInitiationScreen({
                   justifyContent: "center",
                 }}
               >
-                <Mic size={26} color={C.brand} strokeWidth={1.8} />
+                <Mic size={24} color={C.brand} strokeWidth={1.9} />
               </motion.div>
             </div>
 
             <h1
               style={{
-                fontSize: 25,
+                fontSize: transparentSurface ? 30 : 25,
                 fontWeight: 800,
                 color: C.primary,
                 letterSpacing: "-0.045em",
-                lineHeight: 1.18,
+                lineHeight: 1.12,
                 margin: "0 0 10px",
               }}
             >
@@ -295,320 +302,134 @@ export function CallInitiationScreen({
               style={{
                 fontSize: 14,
                 color: C.textMuted,
-                lineHeight: 1.6,
+                lineHeight: 1.55,
                 letterSpacing: "-0.01em",
-                maxWidth: transparentSurface ? 520 : 310,
+                maxWidth: transparentSurface ? 520 : 320,
                 margin: "0 auto",
               }}
             >
-              A quick call with Zappy helps recruiters see the real you, not just a resume.
+              A quick AI voice call with Zappy helps recruiters see the real you, not just a resume.
             </p>
           </motion.div>
 
-          {/* ── Call focus (primary category; switchable when multiple) ─ */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.18, ease: EASE }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              marginBottom: transparentSurface ? 44 : 28,
-              width: "100%",
-              maxWidth: transparentSurface ? 460 : 340,
-              marginLeft: "auto",
-              marginRight: "auto",
-            }}
-          >
-            {hasMultipleFocusOptions ? (
-              <motion.button
-                ref={focusButtonRef}
-                type="button"
-                onClick={() => {
-                  if (transparentSurface) setFocusDropdownOpen((o) => !o);
-                  else setFocusSheetOpen(true);
-                }}
-                whileTap={{ scale: 0.992 }}
-                transition={{ duration: 0.12, ease: EASE }}
-                aria-haspopup={transparentSurface ? "listbox" : "dialog"}
-                aria-expanded={transparentSurface ? focusDropdownOpen : focusSheetOpen}
-                aria-label={`Change call focus. Currently ${focusedLabel}.`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  width: "100%",
-                  padding: "12px 14px",
-                  minHeight: 48,
-                  borderRadius: 14,
-                  background: C.white,
-                  border: `1px solid ${C.brandBorder}`,
-                  boxShadow: "0 2px 10px rgba(28,25,23,0.05), 0 1px 2px rgba(234,88,12,0.06)",
-                  cursor: "pointer",
-                  fontFamily: "Inter, sans-serif",
-                  WebkitTapHighlightColor: "transparent",
-                  textAlign: "left",
-                }}
-              >
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    minWidth: 0,
-                    flex: 1,
-                  }}
-                >
-                  <Focus size={18} color={C.brand} strokeWidth={2.1} aria-hidden />
-                  <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: C.textMuted,
-                        letterSpacing: "0.07em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Call focus
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: C.primary,
-                        letterSpacing: "-0.02em",
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {focusedLabel}
-                    </span>
-                  </span>
-                </span>
-                <span
-                  style={{
-                    display: "flex",
-                    height: 32,
-                    width: 32,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 9,
-                    background: "rgba(234,88,12,0.08)",
-                    flexShrink: 0,
-                    transform: transparentSurface && focusDropdownOpen ? "rotate(180deg)" : undefined,
-                    transition: "transform 0.2s ease",
-                  }}
-                >
-                  <ChevronDown size={18} color={C.brand} strokeWidth={2.2} aria-hidden />
-                </span>
-              </motion.button>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  padding: "12px 14px",
-                  minHeight: 48,
-                  borderRadius: 14,
-                  background: "rgba(234,88,12,0.04)",
-                  border: `1px solid ${C.border}`,
-                }}
-              >
-                <Focus size={18} color={C.brand} strokeWidth={2} strokeOpacity={0.9} aria-hidden />
-                <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: C.textMuted,
-                      letterSpacing: "0.07em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Call focus
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: C.primary,
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {focusedLabel}
-                  </span>
-                </span>
-              </div>
-            )}
-          </motion.div>
-
-          {/* ── What happens after (bento-style, not a heavy list card) ─ */}
+          {/* ── Why take it (minimal 3-up) ─ */}
           <AnimatePresence>
             {ready && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.24, ease: EASE }}
+                transition={{ duration: 0.45, delay: 0.18, ease: EASE }}
                 style={{
-                  marginBottom: transparentSurface ? 28 : 16,
+                  marginBottom: transparentSurface ? 32 : 20,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: transparentSurface ? 12 : 0,
-                    margin: transparentSurface ? "4px 0 18px" : "0 0 10px",
-                  }}
-                >
-                  {transparentSurface && (
-                    <span
-                      aria-hidden
-                      style={{
-                        height: 1,
-                        width: 28,
-                        background:
-                          "linear-gradient(90deg, transparent 0%, rgba(28,25,23,0.18) 100%)",
-                      }}
-                    />
-                  )}
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: C.textSec,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      margin: 0,
-                      textAlign: "center",
-                    }}
-                  >
-                    After your call
-                  </p>
-                  {transparentSurface && (
-                    <span
-                      aria-hidden
-                      style={{
-                        height: 1,
-                        width: 28,
-                        background:
-                          "linear-gradient(90deg, rgba(28,25,23,0.18) 0%, transparent 100%)",
-                      }}
-                    />
-                  )}
-                </div>
-
                 {transparentSurface ? (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                      gap: 16,
-                    }}
-                  >
+                  <div style={{ maxWidth: 720, margin: "0 auto" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        margin: "0 0 14px",
+                        width: "100%",
+                      }}
+                    >
+                      <span
+                        aria-hidden
+                        style={{
+                          flex: 1,
+                          minWidth: 28,
+                          height: 1,
+                          borderRadius: 1,
+                          background:
+                            "linear-gradient(90deg, transparent 0%, rgba(168,162,158,0.08) 35%, rgba(168,162,158,0.42) 100%)",
+                        }}
+                      />
+                      <p
+                        style={{
+                          margin: 0,
+                          flexShrink: 0,
+                          textAlign: "center",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: C.textSec,
+                          lineHeight: 1.4,
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Why take this
+                      </p>
+                      <span
+                        aria-hidden
+                        style={{
+                          flex: 1,
+                          minWidth: 28,
+                          height: 1,
+                          borderRadius: 1,
+                          background:
+                            "linear-gradient(90deg, rgba(168,162,158,0.42) 0%, rgba(168,162,158,0.08) 65%, transparent 100%)",
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                        gap: 28,
+                      }}
+                    >
                     {OUTCOMES.map((o, i) => (
                       <motion.div
                         key={o.title}
-                        initial={{ opacity: 0, y: 14 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 + i * 0.09, ease: EASE }}
-                        whileHover={{ y: -3 }}
+                        transition={{ duration: 0.45, delay: 0.26 + i * 0.07, ease: EASE }}
                         style={{
-                          position: "relative",
-                          borderRadius: 18,
-                          padding: "22px 20px 20px",
-                          background:
-                            "linear-gradient(155deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.44) 100%)",
-                          border: "1px solid rgba(255,255,255,0.7)",
-                          boxShadow:
-                            "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(28,25,23,0.04), 0 12px 28px rgba(28,25,23,0.06)",
-                          overflow: "hidden",
-                          transition: "box-shadow 0.25s ease",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          padding: "4px 2px",
                         }}
                       >
-                        {/* ambient corner glow */}
-                        <div
-                          aria-hidden
-                          style={{
-                            position: "absolute",
-                            top: -32,
-                            right: -32,
-                            width: 110,
-                            height: 110,
-                            borderRadius: "50%",
-                            background:
-                              "radial-gradient(circle, rgba(234,88,12,0.14) 0%, rgba(234,88,12,0.04) 55%, transparent 75%)",
-                            pointerEvents: "none",
-                            filter: "blur(2px)",
-                          }}
-                        />
-
-                        {/* numbered accent */}
                         <span
                           aria-hidden
                           style={{
-                            position: "absolute",
-                            top: 14,
-                            right: 16,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            letterSpacing: "0.14em",
-                            color: C.textSec,
-                            fontFeatureSettings: '"tnum"',
-                          }}
-                        >
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-
-                        {/* icon chip */}
-                        <div
-                          style={{
-                            position: "relative",
-                            width: 42,
-                            height: 42,
-                            borderRadius: 13,
-                            background:
-                              "linear-gradient(145deg, rgba(234,88,12,0.16) 0%, rgba(234,88,12,0.04) 100%)",
-                            border: "1px solid rgba(234,88,12,0.2)",
-                            display: "flex",
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: "rgba(234,88,12,0.08)",
+                            display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            marginBottom: 16,
-                            boxShadow:
-                              "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 10px rgba(234,88,12,0.1)",
                           }}
                         >
                           {isValidElement(o.icon)
                             ? cloneElement(
                                 o.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>,
-                                { size: 20, strokeWidth: 2 },
+                                { size: 17, strokeWidth: 2 },
                               )
                             : o.icon}
-                        </div>
+                        </span>
 
                         <p
                           style={{
-                            fontSize: 14,
+                            fontSize: 13.5,
                             fontWeight: 700,
                             color: C.primary,
                             margin: 0,
-                            letterSpacing: "-0.025em",
-                            lineHeight: 1.28,
+                            letterSpacing: "-0.02em",
+                            lineHeight: 1.3,
                           }}
                         >
                           {o.title}
                         </p>
                         <p
                           style={{
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             color: C.textMuted,
-                            margin: "8px 0 0",
+                            margin: 0,
                             lineHeight: 1.5,
                             letterSpacing: "-0.01em",
                           }}
@@ -617,13 +438,63 @@ export function CallInitiationScreen({
                         </p>
                       </motion.div>
                     ))}
+                    </div>
                   </div>
                 ) : (
-                  <div
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        margin: "0 auto 12px",
+                        maxWidth: 340,
+                        width: "100%",
+                      }}
+                    >
+                      <span
+                        aria-hidden
+                        style={{
+                          flex: 1,
+                          minWidth: 20,
+                          height: 1,
+                          borderRadius: 1,
+                          background:
+                            "linear-gradient(90deg, transparent 0%, rgba(168,162,158,0.08) 35%, rgba(168,162,158,0.42) 100%)",
+                        }}
+                      />
+                      <p
+                        style={{
+                          margin: 0,
+                          flexShrink: 0,
+                          textAlign: "center",
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          color: C.textSec,
+                          lineHeight: 1.4,
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Why take this
+                      </p>
+                      <span
+                        aria-hidden
+                        style={{
+                          flex: 1,
+                          minWidth: 20,
+                          height: 1,
+                          borderRadius: 1,
+                          background:
+                            "linear-gradient(90deg, rgba(168,162,158,0.42) 0%, rgba(168,162,158,0.08) 65%, transparent 100%)",
+                        }}
+                      />
+                    </div>
+                    <div
                     style={{
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
-                      gap: 8,
+                      gap: 6,
                       gridTemplateRows: "auto auto",
                     }}
                   >
@@ -634,14 +505,14 @@ export function CallInitiationScreen({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.3 + i * 0.06, ease: EASE }}
                         style={{
-                          borderRadius: 14,
-                          padding: "12px 12px 11px",
-                          background: "rgba(255,255,255,0.7)",
-                          border: `1px solid ${C.border}`,
+                          borderRadius: 12,
+                          padding: "10px 10px 9px",
+                          background: "rgba(255,255,255,0.38)",
+                          border: "1px solid rgba(28,25,23,0.045)",
                           minHeight: 0,
                         }}
                       >
-                        <div style={{ marginBottom: 8, opacity: 0.9 }}>{o.icon}</div>
+                        <div style={{ marginBottom: 7, opacity: 0.88 }}>{o.icon}</div>
                         <p
                           style={{
                             fontSize: 12.5,
@@ -674,18 +545,17 @@ export function CallInitiationScreen({
                       transition={{ duration: 0.3, delay: 0.42, ease: EASE }}
                       style={{
                         gridColumn: "1 / -1",
-                        borderRadius: 14,
-                        padding: "12px 14px",
-                        background:
-                          "linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(234,88,12,0.02) 100%)",
-                        border: "1px solid rgba(234,88,12,0.12)",
+                        borderRadius: 12,
+                        padding: "10px 12px",
+                        background: "rgba(255,255,255,0.36)",
+                        border: "1px solid rgba(28,25,23,0.045)",
                         minHeight: 0,
                         display: "flex",
                         alignItems: "flex-start",
-                        gap: 10,
+                        gap: 8,
                       }}
                     >
-                      <div style={{ opacity: 0.9, flexShrink: 0, lineHeight: 0 }}>{OUTCOMES[2].icon}</div>
+                      <div style={{ opacity: 0.88, flexShrink: 0, lineHeight: 0 }}>{OUTCOMES[2].icon}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p
                           style={{
@@ -713,10 +583,195 @@ export function CallInitiationScreen({
                       </div>
                     </motion.div>
                   </div>
+                  </div>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ── Call focus (domain) ─ Shown AFTER reasons; switchable when multiple. */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.38, ease: EASE }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              marginTop: transparentSurface ? 20 : undefined,
+              marginBottom: 12,
+              width: "100%",
+              maxWidth: transparentSurface ? 520 : 360,
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                borderRadius: 18,
+                padding: transparentSurface ? "14px 16px" : "13px 14px",
+                background:
+                  "linear-gradient(150deg, rgba(255,255,255,0.88) 0%, rgba(255,247,241,0.72) 100%)",
+                border: `1px solid ${C.brandBorder}`,
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(28,25,23,0.04), 0 10px 28px rgba(234,88,12,0.06)",
+                display: "grid",
+                columnGap: 12,
+                rowGap: transparentSurface ? 10 : 8,
+                alignItems: "center",
+                gridTemplateColumns: "auto minmax(0, 1fr)",
+                gridTemplateRows: "auto auto",
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  gridColumn: 1,
+                  gridRow: 1,
+                  alignSelf: "start",
+                  marginTop: 2,
+                  flexShrink: 0,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background:
+                    "linear-gradient(145deg, rgba(234,88,12,0.16) 0%, rgba(234,88,12,0.04) 100%)",
+                  border: "1px solid rgba(234,88,12,0.22)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+                }}
+              >
+                <Focus size={18} color={C.brand} strokeWidth={2.1} />
+              </span>
+
+              <div
+                style={{
+                  gridColumn: 2,
+                  gridRow: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  minWidth: 0,
+                  justifySelf: "stretch",
+                  alignSelf: "start",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: C.textSec,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  This call will focus on
+                </span>
+                <span
+                  style={{
+                    fontSize: transparentSurface ? 15.5 : 14.5,
+                    fontWeight: 700,
+                    color: C.primary,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.25,
+                    marginTop: 2,
+                  }}
+                  title={focusedLabel}
+                >
+                  {focusedLabel}
+                </span>
+              </div>
+
+              {hasMultipleFocusOptions ? (
+                <motion.button
+                  ref={focusButtonRef}
+                  type="button"
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    if (transparentSurface) setFocusDropdownOpen((o) => !o);
+                    else setFocusSheetOpen(true);
+                  }}
+                  aria-haspopup={transparentSurface ? "listbox" : "dialog"}
+                  aria-expanded={transparentSurface ? focusDropdownOpen : focusSheetOpen}
+                  aria-label={`Change call focus. Currently ${focusedLabel}.`}
+                  style={{
+                    gridColumn: "1 / -1",
+                    gridRow: 2,
+                    width: "100%",
+                    minHeight: 40,
+                    boxSizing: "border-box",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                    margin: 0,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      height: 34,
+                      width: "100%",
+                      maxWidth: "100%",
+                      padding: "0 14px",
+                      borderRadius: 999,
+                      background: C.white,
+                      border: `1px solid ${C.brandBorder}`,
+                      color: C.brand,
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      letterSpacing: "-0.01em",
+                      boxShadow: "0 1px 2px rgba(234,88,12,0.06)",
+                    }}
+                  >
+                    Change
+                    <ChevronDown
+                      size={14}
+                      color={C.brand}
+                      strokeWidth={2.2}
+                      aria-hidden
+                      style={{
+                        transform:
+                          (transparentSurface && focusDropdownOpen) ||
+                          (!transparentSurface && focusSheetOpen)
+                            ? "rotate(180deg)"
+                            : undefined,
+                        transition: "transform 0.2s ease",
+                      }}
+                    />
+                  </span>
+                </motion.button>
+              ) : (
+                <span
+                  style={{
+                    gridColumn: "1 / -1",
+                    gridRow: 2,
+                    justifySelf: "end",
+                    width: "100%",
+                    textAlign: "right",
+                    flexShrink: 0,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: C.textSec,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  From your preferences
+                </span>
+              )}
+            </div>
+          </motion.div>
 
         </div>
       </div>
@@ -727,10 +782,14 @@ export function CallInitiationScreen({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5, ease: EASE }}
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
+          ...(transparentSurface
+            ? {}
+            : {
+                position: "absolute" as const,
+                bottom: 0,
+                left: 0,
+                right: 0,
+              }),
           padding: transparentSurface
             ? "12px 20px calc(12px + env(safe-area-inset-bottom))"
             : "14px 20px calc(14px + env(safe-area-inset-bottom))",
@@ -743,6 +802,8 @@ export function CallInitiationScreen({
           justifyContent: transparentSurface ? "flex-end" : "stretch",
           alignItems: "center",
           gap: transparentSurface ? 6 : 10,
+          flexShrink: 0,
+          width: transparentSurface ? "100%" : undefined,
         }}
       >
         <motion.button
@@ -996,9 +1057,9 @@ export function CallInitiationScreen({
                 }}
               >
                 {firstName
-                  ? `${firstName.charAt(0).toUpperCase() + firstName.slice(1)}, pick where Zappy should dig in—`
-                  : "Pick where Zappy should dig in—"}
-                questions follow{" "}
+                  ? `${firstName.charAt(0).toUpperCase() + firstName.slice(1)}, pick where Zappy should dig in. `
+                  : "Pick where Zappy should dig in. "}
+                Questions follow{" "}
                 <span style={{ fontWeight: 600, color: C.primary }}>this focus</span>.
               </p>
               <div

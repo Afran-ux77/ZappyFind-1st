@@ -3,8 +3,10 @@ import type { ComponentType } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
+  ArrowRight,
   Bookmark,
   Briefcase,
+  CheckCircle2,
   ChevronDown,
   Clock,
   ExternalLink,
@@ -20,7 +22,115 @@ import {
   REQUIRED_SKILLS_BY_JOB,
   inferDepartmentFromTitle,
 } from "../components/JobReviewScreen";
-import { DT } from "./desktop-tokens";
+import { DT, desktopHubStagger } from "./desktop-tokens";
+
+/** Minimal empty-state art (inline SVG, no external assets). */
+function IllustrationSavedCompact({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <circle cx="36" cy="36" r="28" stroke="rgba(28,25,23,0.06)" strokeWidth="1" />
+      <circle cx="36" cy="36" r="20" stroke="rgba(234,88,12,0.15)" strokeWidth="1.25" strokeDasharray="3 5" />
+      <rect x="22" y="26" width="28" height="22" rx="6" fill="rgba(255,255,255,0.9)" stroke="rgba(28,25,23,0.1)" />
+      <path
+        d="M30 32h12M30 38h8"
+        stroke="rgba(28,25,23,0.12)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M44 26v8l4-2.5 4 2.5v-8a2 2 0 00-2-2h-4a2 2 0 00-2 2z"
+        fill="rgba(234,88,12,0.22)"
+        stroke="#EA580C"
+        strokeWidth="1.1"
+        strokeLinejoin="round"
+      />
+      <circle cx="28" cy="52" r="3" fill="rgba(234,88,12,0.45)" />
+      <circle cx="36" cy="54" r="2.5" fill="rgba(28,25,23,0.1)" />
+      <circle cx="44" cy="52" r="3" fill="rgba(28,25,23,0.1)" />
+    </svg>
+  );
+}
+
+function IllustrationAppliedCompact({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect x="14" y="20" width="44" height="32" rx="6" fill="rgba(255,255,255,0.95)" stroke="rgba(28,25,23,0.1)" />
+      <path d="M14 28h44" stroke="rgba(28,25,23,0.07)" strokeWidth="1" />
+      <path
+        d="M22 36h20M22 42h14"
+        stroke="rgba(28,25,23,0.1)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="50" cy="40" r="14" fill="#fff" stroke="rgba(234,88,12,0.35)" strokeWidth="1.5" />
+      <path
+        d="M45 40l3 3 6-7"
+        stroke="#EA580C"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M26 52l6 4 14-9"
+        stroke="rgba(234,88,12,0.35)"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeDasharray="2 3"
+      />
+    </svg>
+  );
+}
+
+function IllustrationSavedHero({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect x="8" y="24" width="184" height="96" rx="14" fill="rgba(255,255,255,0.7)" stroke="rgba(28,25,23,0.08)" />
+      <rect x="24" y="42" width="72" height="56" rx="10" fill="#FAF8F5" stroke="rgba(28,25,23,0.06)" />
+      <rect x="104" y="42" width="72" height="56" rx="10" fill="#FFF" stroke="rgba(234,88,12,0.2)" />
+      <rect x="116" y="54" width="48" height="4" rx="2" fill="rgba(28,25,23,0.08)" />
+      <rect x="116" y="64" width="36" height="4" rx="2" fill="rgba(28,25,23,0.05)" />
+      <path
+        d="M152 38v12l8-6 8 6V38a2.5 2.5 0 00-2.5-2.5h-11A2.5 2.5 0 00152 38z"
+        fill="rgba(234,88,12,0.18)"
+        stroke="#EA580C"
+        strokeWidth="1.2"
+      />
+      <rect x="36" y="54" width="48" height="4" rx="2" fill="rgba(28,25,23,0.07)" />
+      <rect x="36" y="64" width="32" height="4" rx="2" fill="rgba(28,25,23,0.05)" />
+      <circle cx="44" cy="88" r="3" fill="rgba(234,88,12,0.35)" />
+      <circle cx="60" cy="88" r="3" fill="rgba(28,25,23,0.08)" />
+      <circle cx="76" cy="88" r="3" fill="rgba(28,25,23,0.08)" />
+    </svg>
+  );
+}
+
+function IllustrationAppliedHero({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect x="20" y="36" width="160" height="72" rx="12" fill="rgba(255,255,255,0.75)" stroke="rgba(28,25,23,0.07)" />
+      <path d="M36 58h88" stroke="rgba(28,25,23,0.08)" strokeWidth="1.25" strokeLinecap="round" />
+      <path d="M36 70h64" stroke="rgba(28,25,23,0.06)" strokeWidth="1.25" strokeLinecap="round" />
+      <path d="M36 82h72" stroke="rgba(28,25,23,0.05)" strokeWidth="1.25" strokeLinecap="round" />
+      <circle cx="46" cy="112" r="4" fill="rgba(234,88,12,0.2)" stroke="#EA580C" strokeWidth="1" />
+      <circle cx="100" cy="112" r="4" fill="rgba(28,25,23,0.06)" />
+      <circle cx="154" cy="112" r="4" fill="rgba(28,25,23,0.06)" />
+      <path
+        d="M118 52l36-20 12 40-28-16-20 8 8-12z"
+        fill="rgba(234,88,12,0.1)"
+        stroke="#EA580C"
+        strokeWidth="1.35"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M52 28c28-8 56 4 72 28"
+        stroke="rgba(234,88,12,0.25)"
+        strokeWidth="1.5"
+        strokeDasharray="4 6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 /** Sidebar tabs for desktop job workspace (also used by App / DesktopAppRoot for deep links). */
 export type JobWorkspaceTab = "recommended" | "applied" | "saved";
@@ -80,14 +190,21 @@ export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobR
   };
 
   return (
-    <div className="flex min-h-0 flex-1" style={{ fontFamily: DT.sans }}>
+    <motion.div
+      variants={desktopHubStagger.container}
+      initial="hidden"
+      animate="show"
+      className="flex min-h-0 w-full min-w-0 flex-1"
+      style={{ fontFamily: DT.sans }}
+    >
       {/* List pane */}
-      <div
-        className="flex w-[min(380px,38vw)] shrink-0 flex-col border-r"
+      <motion.div
+        variants={desktopHubStagger.item}
+        className="flex min-h-0 w-[min(380px,38vw)] shrink-0 flex-col border-r"
         style={{ borderColor: DT.border, background: DT.surfaceMuted }}
       >
         <div
-          className="border-b px-4 py-3.5"
+          className="border-b px-4 py-3.5 text-[12px]"
           style={{
             borderColor: DT.border,
             background: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,245,243,0.92) 100%)",
@@ -101,15 +218,15 @@ export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobR
             >
               <Briefcase className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
-            <span className="text-[13.5px] font-semibold tracking-[-0.01em]" style={{ color: DT.text }}>
+            <span className="font-semibold tracking-[-0.01em]" style={{ color: DT.text }}>
               Job workspace
             </span>
           </div>
           <div
-            className="grid grid-cols-3 gap-1.5 rounded-lg border p-1"
+            className="grid grid-cols-3 gap-1 rounded-lg p-0.5"
             style={{
-              background: "rgba(255,255,255,0.75)",
-              borderColor: "rgba(28,25,23,0.08)",
+              background: "linear-gradient(180deg, rgba(246,244,241,0.98) 0%, rgba(235,231,226,0.96) 100%)",
+              border: "1px solid rgba(110,100,92,0.08)",
             }}
           >
             {TAB_CONFIG.map(({ id, label, icon: TabIcon }) => {
@@ -121,42 +238,56 @@ export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobR
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className="flex min-w-0 items-center justify-center gap-1 rounded-md px-2 py-1.5 transition-colors"
+                  className="relative flex items-center justify-center rounded-md px-1.5 py-1.5 transition-colors"
                   style={{
-                    background: active ? DT.surface : "transparent",
                     color: active ? DT.text : DT.textMuted,
-                    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
                   }}
                 >
-                  <TabIcon
-                    className="h-2.5 w-2.5 shrink-0"
-                    strokeWidth={active ? 2.25 : 2}
-                    style={{ color: active ? DT.accent : DT.textMuted }}
-                  />
-                  <span className="truncate text-[9.5px] font-semibold leading-tight">{label}</span>
-                  {count != null && count > 0 ? (
-                    <span
-                      className="tabular-nums text-[9px] font-bold"
-                      style={{ color: DT.textSubtle }}
-                    >
-                      {count}
-                    </span>
+                  {active ? (
+                    <motion.div
+                      layoutId="desktopJobWorkspaceTabPill"
+                      className="pointer-events-none absolute inset-0 rounded-md"
+                      style={{
+                        background: DT.surface,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                      }}
+                      transition={{ type: "spring", stiffness: 400, damping: 34, mass: 0.85 }}
+                    />
                   ) : null}
+                  <span className="relative z-10 flex min-w-0 items-center justify-center gap-2">
+                    <TabIcon
+                      className="h-2.5 w-2.5 shrink-0"
+                      strokeWidth={active ? 2.25 : 2}
+                      style={{ color: active ? DT.accent : DT.textMuted }}
+                    />
+                    <span className="truncate text-[11px] font-semibold leading-tight">{label}</span>
+                    {count != null && count > 0 ? (
+                      <span
+                        className="tabular-nums text-[10px] font-bold"
+                        style={{ color: DT.textSubtle }}
+                      >
+                        {count}
+                      </span>
+                    ) : null}
+                  </span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {listJobs.length === 0 ? (
-            <div className="p-6 text-center text-[13px]" style={{ color: DT.textMuted }}>
-              {tab === "saved"
-                ? "No saved jobs yet. Tap the bookmark on a role in Recommended to save it."
-                : tab === "applied"
-                  ? "No applied jobs yet. Use Apply or Mark interested on a role to track it here."
-                  : "No roles in this list."}
-            </div>
+            tab === "saved" || tab === "applied" ? (
+              <JobWorkspaceListEmpty tab={tab} onBrowseRecommended={() => setTab("recommended")} />
+            ) : (
+              <div
+                className="flex flex-1 flex-col items-center justify-center p-6 text-center text-[13px]"
+                style={{ color: DT.textMuted }}
+              >
+                No roles in this list.
+              </div>
+            )
           ) : (
             listJobs.map((job) => (
               <JobRow
@@ -170,10 +301,14 @@ export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobR
             ))
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Detail pane */}
-      <div className="min-w-0 flex-1 overflow-y-auto" style={{ background: DT.pageBg }}>
+      <motion.div
+        variants={desktopHubStagger.item}
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto"
+        style={{ background: DT.pageBg }}
+      >
         <AnimatePresence mode="wait">
           {selected ? (
             <JobDetailPane
@@ -184,6 +319,8 @@ export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobR
               onToggleSave={() => toggleSave(selected.id)}
               onMarkApplied={() => markApplied(selected.id)}
             />
+          ) : listJobs.length === 0 && (tab === "saved" || tab === "applied") ? (
+            <JobWorkspaceDetailEmpty tab={tab} onBrowseRecommended={() => setTab("recommended")} />
           ) : (
             <div
               className="flex min-h-[280px] flex-1 items-center justify-center px-8 py-12 text-center text-[14px]"
@@ -193,8 +330,124 @@ export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobR
             </div>
           )}
         </AnimatePresence>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function JobWorkspaceListEmpty({
+  tab,
+  onBrowseRecommended,
+}: {
+  tab: "saved" | "applied";
+  onBrowseRecommended: () => void;
+}) {
+  const isSaved = tab === "saved";
+  const title = isSaved ? "You have not saved any jobs yet" : "You have not applied to any jobs yet";
+  const description = isSaved
+    ? "Pin roles from Recommended with the bookmark. They stack here."
+    : "Fire off an apply or mark interest from a card. This list catches the trail.";
+
+  return (
+    <motion.div
+      className="flex flex-1 flex-col items-center justify-center px-5 py-10"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div
+        className="mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-2xl"
+        style={{
+          background: "radial-gradient(circle at 35% 25%, rgba(234,88,12,0.08) 0%, transparent 45%), linear-gradient(165deg, rgba(255,255,255,0.99) 0%, rgba(250,246,241,0.92) 100%)",
+          border: `1px solid ${DT.border}`,
+          boxShadow: "0 8px 24px rgba(28,25,23,0.06)",
+        }}
+      >
+        {isSaved ? (
+          <IllustrationSavedCompact className="h-[56px] w-[56px]" />
+        ) : (
+          <IllustrationAppliedCompact className="h-[56px] w-[56px]" />
+        )}
       </div>
-    </div>
+      <h3
+        className="mb-1.5 max-w-[min(300px,100%)] text-center text-[13px] font-semibold tracking-[-0.02em]"
+        style={{ color: DT.text }}
+      >
+        {title}
+      </h3>
+      <p className="mb-5 max-w-[min(300px,100%)] text-center text-[12px] leading-relaxed" style={{ color: DT.textMuted }}>
+        {description}
+      </p>
+      <button
+        type="button"
+        onClick={onBrowseRecommended}
+        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-[12px] font-semibold transition-opacity hover:opacity-90"
+        style={{
+          background: DT.accentGradient,
+          color: "#fff",
+          boxShadow: "0 1px 2px rgba(234,88,12,0.25), 0 4px 12px rgba(234,88,12,0.2)",
+        }}
+      >
+        <Sparkles className="h-3.5 w-3.5 shrink-0 opacity-95" strokeWidth={2.25} />
+        Browse Recommended
+        <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2.25} />
+      </button>
+    </motion.div>
+  );
+}
+
+function JobWorkspaceDetailEmpty({
+  tab,
+  onBrowseRecommended,
+}: {
+  tab: "saved" | "applied";
+  onBrowseRecommended: () => void;
+}) {
+  const isSaved = tab === "saved";
+  const title = isSaved ? "Curate before you commit" : "Turn intent into a paper trail";
+  const description = isSaved
+    ? "Think of this as your dressing room: line up offers, contrast the fine print, and cut what does not fit before you say yes."
+    : "When outreach picks up, you will want dates, threads, and next steps in one glance. This canvas is ready for that story.";
+
+  return (
+    <motion.div
+      className="flex w-full flex-1 flex-col items-center justify-center px-10 py-16 text-center"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        background: DT.pageBg,
+        minHeight: "max(100%, calc(100dvh - 3.5rem))",
+      }}
+    >
+      <div className="mx-auto mb-8 w-full max-w-[min(320px,90vw)]">
+        {isSaved ? (
+          <IllustrationSavedHero className="h-auto w-full" />
+        ) : (
+          <IllustrationAppliedHero className="h-auto w-full" />
+        )}
+      </div>
+      <h2
+        className="mx-auto mb-3 max-w-md text-center text-[17px] font-semibold leading-snug tracking-[-0.02em]"
+        style={{ color: DT.text }}
+      >
+        {title}
+      </h2>
+      <p
+        className="mx-auto mb-6 max-w-[420px] text-center text-[14px] leading-relaxed"
+        style={{ color: DT.textMuted }}
+      >
+        {description}
+      </p>
+      <button
+        type="button"
+        onClick={onBrowseRecommended}
+        className="text-[13px] font-medium underline underline-offset-4 transition-opacity hover:opacity-80"
+        style={{ color: DT.textSubtle }}
+      >
+        Open Recommended
+      </button>
+    </motion.div>
   );
 }
 
@@ -251,13 +504,18 @@ function JobRow({
           <div className="mt-0.5 truncate text-[11.5px]" style={{ color: DT.textMuted }}>
             {job.company}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[10.5px]" style={{ color: DT.textSubtle }}>
-            <span
-              className="truncate rounded-full px-1.5 py-[1px]"
-              style={{ background: "rgba(28,25,23,0.05)", maxWidth: "100%" }}
-              title={job.salary}
-            >
-              {job.salary.replace(/^est\.\s*/i, "")}
+          <div
+            className="mt-1 flex min-w-0 items-center gap-1 text-[10.5px] leading-snug"
+            style={{ color: DT.textSubtle }}
+            title={`${job.location} · ${job.locationType} · ${job.salary}`}
+          >
+            <MapPin className="h-2.5 w-2.5 shrink-0 opacity-70" strokeWidth={2} aria-hidden />
+            <span className="min-w-0 truncate">
+              {job.location}
+              <span className="opacity-50"> · </span>
+              {job.locationType}
+              <span className="opacity-50"> · </span>
+              <span className="tabular-nums">{job.salary}</span>
             </span>
           </div>
         </div>
@@ -299,6 +557,7 @@ function JobDetailPane({
     REQUIRED_SKILLS_BY_JOB[job.id] ?? ["Product Design", "User Research", "Visual Design", "Prototyping"];
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [applyDelight, setApplyDelight] = useState(false);
   const visibleSkills = showAllSkills ? requiredSkills : requiredSkills.slice(0, 6);
   const hiddenSkillsCount = Math.max(requiredSkills.length - visibleSkills.length, 0);
   const department = inferDepartmentFromTitle(job.title);
@@ -311,7 +570,20 @@ function JobDetailPane({
   useEffect(() => {
     setShowAllSkills(false);
     setDescriptionOpen(false);
+    setApplyDelight(false);
   }, [job.id]);
+
+  useEffect(() => {
+    if (!applyDelight) return;
+    const t = window.setTimeout(() => setApplyDelight(false), 4800);
+    return () => window.clearTimeout(t);
+  }, [applyDelight]);
+
+  const triggerApplyTracked = () => {
+    if (isApplied) return;
+    onMarkApplied();
+    setApplyDelight(true);
+  };
 
   const descriptionPreview = useMemo(() => {
     const firstBreak = job.jobDescription.indexOf("\n\n");
@@ -422,8 +694,8 @@ function JobDetailPane({
                 href={job.externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={onMarkApplied}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-semibold text-white"
+                onClick={triggerApplyTracked}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-95"
                 style={{ background: DT.accentGradient }}
               >
                 Apply
@@ -432,16 +704,69 @@ function JobDetailPane({
             ) : (
               <button
                 type="button"
-                onClick={onMarkApplied}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-semibold text-white"
+                disabled={isApplied}
+                onClick={triggerApplyTracked}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] font-semibold text-white transition-opacity enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 style={{ background: DT.accentGradient }}
               >
-                Quick apply
+                {isApplied ? "Applied" : "Quick apply"}
                 <Send className="h-4 w-4" strokeWidth={1.75} />
               </button>
             )}
           </div>
         </div>
+
+        <AnimatePresence>
+          {applyDelight ? (
+            <motion.div
+              key="apply-delight"
+              role="status"
+              aria-live="polite"
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.99 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.85 }}
+              className="relative mx-6 mb-4 flex items-start gap-3 overflow-hidden rounded-xl border px-4 py-3.5"
+              style={{
+                borderColor: "rgba(16,185,129,0.28)",
+                background: "linear-gradient(125deg, rgba(16,185,129,0.1) 0%, rgba(255,255,255,0.98) 55%, rgba(255,245,237,0.85) 100%)",
+                boxShadow: "0 10px 36px rgba(16,185,129,0.14), 0 1px 0 rgba(255,255,255,0.8) inset",
+              }}
+            >
+              <motion.span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                style={{ background: "rgba(16,185,129,0.15)", color: "#059669" }}
+                initial={{ scale: 0.6, rotate: -12 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22, delay: 0.05 }}
+              >
+                <CheckCircle2 className="h-5 w-5" strokeWidth={2.25} />
+              </motion.span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <p className="text-[13px] font-semibold tracking-[-0.02em]" style={{ color: DT.text }}>
+                  You are in
+                </p>
+                <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: DT.textMuted }}>
+                  We added this role to Applied. Keep the momentum when you are ready for next steps.
+                </p>
+              </div>
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -right-4 -top-6 h-16 w-16 rounded-full opacity-40 blur-2xl"
+                style={{ background: "rgba(234,88,12,0.35)" }}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 0.4, scale: 1 }}
+                transition={{ duration: 0.45 }}
+              />
+              <Sparkles
+                className="absolute right-3 top-3 h-4 w-4 shrink-0 opacity-50"
+                style={{ color: DT.accent }}
+                strokeWidth={2}
+                aria-hidden
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         {/* Meta strip */}
         <div
@@ -459,7 +784,7 @@ function JobDetailPane({
           />
           <MetaTile icon={Clock} label="Experience" value={experienceRange} />
           <MetaTile icon={Briefcase} label="Department" value={department} />
-          <MetaTile icon={IndianRupee} label="Compensation" value={compensationRange} highlight />
+          <MetaTile icon={IndianRupee} label="Compensation" value={compensationRange} />
         </div>
       </div>
 
@@ -666,13 +991,11 @@ function MetaTile({
   label,
   value,
   hint,
-  highlight,
 }: {
   icon: ComponentType<{ className?: string; style?: object; strokeWidth?: number }>;
   label: string;
   value: string;
   hint?: string;
-  highlight?: boolean;
 }) {
   return (
     <div
@@ -682,8 +1005,8 @@ function MetaTile({
       <span
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
         style={{
-          background: highlight ? "rgba(234,88,12,0.1)" : "rgba(28,25,23,0.05)",
-          color: highlight ? DT.accent : DT.textMuted,
+          background: "rgba(28,25,23,0.05)",
+          color: DT.textMuted,
         }}
       >
         <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
@@ -697,7 +1020,7 @@ function MetaTile({
         </div>
         <div
           className="text-[13px] font-semibold leading-snug"
-          style={{ color: highlight ? DT.text : DT.text }}
+          style={{ color: DT.text }}
           title={hint ? `${value} · ${hint}` : value}
         >
           {value}

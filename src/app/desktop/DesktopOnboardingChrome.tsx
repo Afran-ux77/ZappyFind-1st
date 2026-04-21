@@ -37,6 +37,11 @@ type DesktopOnboardingChromeProps = {
   contentMinHeightClass?: string;
   /** Bottom padding on the glass card for steps 1–7 (default pb-6). */
   cardFooterPaddingClass?: string;
+  /**
+   * When false (e.g. voice call step), inner column skips flex-1 so height follows
+   * content instead of stretching inside the glass card.
+   */
+  scrollColumnGrow?: boolean;
 };
 
 export function DesktopOnboardingChrome({
@@ -49,6 +54,7 @@ export function DesktopOnboardingChrome({
   cardHeightClass = "min-h-[806px] h-fit",
   contentMinHeightClass = "",
   cardFooterPaddingClass = "pb-6",
+  scrollColumnGrow = true,
 }: DesktopOnboardingChromeProps) {
   /** Steps 1–7: 880px max-width card, min height with content-driven height, 44px horizontal/top padding and 24px bottom; intro (0) is separate. */
   const isNarrowChrome = activeStep >= 1 && activeStep <= 7;
@@ -124,13 +130,16 @@ export function DesktopOnboardingChrome({
               "0 34px 80px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.76), inset 0 -1px 0 rgba(255,255,255,0.22)",
             backdropFilter: "blur(16px) saturate(140%)",
             WebkitBackdropFilter: "blur(16px) saturate(140%)",
+            ...(activeStep !== 0 ? { height: "fit-content" as const } : {}),
           }}
         >
           <div
             className={
               activeStep === 0
                 ? "min-h-0 h-fit"
-                : `flex min-h-0 flex-1 flex-col overflow-y-auto ${contentMinHeightClass}`.trim()
+                : scrollColumnGrow
+                  ? `flex min-h-0 flex-1 flex-col overflow-y-auto ${contentMinHeightClass}`.trim()
+                  : `flex min-h-0 h-fit flex-col overflow-y-auto ${contentMinHeightClass}`.trim()
             }
           >
             {children}

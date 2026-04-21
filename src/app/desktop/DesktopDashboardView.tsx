@@ -12,7 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import type { FullProfile } from "../components/WelcomeScreen";
-import { DT } from "./desktop-tokens";
+import { JOB_DEPARTMENT_LABEL_BY_ID } from "../components/jobPrefDepartmentsData";
+import { DT, desktopHubStagger } from "./desktop-tokens";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -20,6 +21,21 @@ const HERO_GRADIENT =
   "radial-gradient(ellipse at 18% 0%, #FFF6EE 0%, #FFEAD6 42%, #FFD9BC 90%)";
 const WHY_MATCH_GRADIENT =
   "linear-gradient(160deg, rgba(234,88,12,0.09) 0%, rgba(255,255,255,0.92) 42%, rgba(255,248,242,0.85) 100%)";
+
+function humanizePreferenceCategoryId(id: string): string {
+  return id
+    .split("_")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/** Label for hero copy — maps taxonomy ids to friendly names (fixes e.g. `product_management`). */
+function heroRoleFocusLabel(profile: FullProfile | null | undefined): string {
+  const raw = profile?.preferences?.categories?.[0]?.trim();
+  if (!raw) return "Product design";
+  return JOB_DEPARTMENT_LABEL_BY_ID[raw] ?? humanizePreferenceCategoryId(raw);
+}
 
 type MockJob = {
   id: string;
@@ -205,10 +221,7 @@ export function DesktopDashboardView({
   onViewSavedJobs,
 }: DesktopDashboardViewProps) {
   const name = firstName || "Alex";
-  const roleLabel =
-    profile?.preferences?.categories?.length
-      ? profile.preferences.categories[0]
-      : "Product Design";
+  const roleLabel = heroRoleFocusLabel(profile);
   const totalJobs = 42;
   const activeCompanies = 18;
   const savedJobs = 8;
@@ -221,7 +234,12 @@ export function DesktopDashboardView({
 
   return (
     <div className="p-6 lg:p-8" style={{ fontFamily: DT.sans }}>
-      <div className="mx-auto flex max-w-[1240px] flex-col gap-6">
+      <motion.div
+        variants={desktopHubStagger.container}
+        initial="hidden"
+        animate="show"
+        className="mx-auto flex max-w-[1240px] flex-col gap-6"
+      >
         {/* Row 1 — Hero (slim) */}
         <HeroStandingCard
           name={name}
@@ -239,7 +257,7 @@ export function DesktopDashboardView({
         />
 
         {/* Row 3 — Top matches */}
-        <section>
+        <motion.section variants={desktopHubStagger.item}>
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h3
@@ -276,10 +294,10 @@ export function DesktopDashboardView({
               />
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Row 4 — Recruiter activity + Saved shortlist */}
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <motion.div variants={desktopHubStagger.item} className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
           <RecruiterActivityCard
             recruiterViews={recruiterViews}
             week={RECRUITER_WEEK}
@@ -290,8 +308,8 @@ export function DesktopDashboardView({
             preview={savedPreview}
             onViewAll={onViewSavedJobs}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
@@ -313,9 +331,7 @@ function HeroStandingCard({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, ease: EASE }}
+      variants={desktopHubStagger.item}
       className="relative overflow-hidden rounded-[22px] border"
       style={{
         background: HERO_GRADIENT,
@@ -351,23 +367,23 @@ function HeroStandingCard({
         }}
       />
 
-      <div className="relative flex flex-col gap-6 p-7 lg:flex-row lg:items-end lg:justify-between lg:p-9">
+      <div className="relative flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between lg:gap-5 lg:p-7">
         <div className="min-w-0 max-w-[62ch]">
           <p
-            className="text-[12.5px] font-semibold uppercase"
-            style={{ color: "rgba(28,25,23,0.48)", letterSpacing: "0.14em" }}
+            className="text-[11.5px] font-semibold uppercase"
+            style={{ color: "rgba(28,25,23,0.48)", letterSpacing: "0.12em" }}
           >
             {getGreeting()}
           </p>
           <h1
-            className="mt-2 text-[36px] leading-[1.08] lg:text-[42px]"
+            className="mt-1.5 text-[30px] leading-[1.08] lg:text-[36px]"
             style={{
               fontFamily: DT.serif,
               letterSpacing: "-0.03em",
               color: DT.text,
             }}
           >
-            {name},{" "}
+            <span style={{ color: DT.text }}>Welcome back, </span>
             <span
               style={{
                 backgroundImage: DT.accentGradient,
@@ -376,16 +392,16 @@ function HeroStandingCard({
                 backgroundClip: "text",
               }}
             >
-              here's where you stand.
+              {name}
             </span>
           </h1>
           <p
-            className="mt-3 text-[14.5px] leading-relaxed"
+            className="mt-2 text-[14px] leading-snug lg:leading-relaxed"
             style={{ color: "rgba(28,25,23,0.68)", letterSpacing: "-0.01em" }}
           >
             {hasCompletedInterview ? (
               <>
-                Fresh matches are ready for your 
+                {"You're set up for "}
                 <strong
                   style={{
                     color: "rgba(28,25,23,0.86)",
@@ -394,13 +410,13 @@ function HeroStandingCard({
                   }}
                 >
                   {roleLabel}
-                </strong>
-                 preferences. Review new openings, save strong fits, and
-                apply in minutes while recruiter activity is still warm.
+                </strong>{" "}
+                roles. Explore today's curated matches, bookmark roles you want to revisit, and apply while your
+                profile is still top-of-mind for hiring teams.
               </>
             ) : (
               <>
-                Complete your interview to unlock tailored 
+                Finish a short voice profile so we can line up stronger{" "}
                 <strong
                   style={{
                     color: "rgba(28,25,23,0.86)",
@@ -409,9 +425,9 @@ function HeroStandingCard({
                   }}
                 >
                   {roleLabel}
-                </strong>
-                 matches, stronger fit signals, and faster recruiter
-                shortlisting.
+                </strong>{" "}
+                matches and show recruiters you're ready to talk—most candidates who complete it see better-fit
+                suggestions within a day or two.
               </>
             )}
           </p>
@@ -421,7 +437,7 @@ function HeroStandingCard({
           <button
             type="button"
             onClick={onStartInterview}
-            className="inline-flex w-fit shrink-0 items-center gap-2 rounded-[14px] px-5 py-3 text-[13.5px] font-semibold text-white transition-transform hover:-translate-y-px"
+            className="inline-flex w-fit shrink-0 items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-px"
             style={{
               background: DT.accentGradient,
               boxShadow:
@@ -571,9 +587,7 @@ function KpiStrip({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: 0.08, ease: EASE }}
+      variants={desktopHubStagger.item}
       className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
     >
       {tiles.map((t, i) => (
@@ -587,10 +601,7 @@ function KpiCard({ tile, index }: { tile: KpiTile; index: number }) {
   const { label, value, icon: Icon, accent, accentSoft, viz } = tile;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.1 + index * 0.05, ease: EASE }}
+    <div
       className="flex flex-col rounded-[18px] border p-5"
       style={{
         borderColor: DT.border,
@@ -639,7 +650,7 @@ function KpiCard({ tile, index }: { tile: KpiTile; index: number }) {
           <LogoStack logos={viz.logos} extra={viz.extra} delay={0.15 + index * 0.05} />
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -771,10 +782,7 @@ function RecruiterActivityCard({
   const trendingUp = deltaPct >= 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
+    <div
       className="flex flex-col overflow-hidden rounded-[22px] border"
       style={{
         borderColor: DT.border,
@@ -959,7 +967,7 @@ function RecruiterActivityCard({
           ))}
         </ul>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -977,10 +985,7 @@ function SavedShortlistCard({
   onViewAll: () => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.22, ease: EASE }}
+    <div
       className="flex flex-col overflow-hidden rounded-[22px] border"
       style={{
         borderColor: DT.border,
@@ -1094,7 +1099,7 @@ function SavedShortlistCard({
         Compare all {savedJobs} saved
         <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1124,9 +1129,6 @@ function JobMatchCard({
     <motion.button
       type="button"
       onClick={onOpen}
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: 0.15 + index * 0.05, ease: EASE }}
       whileHover={{ y: -3 }}
       className="group relative flex w-full flex-col items-stretch rounded-[20px] border p-5 text-left transition-shadow hover:shadow-lg"
       style={{

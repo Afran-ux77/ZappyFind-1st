@@ -20,6 +20,7 @@ import { useIsDesktop } from "./hooks/use-desktop";
 import { DesktopAppRoot } from "./desktop/DesktopAppRoot";
 import type { JobWorkspaceTab } from "./desktop/DesktopJobReviewView";
 import { JOB_DEPARTMENT_LABEL_BY_ID } from "./components/jobPrefDepartmentsData";
+import { DT } from "./desktop/desktop-tokens";
 
 type Screen =
   | "login"
@@ -2000,7 +2001,7 @@ function ZappyHomeScreen({
                     borderRadius: 999,
                     padding: "6px 13px",
                     background: "rgba(255,241,232,0.7)",
-                    color: "#C2410C",
+                    color: DT.accent,
                     fontSize: 12.5,
                     fontWeight: 500,
                     letterSpacing: "-0.01em",
@@ -2027,7 +2028,7 @@ function ZappyHomeScreen({
                     borderRadius: 999,
                     padding: "6px 13px",
                     background: "rgba(255,241,232,0.7)",
-                    color: "#C2410C",
+                    color: DT.accent,
                     fontSize: 12.5,
                     fontWeight: 500,
                     letterSpacing: "-0.01em",
