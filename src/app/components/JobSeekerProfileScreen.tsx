@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { FullProfile } from "./WelcomeScreen";
 import { DashboardHeader, SettingsBottomSheet } from "./DashboardPreviewScreen";
+import { InterviewRecordingCompactCard } from "./InterviewTranscriptScroll";
 import { DT, desktopHubStagger } from "../desktop/desktop-tokens";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -34,13 +35,13 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 /** Matches `ScanSection` top rule — shared for section dividers. */
 const SCAN_SECTION_RULE_GRADIENT =
   "linear-gradient(90deg, transparent 0%, rgba(28,25,23,0.05) 18%, rgba(234,88,12,0.14) 50%, rgba(28,25,23,0.05) 82%, transparent 100%)";
-const SCAN_SECTION_RULE_GRADIENT_VERTICAL =
-  "linear-gradient(180deg, transparent 0%, rgba(28,25,23,0.05) 18%, rgba(234,88,12,0.14) 50%, rgba(28,25,23,0.05) 82%, transparent 100%)";
 
 const C = {
   textPrimary: "#1C1917",
-  textMuted: "#78716C",
-  textSec: "#A8A29E",
+  /** Secondary body — was stone-500, bumped for contrast on white. */
+  textMuted: "#5C5651",
+  /** Dates, captions, pref labels — was stone-400. */
+  textSec: "#8A837D",
   avatarGrad: "#FFE7D6",
   avatarShadow: "none",
   avatarInitial: "#C2410C",
@@ -132,7 +133,7 @@ function ProfileZappyCoach({
           style={{
             fontSize: 11,
             fontWeight: 700,
-            color: "#78716C",
+            color: "#5C5651",
             letterSpacing: "0.09em",
             textTransform: "uppercase",
           }}
@@ -195,14 +196,14 @@ function ProfileDetailsBody({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "minmax(0, 1fr) 2px minmax(0, 1fr)",
+                  gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
                   gap: 24,
                   alignItems: "stretch",
                 }}
               >
                 <div style={{ minWidth: 0 }}>
                   <ScanSection
-                    icon={<Briefcase size={14} color="#A8A29E" strokeWidth={2} />}
+                    icon={<Briefcase size={14} color="#8A837D" strokeWidth={2} />}
                     title="Experience"
                     hideTopRule
                     delay={0}
@@ -238,7 +239,7 @@ function ProfileDetailsBody({
                                 style={{
                                   fontSize: 11,
                                   fontWeight: 500,
-                                  color: "#A8A29E",
+                                  color: "#8A837D",
                                   flexShrink: 0,
                                   marginLeft: 8,
                                 }}
@@ -252,7 +253,7 @@ function ProfileDetailsBody({
                               style={{
                                 fontSize: 12,
                                 fontWeight: 600,
-                                color: "#78716C",
+                                color: "#5C5651",
                                 margin: "0 0 4px",
                                 letterSpacing: "-0.01em",
                               }}
@@ -264,7 +265,7 @@ function ProfileDetailsBody({
                             <p
                               style={{
                                 fontSize: 11,
-                                color: "#A8A29E",
+                                color: "#8A837D",
                                 margin: 0,
                                 lineHeight: 1.45,
                                 fontStyle: "italic",
@@ -273,31 +274,15 @@ function ProfileDetailsBody({
                               {buildExpInsight(exp)}
                             </p>
                           ) : null}
-                          {i < topExperiences.length - 1 ? (
-                            <div style={{ height: 1, background: "rgba(28,25,23,0.05)", marginTop: 12 }} />
-                          ) : null}
                         </motion.div>
                       ))}
                     </div>
                   </ScanSection>
                 </div>
-                <div
-                  aria-hidden
-                  style={{
-                    width: 2,
-                    borderRadius: 2,
-                    background: SCAN_SECTION_RULE_GRADIENT_VERTICAL,
-                    boxShadow: "1px 0 0 rgba(255,255,255,0.6)",
-                    marginTop: 6,
-                    marginBottom: 6,
-                    minHeight: 48,
-                    alignSelf: "stretch",
-                  }}
-                />
                 <div style={{ minWidth: 0 }}>
                   {topEdu ? (
                     <ScanSection
-                      icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                      icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                       title="Education"
                       hideTopRule
                       delay={0.06}
@@ -315,13 +300,13 @@ function ProfileDetailsBody({
                             {topEdu.institution || "Institution"}
                           </span>
                           {topEdu.year ? (
-                            <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", flexShrink: 0, marginLeft: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 500, color: "#8A837D", flexShrink: 0, marginLeft: 8 }}>
                               {topEdu.year}
                             </span>
                           ) : null}
                         </div>
                         {topEdu.degree ? (
-                          <p style={{ fontSize: 12, fontWeight: 500, color: "#78716C", margin: 0, letterSpacing: "-0.01em" }}>
+                          <p style={{ fontSize: 12, fontWeight: 500, color: "#5C5651", margin: 0, letterSpacing: "-0.01em" }}>
                             {topEdu.degree}
                           </p>
                         ) : null}
@@ -329,12 +314,12 @@ function ProfileDetailsBody({
                     </ScanSection>
                   ) : (
                     <ScanSection
-                      icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                      icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                       title="Education"
                       hideTopRule
                       delay={0.06}
                     >
-                      <p style={{ fontSize: 13, color: "#78716C", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
+                      <p style={{ fontSize: 13, color: "#5C5651", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
                     </ScanSection>
                   )}
                 </div>
@@ -342,7 +327,7 @@ function ProfileDetailsBody({
             ) : (
               <>
                 <ScanSection
-                  icon={<Briefcase size={14} color="#A8A29E" strokeWidth={2} />}
+                  icon={<Briefcase size={14} color="#8A837D" strokeWidth={2} />}
                   title="Experience"
                   hideTopRule
                   delay={0}
@@ -378,7 +363,7 @@ function ProfileDetailsBody({
                               style={{
                                 fontSize: 11,
                                 fontWeight: 500,
-                                color: "#A8A29E",
+                                color: "#8A837D",
                                 flexShrink: 0,
                                 marginLeft: 8,
                               }}
@@ -392,7 +377,7 @@ function ProfileDetailsBody({
                             style={{
                               fontSize: 12,
                               fontWeight: 600,
-                              color: "#78716C",
+                              color: "#5C5651",
                               margin: "0 0 4px",
                               letterSpacing: "-0.01em",
                             }}
@@ -404,7 +389,7 @@ function ProfileDetailsBody({
                           <p
                             style={{
                               fontSize: 11,
-                              color: "#A8A29E",
+                              color: "#8A837D",
                               margin: 0,
                               lineHeight: 1.45,
                               fontStyle: "italic",
@@ -412,9 +397,6 @@ function ProfileDetailsBody({
                           >
                             {buildExpInsight(exp)}
                           </p>
-                        ) : null}
-                        {i < topExperiences.length - 1 ? (
-                          <div style={{ height: 1, background: "rgba(28,25,23,0.05)", marginTop: 12 }} />
                         ) : null}
                       </motion.div>
                     ))}
@@ -424,12 +406,12 @@ function ProfileDetailsBody({
             )
           ) : (
             <ScanSection
-              icon={<Briefcase size={14} color="#A8A29E" strokeWidth={2} />}
+              icon={<Briefcase size={14} color="#8A837D" strokeWidth={2} />}
               title="Experience"
               hideTopRule
               delay={0}
             >
-              <p style={{ fontSize: 13, color: "#78716C", margin: 0, lineHeight: 1.5, letterSpacing: "-0.01em" }}>
+              <p style={{ fontSize: 13, color: "#5C5651", margin: 0, lineHeight: 1.5, letterSpacing: "-0.01em" }}>
                 {experienceBlurb}
               </p>
             </ScanSection>
@@ -452,7 +434,7 @@ function ProfileDetailsBody({
           {!isDesktop
             ? topEdu ? (
                 <ScanSection
-                  icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                  icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                   title="Education"
                   hideTopRule
                   delay={0.06}
@@ -470,13 +452,13 @@ function ProfileDetailsBody({
                         {topEdu.institution || "Institution"}
                       </span>
                       {topEdu.year ? (
-                        <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", flexShrink: 0, marginLeft: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 500, color: "#8A837D", flexShrink: 0, marginLeft: 8 }}>
                           {topEdu.year}
                         </span>
                       ) : null}
                     </div>
                     {topEdu.degree ? (
-                      <p style={{ fontSize: 12, fontWeight: 500, color: "#78716C", margin: 0, letterSpacing: "-0.01em" }}>
+                      <p style={{ fontSize: 12, fontWeight: 500, color: "#5C5651", margin: 0, letterSpacing: "-0.01em" }}>
                         {topEdu.degree}
                       </p>
                     ) : null}
@@ -484,12 +466,12 @@ function ProfileDetailsBody({
                 </ScanSection>
               ) : (
                 <ScanSection
-                  icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                  icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                   title="Education"
                   hideTopRule
                   delay={0.06}
                 >
-                  <p style={{ fontSize: 13, color: "#78716C", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
+                  <p style={{ fontSize: 13, color: "#5C5651", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
                 </ScanSection>
               )
             : null}
@@ -497,7 +479,7 @@ function ProfileDetailsBody({
           {isDesktop && topExperiences.length === 0 ? (
             topEdu ? (
               <ScanSection
-                icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                 title="Education"
                 hideTopRule
                 delay={0.06}
@@ -515,13 +497,13 @@ function ProfileDetailsBody({
                       {topEdu.institution || "Institution"}
                     </span>
                     {topEdu.year ? (
-                      <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", flexShrink: 0, marginLeft: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: "#8A837D", flexShrink: 0, marginLeft: 8 }}>
                         {topEdu.year}
                       </span>
                     ) : null}
                   </div>
                   {topEdu.degree ? (
-                    <p style={{ fontSize: 12, fontWeight: 500, color: "#78716C", margin: 0, letterSpacing: "-0.01em" }}>
+                    <p style={{ fontSize: 12, fontWeight: 500, color: "#5C5651", margin: 0, letterSpacing: "-0.01em" }}>
                       {topEdu.degree}
                     </p>
                   ) : null}
@@ -529,18 +511,18 @@ function ProfileDetailsBody({
               </ScanSection>
             ) : (
               <ScanSection
-                icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                 title="Education"
                 hideTopRule
                 delay={0.06}
               >
-                <p style={{ fontSize: 13, color: "#78716C", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
+                <p style={{ fontSize: 13, color: "#5C5651", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
               </ScanSection>
             )
           ) : null}
 
           {skillsArr.length > 0 ? (
-            <ScanSection icon={<Wrench size={14} color="#A8A29E" strokeWidth={2} />} title="Skills" delay={0.12}>
+            <ScanSection icon={<Wrench size={14} color="#8A837D" strokeWidth={2} />} title="Skills" delay={0.12}>
               {isDesktop ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {skillsArr.map((s) => (
@@ -569,7 +551,7 @@ function ProfileDetailsBody({
             </ScanSection>
           ) : null}
 
-          <ScanSection icon={<Target size={14} color="#A8A29E" strokeWidth={2} />} title="Preferences" delay={0.16}>
+          <ScanSection icon={<Target size={14} color="#8A837D" strokeWidth={2} />} title="Preferences" delay={0.16}>
             <div
               style={{
                 display: "grid",
@@ -1039,11 +1021,29 @@ export function JobSeekerProfileScreen({
               variants={desktopHubStagger.item}
               style={{
                 display: "grid",
-                gridTemplateColumns: "minmax(260px, 300px) minmax(0, 1fr)",
+                gridTemplateColumns: "minmax(0, 1fr) minmax(260px, 300px)",
                 gap: 32,
                 alignItems: "start",
               }}
             >
+              <div style={{ minWidth: 0 }}>
+                <ProfileZappyCoach workingWellItems={workingWellItems} improveItems={improveItems} />
+                <div style={{ marginTop: 16 }}>
+                  <InterviewRecordingCompactCard />
+                </div>
+                <ProfileDetailsBody
+                  isDesktop
+                  ready={ready}
+                  topExperiences={topExperiences}
+                  experienceBlurb={experienceBlurb}
+                  topEdu={topEdu}
+                  educationFallback={educationFallback}
+                  skillsArr={skillsArr}
+                  desiredRole={desiredRole}
+                  workSetup={workSetup}
+                  salaryExpectation={salaryExpectation}
+                />
+              </div>
               <aside
                 style={{
                   position: "sticky",
@@ -1074,21 +1074,6 @@ export function JobSeekerProfileScreen({
                   />
                 </div>
               </aside>
-              <div style={{ minWidth: 0 }}>
-                <ProfileZappyCoach workingWellItems={workingWellItems} improveItems={improveItems} />
-                <ProfileDetailsBody
-                  isDesktop
-                  ready={ready}
-                  topExperiences={topExperiences}
-                  experienceBlurb={experienceBlurb}
-                  topEdu={topEdu}
-                  educationFallback={educationFallback}
-                  skillsArr={skillsArr}
-                  desiredRole={desiredRole}
-                  workSetup={workSetup}
-                  salaryExpectation={salaryExpectation}
-                />
-              </div>
             </motion.div>
             </motion.div>
           </div>
@@ -1239,6 +1224,10 @@ export function JobSeekerProfileScreen({
 
           <ProfileZappyCoach workingWellItems={workingWellItems} improveItems={improveItems} />
 
+          <div style={{ marginTop: 16 }}>
+            <InterviewRecordingCompactCard />
+          </div>
+
           <ProfileMilestoneTimeline
             milestones={PROFILE_MILESTONES}
             initialVisible={TIMELINE_INITIAL_VISIBLE}
@@ -1258,7 +1247,7 @@ export function JobSeekerProfileScreen({
               >
                 {topExperiences.length > 0 ? (
                   <ScanSection
-                    icon={<Briefcase size={14} color="#A8A29E" strokeWidth={2} />}
+                    icon={<Briefcase size={14} color="#8A837D" strokeWidth={2} />}
                     title="Experience"
                     hideTopRule
                     delay={0}
@@ -1294,7 +1283,7 @@ export function JobSeekerProfileScreen({
                                 style={{
                                   fontSize: 11,
                                   fontWeight: 500,
-                                  color: "#A8A29E",
+                                  color: "#8A837D",
                                   flexShrink: 0,
                                   marginLeft: 8,
                                 }}
@@ -1308,7 +1297,7 @@ export function JobSeekerProfileScreen({
                               style={{
                                 fontSize: 12,
                                 fontWeight: 600,
-                                color: "#78716C",
+                                color: "#5C5651",
                                 margin: "0 0 4px",
                                 letterSpacing: "-0.01em",
                               }}
@@ -1320,7 +1309,7 @@ export function JobSeekerProfileScreen({
                             <p
                               style={{
                                 fontSize: 11,
-                                color: "#A8A29E",
+                                color: "#8A837D",
                                 margin: 0,
                                 lineHeight: 1.45,
                                 fontStyle: "italic",
@@ -1329,21 +1318,18 @@ export function JobSeekerProfileScreen({
                               {buildExpInsight(exp)}
                             </p>
                           ) : null}
-                          {i < topExperiences.length - 1 ? (
-                            <div style={{ height: 1, background: "rgba(28,25,23,0.05)", marginTop: 12 }} />
-                          ) : null}
                         </motion.div>
                       ))}
                     </div>
                   </ScanSection>
                 ) : (
                   <ScanSection
-                    icon={<Briefcase size={14} color="#A8A29E" strokeWidth={2} />}
+                    icon={<Briefcase size={14} color="#8A837D" strokeWidth={2} />}
                     title="Experience"
                     hideTopRule
                     delay={0}
                   >
-                    <p style={{ fontSize: 13, color: "#78716C", margin: 0, lineHeight: 1.5, letterSpacing: "-0.01em" }}>
+                    <p style={{ fontSize: 13, color: "#5C5651", margin: 0, lineHeight: 1.5, letterSpacing: "-0.01em" }}>
                       {experienceBlurb}
                     </p>
                   </ScanSection>
@@ -1365,7 +1351,7 @@ export function JobSeekerProfileScreen({
 
                 {topEdu ? (
                   <ScanSection
-                    icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                    icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                     title="Education"
                     hideTopRule
                     delay={0.06}
@@ -1383,13 +1369,13 @@ export function JobSeekerProfileScreen({
                           {topEdu.institution || "Institution"}
                         </span>
                         {topEdu.year ? (
-                          <span style={{ fontSize: 11, fontWeight: 500, color: "#A8A29E", flexShrink: 0, marginLeft: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 500, color: "#8A837D", flexShrink: 0, marginLeft: 8 }}>
                             {topEdu.year}
                           </span>
                         ) : null}
                       </div>
                       {topEdu.degree ? (
-                        <p style={{ fontSize: 12, fontWeight: 500, color: "#78716C", margin: 0, letterSpacing: "-0.01em" }}>
+                        <p style={{ fontSize: 12, fontWeight: 500, color: "#5C5651", margin: 0, letterSpacing: "-0.01em" }}>
                           {topEdu.degree}
                         </p>
                       ) : null}
@@ -1397,17 +1383,17 @@ export function JobSeekerProfileScreen({
                   </ScanSection>
                 ) : (
                   <ScanSection
-                    icon={<GraduationCap size={14} color="#A8A29E" strokeWidth={2} />}
+                    icon={<GraduationCap size={14} color="#8A837D" strokeWidth={2} />}
                     title="Education"
                     hideTopRule
                     delay={0.06}
                   >
-                    <p style={{ fontSize: 13, color: "#78716C", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
+                    <p style={{ fontSize: 13, color: "#5C5651", margin: 0, lineHeight: 1.5 }}>{educationFallback}</p>
                   </ScanSection>
                 )}
 
                 {skillsArr.length > 0 ? (
-                  <ScanSection icon={<Wrench size={14} color="#A8A29E" strokeWidth={2} />} title="Skills" delay={0.12}>
+                  <ScanSection icon={<Wrench size={14} color="#8A837D" strokeWidth={2} />} title="Skills" delay={0.12}>
                     <p style={{ fontSize: 13, color: "#1C1917", margin: 0, lineHeight: 1.55, letterSpacing: "-0.01em" }}>
                       {skillsArr.join(" · ")}
                     </p>
@@ -1415,7 +1401,7 @@ export function JobSeekerProfileScreen({
                 ) : null}
 
                 <ScanSection
-                  icon={<Target size={14} color="#A8A29E" strokeWidth={2} />}
+                  icon={<Target size={14} color="#8A837D" strokeWidth={2} />}
                   title="Preferences"
                   delay={0.16}
                 >
@@ -1552,7 +1538,7 @@ function ProfileMilestoneTimeline({
           style={{
             fontSize: 11,
             fontWeight: 700,
-            color: "#78716C",
+            color: "#5C5651",
             letterSpacing: "0.09em",
             textTransform: "uppercase",
           }}
@@ -1599,7 +1585,7 @@ function ProfileMilestoneTimeline({
               style={{
                 fontSize: 11,
                 fontWeight: 600,
-                color: "#A8A29E",
+                color: "#8A837D",
                 letterSpacing: "-0.01em",
                 marginBottom: 3,
               }}
@@ -1620,7 +1606,7 @@ function ProfileMilestoneTimeline({
             <p
               style={{
                 fontSize: 12,
-                color: "#78716C",
+                color: "#5C5651",
                 margin: "4px 0 0",
                 lineHeight: 1.4,
                 letterSpacing: "-0.01em",
@@ -1726,7 +1712,7 @@ function ScanSection({
           style={{
             fontSize: 11,
             fontWeight: 700,
-            color: "#78716C",
+            color: "#5C5651",
             letterSpacing: "0.09em",
             textTransform: "uppercase",
           }}
@@ -1881,7 +1867,7 @@ function HeaderMetaChip({
 function ContactLine({ icon, text }: { icon: ReactNode; text: string }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-      <span style={{ display: "flex", color: "#A8A29E", flexShrink: 0, marginTop: 1 }}>{icon}</span>
+      <span style={{ display: "flex", color: "#8A837D", flexShrink: 0, marginTop: 1 }}>{icon}</span>
       <span
         style={{
           fontSize: 14,
@@ -1901,7 +1887,7 @@ function PrefRow({ icon, label, value }: { icon: ReactNode; label: string; value
   const iconMuted = isValidElement(icon)
     ? cloneElement(icon as ReactElement<{ size?: number; color?: string; strokeWidth?: number }>, {
         size: 12,
-        color: "#A8A29E",
+        color: "#8A837D",
         strokeWidth: 1.75,
       })
     : icon;
@@ -1911,7 +1897,7 @@ function PrefRow({ icon, label, value }: { icon: ReactNode; label: string; value
         {iconMuted}
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ fontSize: 11, color: "#A8A29E", margin: 0, fontWeight: 500 }}>{label}</p>
+        <p style={{ fontSize: 11, color: "#8A837D", margin: 0, fontWeight: 500 }}>{label}</p>
         <p
           style={{
             fontSize: 13,

@@ -38,6 +38,8 @@ interface CallInitiationScreenProps {
   onStartCall: (focusedJobCategory: string) => void;
   onSkip: () => void;
   transparentSurface?: boolean;
+  /** Native desktop shell / onboarding chrome — used for call-focus UI even if `transparentSurface` is omitted. */
+  layout?: "mobile" | "desktop";
 }
 
 const OUTCOMES = [
@@ -64,6 +66,7 @@ export function CallInitiationScreen({
   onStartCall,
   onSkip,
   transparentSurface = false,
+  layout = "mobile",
 }: CallInitiationScreenProps) {
   const sheetTitleId = useId();
   const sheetDescId = useId();
@@ -86,6 +89,11 @@ export function CallInitiationScreen({
   const hasMultipleFocusOptions = labels.length > 1;
   const focusedLabel = labels[Math.min(focusIndex, labels.length - 1)] ?? "your expertise";
 
+  /** Desktop shell: inline focus dropdown + top-right Change pill (not bottom sheet). */
+  const isDesktopFocusUi = transparentSurface || layout === "desktop";
+  /** Top-right compact pill + reserved text gutter (absolute positioning). */
+  const desktopCallFocusChrome = isDesktopFocusUi && hasMultipleFocusOptions;
+
   useEffect(() => {
     setFocusIndex((i) => Math.min(i, Math.max(0, labels.length - 1)));
   }, [labels.length]);
@@ -96,13 +104,13 @@ export function CallInitiationScreen({
   }, []);
 
   useEffect(() => {
-    if (!focusSheetOpen || transparentSurface) return;
+    if (!focusSheetOpen || isDesktopFocusUi) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [focusSheetOpen, transparentSurface]);
+  }, [focusSheetOpen, isDesktopFocusUi]);
 
   const measureFocusDropdown = useCallback(() => {
     const el = focusButtonRef.current;
@@ -119,7 +127,7 @@ export function CallInitiationScreen({
   }, []);
 
   useLayoutEffect(() => {
-    if (!transparentSurface || !focusDropdownOpen) {
+    if (!isDesktopFocusUi || !focusDropdownOpen) {
       setFocusDropdownLayout(null);
       return;
     }
@@ -131,7 +139,7 @@ export function CallInitiationScreen({
       window.removeEventListener("resize", onMove);
       window.removeEventListener("scroll", onMove, true);
     };
-  }, [transparentSurface, focusDropdownOpen, measureFocusDropdown]);
+  }, [isDesktopFocusUi, focusDropdownOpen, measureFocusDropdown]);
 
   useEffect(() => {
     if (!focusDropdownOpen) return;
@@ -618,10 +626,12 @@ export function CallInitiationScreen({
                   "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(28,25,23,0.04), 0 10px 28px rgba(234,88,12,0.06)",
                 display: "grid",
                 columnGap: 12,
-                rowGap: transparentSurface ? 10 : 8,
-                alignItems: "center",
+                rowGap: hasMultipleFocusOptions && !desktopCallFocusChrome ? 8 : 0,
+                alignItems:
+                  hasMultipleFocusOptions && !desktopCallFocusChrome ? "center" : "start",
                 gridTemplateColumns: "auto minmax(0, 1fr)",
-                gridTemplateRows: "auto auto",
+                gridTemplateRows:
+                  hasMultipleFocusOptions && !desktopCallFocusChrome ? "auto auto" : "auto",
               }}
             >
               <span
@@ -656,6 +666,7 @@ export function CallInitiationScreen({
                   minWidth: 0,
                   justifySelf: "stretch",
                   alignSelf: "start",
+                  paddingRight: desktopCallFocusChrome ? 108 : undefined,
                 }}
               >
                 <span
@@ -685,34 +696,54 @@ export function CallInitiationScreen({
                 </span>
               </div>
 
-              {hasMultipleFocusOptions ? (
+              {hasMultipleFocusOptions && (
                 <motion.button
                   ref={focusButtonRef}
                   type="button"
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
-                    if (transparentSurface) setFocusDropdownOpen((o) => !o);
+                    if (isDesktopFocusUi) setFocusDropdownOpen((o) => !o);
                     else setFocusSheetOpen(true);
                   }}
-                  aria-haspopup={transparentSurface ? "listbox" : "dialog"}
-                  aria-expanded={transparentSurface ? focusDropdownOpen : focusSheetOpen}
+                  aria-haspopup={isDesktopFocusUi ? "listbox" : "dialog"}
+                  aria-expanded={isDesktopFocusUi ? focusDropdownOpen : focusSheetOpen}
                   aria-label={`Change call focus. Currently ${focusedLabel}.`}
-                  style={{
-                    gridColumn: "1 / -1",
-                    gridRow: 2,
-                    width: "100%",
-                    minHeight: 40,
-                    boxSizing: "border-box",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 0,
-                    margin: 0,
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    WebkitTapHighlightColor: "transparent",
-                  }}
+                  style={
+                    desktopCallFocusChrome
+                      ? {
+                          position: "absolute",
+                          top: 2,
+                          right: 0,
+                          zIndex: 2,
+                          width: "auto",
+                          boxSizing: "border-box",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          padding: 0,
+                          margin: 0,
+                          border: "none",
+                          background: "transparent",
+                          cursor: "pointer",
+                          WebkitTapHighlightColor: "transparent",
+                        }
+                      : {
+                          gridColumn: "1 / -1",
+                          gridRow: 2,
+                          width: "100%",
+                          minHeight: 40,
+                          boxSizing: "border-box",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 0,
+                          margin: 0,
+                          border: "none",
+                          background: "transparent",
+                          cursor: "pointer",
+                          WebkitTapHighlightColor: "transparent",
+                        }
+                  }
                 >
                   <span
                     style={{
@@ -721,9 +752,9 @@ export function CallInitiationScreen({
                       justifyContent: "center",
                       gap: 6,
                       height: 34,
-                      width: "100%",
-                      maxWidth: "100%",
-                      padding: "0 14px",
+                      width: desktopCallFocusChrome ? "auto" : "100%",
+                      maxWidth: desktopCallFocusChrome ? "none" : "100%",
+                      padding: desktopCallFocusChrome ? "0 12px" : "0 14px",
                       borderRadius: 999,
                       background: C.white,
                       border: `1px solid ${C.brandBorder}`,
@@ -743,8 +774,8 @@ export function CallInitiationScreen({
                       aria-hidden
                       style={{
                         transform:
-                          (transparentSurface && focusDropdownOpen) ||
-                          (!transparentSurface && focusSheetOpen)
+                          (isDesktopFocusUi && focusDropdownOpen) ||
+                          (!isDesktopFocusUi && focusSheetOpen)
                             ? "rotate(180deg)"
                             : undefined,
                         transition: "transform 0.2s ease",
@@ -752,23 +783,6 @@ export function CallInitiationScreen({
                     />
                   </span>
                 </motion.button>
-              ) : (
-                <span
-                  style={{
-                    gridColumn: "1 / -1",
-                    gridRow: 2,
-                    justifySelf: "end",
-                    width: "100%",
-                    textAlign: "right",
-                    flexShrink: 0,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: C.textSec,
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  From your preferences
-                </span>
               )}
             </div>
           </motion.div>
@@ -863,7 +877,7 @@ export function CallInitiationScreen({
 
       {/* ── Desktop: dropdown (portal) — call focus options below control ─ */}
       {typeof document !== "undefined" &&
-        transparentSurface &&
+        isDesktopFocusUi &&
         hasMultipleFocusOptions &&
         focusDropdownOpen &&
         focusDropdownLayout &&
@@ -969,7 +983,7 @@ export function CallInitiationScreen({
 
       {/* ── Mobile sheet: switch call focus among selected categories ─ */}
       <AnimatePresence>
-        {focusSheetOpen && !transparentSurface && (
+        {focusSheetOpen && !isDesktopFocusUi && (
           <motion.div
             key="call-focus-sheet"
             role="presentation"

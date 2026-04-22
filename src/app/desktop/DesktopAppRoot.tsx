@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { LoginScreen } from "../components/LoginScreen";
 import { OTPScreen } from "../components/OTPScreen";
@@ -13,7 +13,11 @@ import { MatchCelebrationScreen } from "../components/MatchCelebrationScreen";
 import { CallInitiationScreen } from "../components/CallInitiationScreen";
 import { DesktopAuthLayout } from "./DesktopAuthLayout";
 import { DesktopAppShell, type DesktopNavId } from "./DesktopAppShell";
-import { DesktopDashboardView } from "./DesktopDashboardView";
+import {
+  DesktopDashboardView,
+  DESKTOP_DASHBOARD_CASES,
+  type DesktopDashboardCaseKey,
+} from "./DesktopDashboardView";
 import { DesktopJobReviewView, type JobWorkspaceTab } from "./DesktopJobReviewView";
 import { DesktopOnboardingChrome } from "./DesktopOnboardingChrome";
 import { DesktopOnboardingIntroCards } from "./DesktopOnboardingIntroCards";
@@ -161,6 +165,9 @@ export function DesktopAppRoot({
 
   const displayName = firstName || "Alex";
 
+  /** Demo switcher for the eight dashboard cases — mirrors the mobile case menu. */
+  const [dashboardCase, setDashboardCase] = useState<DesktopDashboardCaseKey>("case-1");
+
   const prevDesktopHubScreen = useRef<DesktopHubScreen | null>(null);
   useEffect(() => {
     if (screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") {
@@ -248,13 +255,19 @@ export function DesktopAppRoot({
     );
   };
 
-  const appShell = (children: ReactNode, opts?: { hideSidebar?: boolean; hideHeader?: boolean }) => (
-    <DesktopAppShell
+  const appShell = (
+    children: ReactNode,
+    opts?: { hideSidebar?: boolean; hideHeader?: boolean; withCaseSwitcher?: boolean },
+  ) => (
+    <DesktopAppShell<DesktopDashboardCaseKey>
       userName={displayName}
       active={activeNav()}
       onNavigate={desktopNav}
       hideSidebar={opts?.hideSidebar}
       hideHeader={opts?.hideHeader}
+      caseOptions={opts?.withCaseSwitcher ? DESKTOP_DASHBOARD_CASES : undefined}
+      activeCaseKey={opts?.withCaseSwitcher ? dashboardCase : undefined}
+      onCaseChange={opts?.withCaseSwitcher ? setDashboardCase : undefined}
     >
       {children}
     </DesktopAppShell>
@@ -534,6 +547,7 @@ export function DesktopAppRoot({
               className="flex min-h-0 w-full h-fit flex-col"
             >
               <CallInitiationScreen
+                layout="desktop"
                 transparentSurface
                 firstName={firstName}
                 jobCategoryLabels={jobCategoryLabels}
@@ -602,7 +616,7 @@ export function DesktopAppRoot({
                 <AnimatePresence mode="sync" initial={false}>
                   {screen === "dashboardPreview" && (
                     <motion.div
-                      key="dashboardPreview"
+                      key={`dashboardPreview-${dashboardCase}`}
                       className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-auto"
                       initial={{ opacity: 0, x: hubEnter.x, y: hubEnter.y }}
                       animate={{ opacity: 1, x: 0, y: 0 }}
@@ -613,6 +627,7 @@ export function DesktopAppRoot({
                         firstName={firstName}
                         profile={parsedProfile}
                         hasCompletedInterview={hasCompletedInterview}
+                        caseMode={dashboardCase}
                         onStartInterview={() => goTo("voiceCall", "forward")}
                         onReviewJobs={() => {
                           setJobReviewInitialTab("recommended");
@@ -669,6 +684,7 @@ export function DesktopAppRoot({
                   )}
                 </AnimatePresence>
               </div>,
+              { withCaseSwitcher: true },
             )}
           </motion.div>
         )}

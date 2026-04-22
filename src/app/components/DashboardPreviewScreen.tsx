@@ -1,9 +1,17 @@
 import { useState, useEffect, useRef, type CSSProperties } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { FullProfile } from "./WelcomeScreen";
+import {
+  ANALYSIS_TRAITS,
+  INTERVIEW_RECAP_SUMMARY,
+  INTERVIEW_RECAP_VERDICT,
+  traitAccent,
+} from "../interviewRecapCopy";
+import { InterviewRecordingCompactCard } from "./InterviewTranscriptScroll";
 import {
   Sparkles,
   Bell,
+  Brain,
   Settings,
   User,
   House,
@@ -11,6 +19,7 @@ import {
   ChevronRight,
   ChevronDown,
   Bookmark,
+  Check,
   ArrowRight,
   Mic,
   Target,
@@ -31,6 +40,7 @@ import {
   Lock,
   Zap,
   Clock3,
+  Loader2,
   LogOut,
 } from "lucide-react";
 
@@ -1575,53 +1585,7 @@ function MatchHeroCard({
                 ? "Usually caused by network/audio issues. A quick retake (~10 min) unlocks your ranking, full match insights, and recruiter access."
                 : "After a quick (~10 min) voice interview, you’ll unlock your standing, top matches, and direct recruiter introductions."}
             </div>
-            {paidRetryMode ? (
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-                <button
-                  type="button"
-                  style={{
-                    width: "100%",
-                    padding: "12px 12px",
-                    borderRadius: 12,
-                    border: "none",
-                    background: T.accentGradient,
-                    color: "white",
-                    cursor: "pointer",
-                    fontFamily: T.sans,
-                    fontSize: 13,
-                    fontWeight: 650,
-                    letterSpacing: "-0.01em",
-                    boxShadow: "0 6px 18px rgba(234,88,12,0.25)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Pay to unlock another retake
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    width: "100%",
-                    padding: "11px 12px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(28,25,23,0.14)",
-                    background: "rgba(255,255,255,0.72)",
-                    color: T.text,
-                    cursor: "pointer",
-                    fontFamily: T.sans,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    letterSpacing: "-0.01em",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  Contact support
-                </button>
-              </div>
-            ) : (
+            {!paidRetryMode && (
               <button
                 onClick={onStartInterview}
                 style={{
@@ -1921,7 +1885,6 @@ function JobMatchCard({
   blurInsight = false,
   hideScore = false,
   headerIconSize = 15,
-  lockHintText = "Retake the ZappyFind call to unlock full match details",
 }: {
   job: MockJob;
   index: number;
@@ -1930,7 +1893,6 @@ function JobMatchCard({
   blurInsight?: boolean;
   hideScore?: boolean;
   headerIconSize?: number;
-  lockHintText?: string;
 }) {
   const scoreColor =
     job.matchScore >= 90
@@ -2135,23 +2097,6 @@ function JobMatchCard({
         </div>
       </div>
 
-      {locked && (
-        <div
-          style={{
-            marginTop: 10,
-            fontSize: 11.5,
-            color: T.textTer,
-            letterSpacing: "-0.01em",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Lock size={12} strokeWidth={2.1} />
-          {lockHintText}
-        </div>
-      )}
-
     </motion.div>
   );
 }
@@ -2309,198 +2254,651 @@ function RetakeCallTipsCard({ onStart }: { onStart: () => void }) {
   );
 }
 
+/* ── Case 1 mobile — recap processing empty state (mirrors desktop pending deck) ── */
+const CASE1_RECAP_GRADIENT =
+  "linear-gradient(165deg, rgba(255,252,247,1) 0%, rgba(254,249,243,1) 50%, rgba(255,246,236,0.96) 100%)";
+const CASE1_RECAP_BORDER = "rgba(120, 72, 34, 0.11)";
+const CASE1_RECAP_SHADOW =
+  "inset 0 1px 0 rgba(255,255,255,0.78), 0 1px 2px rgba(124,58,10,0.04), 0 12px 34px rgba(124,58,10,0.05)";
+const CASE1_RECAP_TEXTURE =
+  "repeating-linear-gradient(0deg, rgba(120,53,15,0.02) 0, rgba(120,53,15,0.02) 1px, transparent 1px, transparent 52px)";
+
+const CASE1_PENDING_PHASES = [
+  { key: "transcribe" as const, label: "Transcribing" },
+  { key: "analyse" as const, label: "Analysing" },
+  { key: "summarise" as const, label: "Summarising" },
+];
+
+type Case1RecapVariant = "pending" | "ready";
+
+function Case1RecapVariantToggle({
+  variant,
+  onChange,
+}: {
+  variant: Case1RecapVariant;
+  onChange: (v: Case1RecapVariant) => void;
+}) {
+  const items: Array<{ key: Case1RecapVariant; label: string }> = [
+    { key: "pending", label: "Processing" },
+    { key: "ready", label: "Ready" },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="Interview summary state"
+      style={{
+        display: "inline-flex",
+        alignSelf: "flex-end",
+        alignItems: "center",
+        gap: 4,
+        borderRadius: 999,
+        border: `1px solid ${CASE1_RECAP_BORDER}`,
+        background: "rgba(255,252,247,0.9)",
+        padding: 4,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7)",
+      }}
+    >
+      {items.map((item) => {
+        const active = variant === item.key;
+        return (
+          <button
+            key={item.key}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(item.key)}
+            style={{
+              position: "relative",
+              border: "none",
+              borderRadius: 999,
+              padding: "6px 12px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              color: active ? "#fff" : "#7C4A13",
+              background: "transparent",
+              fontFamily: T.sans,
+            }}
+          >
+            {active && (
+              <motion.span
+                layoutId="case1-mobile-recap-variant-pill"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: 999,
+                  background: T.accentGradient,
+                  boxShadow: "0 2px 8px rgba(234,88,12,0.28)",
+                }}
+                transition={{ type: "spring", stiffness: 500, damping: 36 }}
+              />
+            )}
+            <span style={{ position: "relative" }}>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MobileInterviewRecapPendingCard() {
+  const reduceMotion = useReducedMotion();
+  const activePhaseIndex = 1;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.32, ease: EASE }}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 18,
+        border: `1px solid ${CASE1_RECAP_BORDER}`,
+        background: CASE1_RECAP_GRADIENT,
+        boxShadow: CASE1_RECAP_SHADOW,
+        padding: "16px 16px 18px",
+      }}
+      aria-busy
+      aria-live="polite"
+    >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          backgroundImage: CASE1_RECAP_TEXTURE,
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: -56,
+          right: -40,
+          width: 140,
+          height: 140,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(234,88,12,0.11) 0%, rgba(251,146,60,0.05) 45%, transparent 72%)",
+          filter: "blur(3px)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 1,
+          background:
+            "linear-gradient(90deg, transparent, rgba(234,88,12,0.22), transparent)",
+          pointerEvents: "none",
+        }}
+      />
+      {!reduceMotion && (
+        <motion.div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            height: 2,
+            width: "34%",
+            pointerEvents: "none",
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(234,88,12,0.7) 50%, transparent 100%)",
+            filter: "blur(0.4px)",
+          }}
+          animate={{ x: ["-34%", "320%"] }}
+          transition={{ duration: 2.4, ease: "easeInOut", repeat: Infinity }}
+        />
+      )}
+
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 10,
+              fontWeight: 600,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              color: "#7C4A13",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            AI Interview summary
+          </p>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              borderRadius: 999,
+              padding: "3px 8px",
+              fontSize: 9.5,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              background: "rgba(234,88,12,0.1)",
+              color: "#C2410C",
+              border: "1px solid rgba(234,88,12,0.22)",
+            }}
+          >
+            <motion.span
+              aria-hidden
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "#EA580C",
+              }}
+              animate={
+                reduceMotion ? undefined : { scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }
+              }
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+            In progress
+          </span>
+        </div>
+
+        <h2
+          style={{
+            margin: 0,
+            marginTop: 2,
+            fontSize: 20,
+            fontWeight: 600,
+            lineHeight: 1.18,
+            letterSpacing: "-0.02em",
+            color: T.text,
+            fontFamily: T.sans,
+          }}
+        >
+          Zappy is listening back to your interview.
+        </h2>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13.5,
+            lineHeight: 1.55,
+            color: "rgba(68,64,60,0.9)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          We’re turning your 14:22 conversation into a human-grade recap. A few honest signals, not a
+          score. Usually ready in under a minute.
+        </p>
+
+        <div
+          style={{
+            borderRadius: 14,
+            border: "1px solid rgba(120,72,34,0.1)",
+            background: "rgba(255,253,250,0.78)",
+            backdropFilter: "blur(6px)",
+            padding: "12px 12px 10px",
+          }}
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 14px", alignItems: "center" }}>
+            {CASE1_PENDING_PHASES.map((phase, i) => {
+              const state: "done" | "active" | "upcoming" =
+                i < activePhaseIndex ? "done" : i === activePhaseIndex ? "active" : "upcoming";
+              const color =
+                state === "done"
+                  ? T.success
+                  : state === "active"
+                    ? T.accent
+                    : "rgba(120,113,108,0.65)";
+              return (
+                <div key={phase.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{
+                      display: "flex",
+                      width: 20,
+                      height: 20,
+                      flexShrink: 0,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "50%",
+                      background:
+                        state === "done"
+                          ? T.successSoft
+                          : state === "active"
+                            ? "rgba(234,88,12,0.12)"
+                            : "rgba(28,25,23,0.05)",
+                      border: `1px solid ${
+                        state === "done"
+                          ? "rgba(5,150,105,0.35)"
+                          : state === "active"
+                            ? "rgba(234,88,12,0.35)"
+                            : "rgba(28,25,23,0.08)"
+                      }`,
+                    }}
+                  >
+                    {state === "done" ? (
+                      <Check size={12} strokeWidth={2.6} color={color} />
+                    ) : state === "active" ? (
+                      <motion.span
+                        animate={reduceMotion ? undefined : { rotate: 360 }}
+                        transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+                        style={{ display: "inline-flex" }}
+                      >
+                        <Loader2 size={12} strokeWidth={2.4} color={color} />
+                      </motion.span>
+                    ) : (
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: color,
+                        }}
+                      />
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: state === "upcoming" ? T.textSec : T.text,
+                      letterSpacing: "-0.01em",
+                      opacity: state === "upcoming" ? 0.75 : 1,
+                    }}
+                  >
+                    {phase.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+          }}
+        >
+          {/* One row of placeholders on mobile preview; desktop pending deck keeps four tiles. */}
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              style={{
+                position: "relative",
+                overflow: "hidden",
+                borderRadius: 12,
+                border: "1px solid rgba(120,72,34,0.1)",
+                background: "rgba(255,253,250,0.72)",
+                padding: "10px 10px 12px",
+                minHeight: 72,
+              }}
+            >
+              {!reduceMotion && (
+                <motion.span
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    width: "45%",
+                    left: "-45%",
+                    background:
+                      "linear-gradient(90deg, transparent 0%, rgba(234,88,12,0.14) 50%, transparent 100%)",
+                    pointerEvents: "none",
+                  }}
+                  animate={{ left: ["-45%", "120%"] }}
+                  transition={{
+                    duration: 2.4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.16,
+                  }}
+                />
+              )}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span
+                  style={{
+                    height: 8,
+                    borderRadius: 999,
+                    width: `${58 + (i % 3) * 8}%`,
+                    background: "rgba(120,72,34,0.14)",
+                  }}
+                />
+                <span
+                  aria-hidden
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "rgba(234,88,12,0.22)",
+                  }}
+                />
+              </div>
+              <span
+                style={{
+                  display: "block",
+                  marginTop: 8,
+                  height: 12,
+                  borderRadius: 6,
+                  width: `${48 + (i % 2) * 18}%`,
+                  background: "linear-gradient(90deg, rgba(234,88,12,0.18) 0%, rgba(234,88,12,0.08) 100%)",
+                }}
+              />
+              <span
+                style={{
+                  display: "block",
+                  marginTop: 6,
+                  height: 6,
+                  borderRadius: 999,
+                  width: "88%",
+                  background: "rgba(28,25,23,0.08)",
+                }}
+              />
+              <span
+                style={{
+                  display: "block",
+                  marginTop: 4,
+                  height: 6,
+                  borderRadius: 999,
+                  width: "62%",
+                  background: "rgba(28,25,23,0.06)",
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <Brain size={14} strokeWidth={2} color="#C2410C" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
+          <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(68,64,60,0.82)", lineHeight: 1.5 }}>
+            You can listen back to the recording below. We&rsquo;ll drop your recap here as soon as
+            it&rsquo;s ready.
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function InterviewAnalysisCard() {
   const [showDetails, setShowDetails] = useState(false);
-  const [showAllQuestions, setShowAllQuestions] = useState(false);
-  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
-
-  const performanceHighlights = [
-    {
-      tag: "Communication",
-      summary: "Clear and structured responses.",
-      detail:
-        "Clear and confident responses with practical examples and a structured flow.",
-    },
-    {
-      tag: "Domain depth",
-      summary: "Solid grasp of trade-offs and impact.",
-      detail:
-        "Strong grasp of your core responsibilities, trade-offs, and measurable impact.",
-    },
-    {
-      tag: "Role alignment",
-      summary: "Closely matches target roles.",
-      detail:
-        "Signals align closely with target roles and recruiter expectations.",
-    },
-    {
-      tag: "Confidence",
-      summary: "Poised, steady pacing throughout.",
-      detail:
-        "Poised, concise delivery with steady pacing and strong interview presence.",
-    },
-  ];
-
-  const interviewQuestions = [
-    {
-      id: "q1",
-      number: 1,
-      question: "Walk me through a product you shipped end-to-end.",
-      duration: "1:42",
-    },
-    {
-      id: "q2",
-      number: 2,
-      question: "How do you resolve disagreements with engineering on scope?",
-      duration: "1:18",
-    },
-    {
-      id: "q3",
-      number: 3,
-      question: "Describe a trade-off between speed and polish you navigated.",
-      duration: "2:04",
-    },
-    {
-      id: "q4",
-      number: 4,
-      question: "What signal tells you a design is working in production?",
-      duration: "1:36",
-    },
-  ];
-
-  const visibleQuestions = showAllQuestions
-    ? interviewQuestions
-    : interviewQuestions.slice(0, 2);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
+      transition={{ duration: 0.4, delay: 0.45, ease: EASE }}
       style={{
-        borderRadius: 20,
-        padding: 18,
-        background: T.cardBg,
-        border: `1px solid ${T.border}`,
-        boxShadow: T.shadow,
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 18,
+        border: `1px solid ${CASE1_RECAP_BORDER}`,
+        background: CASE1_RECAP_GRADIENT,
+        boxShadow: CASE1_RECAP_SHADOW,
       }}
     >
-      {/* Header */}
       <div
+        aria-hidden
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 12,
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          backgroundImage: CASE1_RECAP_TEXTURE,
         }}
-      >
-        <Sparkles size={15} color={T.accent} fill={T.accent} strokeWidth={1.9} />
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: T.text,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          AI performance snapshot
-        </span>
-      </div>
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: -56,
+          right: -40,
+          width: 150,
+          height: 150,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(234,88,12,0.1) 0%, rgba(251,146,60,0.05) 45%, transparent 72%)",
+          filter: "blur(3px)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 1,
+          background:
+            "linear-gradient(90deg, transparent, rgba(234,88,12,0.22), transparent)",
+          pointerEvents: "none",
+        }}
+      />
 
-      {/* Luxe hero panel */}
       <div
         style={{
           position: "relative",
-          borderRadius: 16,
-          border: "1px solid rgba(234,88,12,0.14)",
-          background:
-            "linear-gradient(155deg, rgba(234,88,12,0.08) 0%, rgba(255,255,255,0.94) 45%, rgba(255,248,242,0.9) 100%)",
-          padding: "16px 16px 14px",
-          overflow: "hidden",
+          zIndex: 1,
+          padding: "16px 16px 18px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
         }}
       >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: -44,
-            right: -44,
-            width: 140,
-            height: 140,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(circle, rgba(234,88,12,0.18) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-
-        <div
-          style={{
-            fontSize: 11.5,
-            fontWeight: 600,
-            color: T.textSec,
-            letterSpacing: "-0.01em",
-            marginBottom: 12,
-          }}
-        >
-          Top interview highlights
-        </div>
-
-        {/* Competencies as tags/badges */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {performanceHighlights.map((item) => (
-            <span
-              key={item.tag}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "7px 11px",
-                borderRadius: 999,
-                border: "1px solid rgba(234,88,12,0.22)",
-                background: "rgba(255,255,255,0.92)",
-                color: "#9A3412",
-                fontSize: 11.5,
-                fontWeight: 650,
-                letterSpacing: "-0.01em",
-                boxShadow: "0 1px 4px rgba(234,88,12,0.08)",
-              }}
-            >
-              {item.tag}
-            </span>
-          ))}
-        </div>
-
-        {/* View details */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            marginTop: 10,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setShowDetails((prev) => !prev)}
+        <div>
+          <p
             style={{
-              border: "none",
-              background: "transparent",
-              color: T.accent,
-              fontSize: 11.5,
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-              cursor: "pointer",
-              height: 30,
-              padding: "6px 0",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
+              margin: 0,
+              fontSize: 10,
+              fontWeight: 600,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              color: "#7C4A13",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
             }}
           >
-            {showDetails ? "Hide details" : "View details"}
+            AI Interview summary
+          </p>
+          <h2
+            style={{
+              margin: 0,
+              marginTop: 8,
+              fontSize: 20,
+              fontWeight: 600,
+              lineHeight: 1.18,
+              letterSpacing: "-0.02em",
+              color: T.text,
+              fontFamily: T.sans,
+            }}
+          >
+            {INTERVIEW_RECAP_VERDICT}
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              marginTop: 10,
+              fontSize: 13.5,
+              lineHeight: 1.55,
+              color: "rgba(68,64,60,0.9)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {INTERVIEW_RECAP_SUMMARY}
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+          }}
+        >
+          {ANALYSIS_TRAITS.map((trait) => {
+            const accent = traitAccent(trait.level);
+            return (
+              <div
+                key={trait.label}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  borderRadius: 14,
+                  border: "1px solid rgba(120,72,34,0.1)",
+                  background: "rgba(255,253,250,0.72)",
+                  backdropFilter: "blur(6px)",
+                  padding: "12px 11px 12px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      color: T.textSec,
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    {trait.label}
+                  </span>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: accent,
+                      flexShrink: 0,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    lineHeight: 1.15,
+                    letterSpacing: "-0.02em",
+                    fontFamily: T.sans,
+                    color: accent,
+                  }}
+                >
+                  {trait.level}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    lineHeight: 1.45,
+                    color: "rgba(68,64,60,0.86)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {trait.blurb}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={() => setShowDetails((v) => !v)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              minHeight: 40,
+              padding: "8px 14px",
+              borderRadius: 999,
+              border: "1px solid rgba(234,88,12,0.42)",
+              background: showDetails ? "rgba(234,88,12,0.1)" : "rgba(255,255,255,0.78)",
+              color: T.accent,
+              fontSize: 12.5,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              fontFamily: T.sans,
+            }}
+          >
+            {showDetails ? "Hide detailed analysis" : "View detailed analysis"}
             <ChevronDown
-              size={13}
+              size={14}
               strokeWidth={2.3}
+              color={T.accent}
               style={{
                 transform: showDetails ? "rotate(180deg)" : "none",
                 transition: "transform 0.2s ease",
@@ -2512,287 +2910,71 @@ function InterviewAnalysisCard() {
         <AnimatePresence initial={false}>
           {showDetails && (
             <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.22, ease: EASE }}
-              style={{
-                marginTop: 8,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
+              initial={{ opacity: 0, y: 6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -4, height: 0 }}
+              transition={{ duration: 0.26, ease: EASE }}
+              style={{ overflow: "hidden" }}
             >
-              {performanceHighlights.map((item) => (
-                <div
-                  key={`${item.tag}-detail`}
-                  style={{
-                    borderRadius: 12,
-                    border: "1px solid rgba(234,88,12,0.14)",
-                    background: "rgba(255,255,255,0.94)",
-                    padding: "10px 12px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: T.text,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {item.tag}
-                  </span>
-                  <div
-                    style={{
-                      marginTop: 4,
-                      fontSize: 11.75,
-                      color: T.textSec,
-                      lineHeight: 1.5,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {item.detail}
-                  </div>
-                </div>
-              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 2 }}>
+                {ANALYSIS_TRAITS.map((trait) => {
+                  const accent = traitAccent(trait.level);
+                  return (
+                    <div
+                      key={`${trait.label}-detail`}
+                      style={{
+                        borderRadius: 14,
+                        border: "1px solid rgba(120,72,34,0.1)",
+                        background: "rgba(255,253,250,0.85)",
+                        padding: "12px 12px 12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: T.text,
+                            letterSpacing: "-0.01em",
+                          }}
+                        >
+                          {trait.label}
+                        </span>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            borderRadius: 999,
+                            padding: "3px 8px",
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                            background: `${accent}14`,
+                            color: accent,
+                          }}
+                        >
+                          {trait.level}
+                        </span>
+                      </div>
+                      <p
+                        style={{
+                          margin: "8px 0 0",
+                          fontSize: 12.5,
+                          lineHeight: 1.55,
+                          color: "rgba(68,64,60,0.9)",
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        {trait.detail}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* ── Interview recording ── */}
-      <div style={{ marginTop: 18 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
-            marginBottom: 10,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: T.text,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Listen to your answers
-          </span>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: T.textTer,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {interviewQuestions.length} questions
-          </span>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {visibleQuestions.map((q) => {
-            const isExpanded = expandedQuestionId === q.id;
-            return (
-              <div
-                key={q.id}
-                style={{
-                  borderRadius: 14,
-                  border: `1px solid ${
-                    isExpanded
-                      ? "rgba(234,88,12,0.22)"
-                      : "rgba(28,25,23,0.08)"
-                  }`,
-                  background: isExpanded
-                    ? "linear-gradient(160deg, rgba(234,88,12,0.05) 0%, rgba(255,255,255,0.96) 60%)"
-                    : T.cardBg,
-                  overflow: "hidden",
-                  transition: "background 0.2s ease, border-color 0.2s ease",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedQuestionId((prev) =>
-                      prev === q.id ? null : q.id
-                    )
-                  }
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "11px 12px",
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      background: isExpanded
-                        ? T.accentGradient
-                        : "rgba(234,88,12,0.09)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: isExpanded ? "#FFFFFF" : T.accent,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "-0.01em",
-                      boxShadow: isExpanded
-                        ? "0 2px 8px rgba(234,88,12,0.28)"
-                        : "none",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    Q{q.number}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        color: T.text,
-                        letterSpacing: "-0.01em",
-                        lineHeight: 1.4,
-                        display: "-webkit-box",
-                        WebkitLineClamp: isExpanded ? "unset" : 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {q.question}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 24,
-                        height: 24,
-                        borderRadius: "50%",
-                        border: `1px solid ${
-                          isExpanded
-                            ? "rgba(234,88,12,0.3)"
-                            : "rgba(28,25,23,0.12)"
-                        }`,
-                        background: isExpanded
-                          ? "rgba(234,88,12,0.1)"
-                          : "rgba(255,255,255,0.9)",
-                        color: isExpanded ? T.accent : T.textSec,
-                      }}
-                    >
-                      <Play
-                        size={10}
-                        strokeWidth={2.2}
-                        fill="currentColor"
-                        color="currentColor"
-                        style={{ marginLeft: 1 }}
-                      />
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 10.5,
-                        fontWeight: 600,
-                        color: T.textTer,
-                        letterSpacing: "-0.01em",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {q.duration}
-                    </span>
-                  </div>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: EASE }}
-                      style={{ overflow: "hidden" }}
-                    >
-                      <div
-                        style={{
-                          padding: "0 12px 12px 12px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            color: T.textTer,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Your answer
-                        </div>
-                        <audio
-                          controls
-                          preload="none"
-                          style={{ width: "100%", height: 36 }}
-                        >
-                          <source src="" type="audio/mpeg" />
-                        </audio>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
-        </div>
-
-        {!showAllQuestions && interviewQuestions.length > 2 && (
-          <button
-            type="button"
-            onClick={() => setShowAllQuestions(true)}
-            style={{
-              marginTop: 10,
-              width: "100%",
-              border: "1px solid rgba(28,25,23,0.08)",
-              background: "transparent",
-              color: T.text,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-              cursor: "pointer",
-              padding: "10px 12px",
-              borderRadius: 12,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
-          >
-            View all {interviewQuestions.length} questions
-            <ChevronDown size={13} strokeWidth={2.3} />
-          </button>
-        )}
       </div>
     </motion.div>
   );
@@ -4246,7 +4428,7 @@ function BelowAverageDashboard({
           >
             {case6Mode
               ? "Profile strength is low for your current target roles. Core skills and competencies need improvement."
-              : "You're building momentum — every step forward gets you closer to the right role."}
+              : "You're building momentum, every step forward gets you closer to the right role."}
           </p>
         </div>
 
@@ -5058,6 +5240,7 @@ export function DashboardPreviewScreen({
   const greeting = getTimeGreeting();
   const [activeCaseKey, setActiveCaseKey] = useState<"case-0" | "case-1" | "case-2" | "case-3" | "case-4" | "case-6" | "case-7" | "case-8">("case-1");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [case1RecapVariant, setCase1RecapVariant] = useState<Case1RecapVariant>("ready");
   const isCase1Dashboard = activeCaseKey === "case-0";
   const isCase4Dashboard = activeCaseKey === "case-4";
   const isLowPerformer = activeCaseKey === "case-2" || activeCaseKey === "case-6";
@@ -5179,11 +5362,24 @@ export function DashboardPreviewScreen({
           />
 
           {isCase1Dashboard && (
-            <>
-              <div style={{ marginTop: 24 }}>
-                <InterviewAnalysisCard />
-              </div>
-            </>
+            <div
+              style={{
+                marginTop: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              <Case1RecapVariantToggle variant={case1RecapVariant} onChange={setCase1RecapVariant} />
+              <AnimatePresence mode="wait" initial={false}>
+                {case1RecapVariant === "pending" ? (
+                  <MobileInterviewRecapPendingCard key="case1-pending" />
+                ) : (
+                  <InterviewAnalysisCard key="case1-ready" />
+                )}
+              </AnimatePresence>
+              <InterviewRecordingCompactCard />
+            </div>
           )}
 
           {isRetryCallDashboard && (
@@ -5230,13 +5426,6 @@ export function DashboardPreviewScreen({
                   blurInsight={((isCase5Dashboard || isCase7Dashboard) && i < 3) || (isCase8Dashboard && i < 3)}
                   hideScore={isLockedInterviewDashboard}
                   headerIconSize={(isCase5Dashboard || isCase7Dashboard) ? 13 : 15}
-                  lockHintText={
-                    isCase8Dashboard
-                      ? "Start the voice interview to unlock full match details"
-                      : isCase7Dashboard
-                      ? "Free retakes are paused. Pay for another call or contact support."
-                      : "Retake the ZappyFind call to unlock full match details"
-                  }
                 />
               ))}
             </div>
@@ -5246,57 +5435,7 @@ export function DashboardPreviewScreen({
             <ReviewAllButton count={isCase4Dashboard ? MOCK_JOBS.length : 42} onClick={onReviewJobs} />
           ) : (
             !isCase1Dashboard && (
-            isCase7Dashboard ? (
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.55, ease: EASE }}
-                style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}
-              >
-                <button
-                  type="button"
-                  style={{
-                    width: "100%",
-                    padding: "15px",
-                    borderRadius: 16,
-                    border: "none",
-                    background: T.accentGradient,
-                    color: "white",
-                    fontSize: 15,
-                    fontWeight: 600,
-                    letterSpacing: "-0.01em",
-                    cursor: "pointer",
-                    fontFamily: T.sans,
-                    boxShadow:
-                      "0 4px 20px rgba(234,88,12,0.3), 0 1px 4px rgba(234,88,12,0.15)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                >
-                  Pay to unlock another retake
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    width: "100%",
-                    padding: "13px",
-                    borderRadius: 14,
-                    border: "1px solid rgba(28,25,23,0.14)",
-                    background: "rgba(255,255,255,0.72)",
-                    color: T.text,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    letterSpacing: "-0.01em",
-                    cursor: "pointer",
-                    fontFamily: T.sans,
-                  }}
-                >
-                  Contact support
-                </button>
-              </motion.div>
-            ) : (
+            isCase7Dashboard ? null : (
               <motion.button
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
