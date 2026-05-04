@@ -2,8 +2,10 @@ import type { CSSProperties } from "react";
 
 type Axis = {
   label: string;
-  you: number; // 0..1
-  ideal: number; // 0..1
+  /** Normalized 0..1 score the user achieved on this competency. */
+  you: number;
+  /** Retained for backwards compatibility with existing data. The radar no longer renders an "ideal" reference shape. */
+  ideal?: number;
 };
 
 function clamp01(n: number): number {
@@ -28,16 +30,14 @@ export function InterviewQuestionRadar({
   size = 156,
   showAxisLabels = false,
   youColor = "#EA580C",
-  idealColor = "rgba(28,25,23,0.35)",
   gridColor = "rgba(28,25,23,0.08)",
   style,
-  ariaLabel = "Competency comparison chart",
+  ariaLabel = "Competency performance chart",
 }: {
   axes: Axis[];
   size?: number;
   showAxisLabels?: boolean;
   youColor?: string;
-  idealColor?: string;
   gridColor?: string;
   style?: CSSProperties;
   ariaLabel?: string;
@@ -55,12 +55,6 @@ export function InterviewQuestionRadar({
   const youPoints = angles.map((a, i) => {
     const axis = safeAxes[i];
     const v = clamp01(axis?.you ?? 0);
-    return polarToCartesian(cx, cy, r * v, a);
-  });
-
-  const idealPoints = angles.map((a, i) => {
-    const axis = safeAxes[i];
-    const v = clamp01(axis?.ideal ?? 0);
     return polarToCartesian(cx, cy, r * v, a);
   });
 
@@ -87,15 +81,12 @@ export function InterviewQuestionRadar({
         <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={gridColor} strokeWidth={1} />
       ))}
 
-      {/* Ideal polygon */}
-      <path d={polygonPath(idealPoints)} fill="rgba(28,25,23,0.04)" stroke={idealColor} strokeWidth={1.5} />
+      {/* User polygon — single performance shape, no ideal reference. */}
+      <path d={polygonPath(youPoints)} fill="rgba(234,88,12,0.18)" stroke={youColor} strokeWidth={2} />
 
-      {/* You polygon */}
-      <path d={polygonPath(youPoints)} fill="rgba(234,88,12,0.16)" stroke={youColor} strokeWidth={2} />
-
-      {/* Dots for You (subtle anchor points) */}
+      {/* Dots for You */}
       {youPoints.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={2.2} fill={youColor} opacity={0.9} />
+        <circle key={i} cx={p.x} cy={p.y} r={2.4} fill={youColor} opacity={0.95} />
       ))}
 
       {/* Labels */}
@@ -127,4 +118,3 @@ export function InterviewQuestionRadar({
     </svg>
   );
 }
-

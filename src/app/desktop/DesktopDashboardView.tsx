@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -39,7 +39,13 @@ import {
   INTERVIEW_RECAP_VERDICT,
   traitAccent,
 } from "../interviewRecapCopy";
-import { INTERVIEW_QUESTION_ANALYSIS } from "../interviewQuestionAnalysisCopy";
+import {
+  aggregateCompetencyAxesForInterview,
+  formatCompetencyScore,
+  getPrimaryCompetencyForQuestion,
+  INTERVIEW_QUESTION_ANALYSIS,
+  type InterviewQuestionAnalysis,
+} from "../interviewQuestionAnalysisCopy";
 import { DT, desktopHubStagger } from "./desktop-tokens";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -2307,6 +2313,11 @@ function InterviewRecapReadyDeck({
   activeQuestionId: string | null;
   setActiveQuestionId: (id: string | null) => void;
 }) {
+  const sessionRadarAxes = useMemo(
+    () => aggregateCompetencyAxesForInterview(INTERVIEW_QUESTION_ANALYSIS),
+    [],
+  );
+
   return (
     <>
       {/* ── 1. Interview intelligence deck (secondary to warm hero) ───── */}
@@ -2441,6 +2452,37 @@ function InterviewRecapReadyDeck({
             })}
           </div>
 
+          <div
+            className="rounded-[18px] border px-3 py-4 sm:px-4"
+            style={{
+              borderColor: "rgba(28,25,23,0.06)",
+              background: "rgba(255,255,255,0.82)",
+              boxShadow: "0 1px 2px rgba(28,25,23,0.04), 0 8px 22px rgba(28,25,23,0.05)",
+            }}
+          >
+            <div className="flex justify-center">
+              <InterviewQuestionRadar
+                axes={sessionRadarAxes}
+                size={220}
+                showAxisLabels
+                ariaLabel="Your performance across evaluated competencies"
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <span
+                aria-hidden
+                className="h-2.5 w-4 rounded-full border-2"
+                style={{ borderColor: DT.accent, background: "rgba(234,88,12,0.18)" }}
+              />
+              <span
+                className="text-[12px] font-bold"
+                style={{ letterSpacing: "-0.01em", color: "rgba(68,64,60,0.9)" }}
+              >
+                Your performance
+              </span>
+            </div>
+          </div>
+
           {/* Detailed analysis — on demand */}
           <div className="flex w-full items-center">
             <button
@@ -2497,7 +2539,7 @@ function InterviewRecapReadyDeck({
                           className="mt-1 text-[12px] leading-snug"
                           style={{ color: "rgba(87,83,78,0.9)", letterSpacing: "-0.005em" }}
                         >
-                          See how each response compares to the ideal and where you can improve.
+                          One competency was scored per question — open any to see the full transcript and ideal answer.
                         </div>
                       </div>
                     </div>
@@ -2512,85 +2554,21 @@ function InterviewRecapReadyDeck({
                         }}
                       >
                         <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: DT.accent }} />
-                        You
-                      </span>
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold"
-                        style={{
-                          borderColor: "rgba(28,25,23,0.12)",
-                          background: "rgba(28,25,23,0.04)",
-                          color: "rgba(87,83,78,0.86)",
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(28,25,23,0.35)" }} />
-                        Ideal
+                        Your performance
                       </span>
                     </div>
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {INTERVIEW_QUESTION_ANALYSIS.map((q, idx) => {
-                      const active = q.id === activeQuestionId;
-                      return (
-                        <button
-                          key={q.id}
-                          type="button"
-                          onClick={() => setActiveQuestionId(q.id)}
-                          className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left transition-shadow"
-                          style={{
-                            borderColor: active ? "rgba(234,88,12,0.22)" : "rgba(120,72,34,0.1)",
-                            background: "rgba(255,255,255,0.75)",
-                            boxShadow: active ? "0 8px 26px rgba(234,88,12,0.10)" : "0 1px 3px rgba(28,25,23,0.06)",
-                          }}
-                          aria-label={`Open analysis for question ${idx + 1}`}
-                        >
-                          <div aria-hidden className="shrink-0">
-                            <InterviewQuestionRadar axes={q.competencies} size={92} showAxisLabels={false} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline justify-between gap-3">
-                              <span
-                                className="text-[10.5px] font-bold uppercase"
-                                style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}
-                              >
-                                Question {idx + 1}
-                              </span>
-                              <span className="text-[10.5px] font-semibold" style={{ color: "rgba(92,86,81,0.72)" }}>
-                                You vs Ideal
-                              </span>
-                            </div>
-                            <div
-                              className="mt-1.5 line-clamp-3 text-[13px] font-bold leading-snug"
-                              style={{ color: DT.text, letterSpacing: "-0.015em" }}
-                            >
-                              {q.prompt}
-                            </div>
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {q.competencies.slice(0, 4).map((c) => (
-                                <span
-                                  key={c.label}
-                                  className="rounded-full border px-2 py-0.5 text-[10.5px] font-semibold"
-                                  style={{
-                                    borderColor: "rgba(28,25,23,0.06)",
-                                    background: "rgba(28,25,23,0.04)",
-                                    color: "rgba(68,64,60,0.82)",
-                                    letterSpacing: "-0.01em",
-                                  }}
-                                >
-                                  {c.label}
-                                </span>
-                              ))}
-                              {q.competencies.length > 4 ? (
-                                <span className="px-1 text-[10.5px] font-semibold" style={{ color: "rgba(68,64,60,0.64)" }}>
-                                  +{q.competencies.length - 4}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {INTERVIEW_QUESTION_ANALYSIS.map((q, idx) => (
+                      <DesktopQuestionCard
+                        key={q.id}
+                        question={q}
+                        index={idx}
+                        active={q.id === activeQuestionId}
+                        onOpen={() => setActiveQuestionId(q.id)}
+                      />
+                    ))}
                   </div>
                   <QuestionDetailPanel
                     open={Boolean(activeQuestionId)}
@@ -3008,6 +2986,208 @@ function IdealAnswerBlock({ text }: { text: string }) {
   );
 }
 
+/* ── Single-competency score helpers (desktop) ─────────────────────────── */
+
+type DesktopScoreTier = "strong" | "solid" | "growing";
+
+const DESKTOP_SCORE_TIER_PALETTE: Record<
+  DesktopScoreTier,
+  { fg: string; bg: string; border: string; track: string; fill: string }
+> = {
+  strong: {
+    fg: "#15803D",
+    bg: "rgba(22,163,74,0.10)",
+    border: "rgba(22,163,74,0.22)",
+    track: "rgba(22,163,74,0.12)",
+    fill: "linear-gradient(90deg, #22C55E 0%, #15803D 100%)",
+  },
+  solid: {
+    fg: "#C2410C",
+    bg: "rgba(234,88,12,0.10)",
+    border: "rgba(234,88,12,0.22)",
+    track: "rgba(234,88,12,0.12)",
+    fill: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+  },
+  growing: {
+    fg: "#B45309",
+    bg: "rgba(217,119,6,0.10)",
+    border: "rgba(217,119,6,0.22)",
+    track: "rgba(217,119,6,0.14)",
+    fill: "linear-gradient(90deg, #F59E0B 0%, #B45309 100%)",
+  },
+};
+
+function classifyDesktopScore(score01: number): DesktopScoreTier {
+  if (score01 >= 0.78) return "strong";
+  if (score01 >= 0.65) return "solid";
+  return "growing";
+}
+
+function DesktopQuestionCard({
+  question,
+  index,
+  active,
+  onOpen,
+}: {
+  question: InterviewQuestionAnalysis;
+  index: number;
+  active: boolean;
+  onOpen: () => void;
+}) {
+  const competency = getPrimaryCompetencyForQuestion(question);
+  const score = competency?.you ?? 0;
+  const tier = classifyDesktopScore(score);
+  const palette = DESKTOP_SCORE_TIER_PALETTE[tier];
+  const pct = Math.max(0, Math.min(1, score)) * 100;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group relative flex w-full flex-col gap-3 overflow-hidden rounded-[16px] border p-4 text-left transition-shadow"
+      style={{
+        borderColor: active ? "rgba(234,88,12,0.22)" : "rgba(120,72,34,0.1)",
+        background: "rgba(255,255,255,0.78)",
+        boxShadow: active ? "0 8px 26px rgba(234,88,12,0.10)" : "0 1px 3px rgba(28,25,23,0.06)",
+      }}
+      aria-label={`Open analysis for question ${index + 1}`}
+    >
+      <div className="flex items-center justify-start gap-3">
+        <span
+          className="text-[10.5px] font-bold uppercase"
+          style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}
+        >
+          Question {index + 1}
+        </span>
+      </div>
+
+      <div
+        className="line-clamp-3 text-[13px] font-bold leading-snug"
+        style={{ color: DT.text, letterSpacing: "-0.015em" }}
+      >
+        {question.prompt}
+      </div>
+
+      {competency ? (
+        <div
+          className="flex flex-col gap-2 rounded-[12px] border px-3 py-2.5"
+          style={{
+            borderColor: "rgba(28,25,23,0.05)",
+            background: "rgba(253,251,248,0.92)",
+          }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: palette.fg }}
+              />
+              <span
+                className="text-[9.5px] font-bold uppercase"
+                style={{ color: "rgba(120,72,34,0.68)", letterSpacing: "0.12em" }}
+              >
+                Competency evaluated
+              </span>
+            </div>
+            <span
+              className="text-[14px] font-extrabold"
+              style={{ color: palette.fg, letterSpacing: "-0.02em" }}
+            >
+              {formatCompetencyScore(score)}
+            </span>
+          </div>
+          <div
+            className="text-[13px] font-bold"
+            style={{ color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}
+          >
+            {competency.label}
+          </div>
+          <div
+            aria-hidden
+            className="relative h-1.5 w-full overflow-hidden rounded-full"
+            style={{ background: palette.track }}
+          >
+            <div
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{ width: `${pct}%`, background: palette.fill }}
+            />
+          </div>
+        </div>
+      ) : null}
+    </button>
+  );
+}
+
+function DesktopCompetencyScoreHero({ question }: { question: InterviewQuestionAnalysis }) {
+  const competency = getPrimaryCompetencyForQuestion(question);
+  if (!competency) return null;
+  const tier = classifyDesktopScore(competency.you);
+  const palette = DESKTOP_SCORE_TIER_PALETTE[tier];
+  const pct = Math.max(0, Math.min(1, competency.you)) * 100;
+
+  return (
+    <div
+      className="flex flex-col gap-3 rounded-[16px] border p-4"
+      style={{
+        borderColor: palette.border,
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(253,251,248,0.95) 100%)",
+        boxShadow: "0 1px 2px rgba(28,25,23,0.04), 0 8px 22px rgba(28,25,23,0.05)",
+      }}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border"
+            style={{ background: palette.bg, borderColor: palette.border, color: palette.fg }}
+          >
+            <Target className="h-4 w-4" strokeWidth={2.4} />
+          </span>
+          <div className="min-w-0">
+            <div
+              className="text-[10.5px] font-extrabold uppercase"
+              style={{ color: "rgba(120,72,34,0.74)", letterSpacing: "0.1em" }}
+            >
+              Competency evaluated
+            </div>
+            <div
+              className="mt-1 text-[18px] font-extrabold leading-tight"
+              style={{ color: DT.text, letterSpacing: "-0.02em" }}
+            >
+              {competency.label}
+            </div>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end">
+          <span
+            className="text-[28px] leading-none"
+            style={{
+              fontFamily: DT.serif,
+              fontWeight: 400,
+              color: palette.fg,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {formatCompetencyScore(competency.you)}
+          </span>
+        </div>
+      </div>
+      <div
+        aria-hidden
+        className="relative h-2 w-full overflow-hidden rounded-full"
+        style={{ background: palette.track }}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{ width: `${pct}%`, background: palette.fill }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function QuestionDetailPanel({
   open,
   question,
@@ -3100,40 +3280,7 @@ function QuestionDetailPanel({
             </div>
 
             <div className="flex flex-col gap-5 px-6 py-5">
-              <div className="flex flex-wrap items-center gap-5">
-                <div className="shrink-0">
-                  <InterviewQuestionRadar axes={question.competencies} size={220} showAxisLabels />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: DT.accent }} />
-                      <span className="text-[12px] font-bold" style={{ color: "rgba(68,64,60,0.9)", letterSpacing: "-0.01em" }}>
-                        You
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: "rgba(28,25,23,0.35)" }} />
-                      <span className="text-[12px] font-bold" style={{ color: "rgba(68,64,60,0.86)", letterSpacing: "-0.01em" }}>
-                        Ideal
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-2">
-                    {question.competencies.map((c) => (
-                      <div key={c.label} className="flex items-center justify-between gap-4">
-                        <span className="text-[12px] font-semibold" style={{ color: "rgba(68,64,60,0.86)", letterSpacing: "-0.01em" }}>
-                          {c.label}
-                        </span>
-                        <div className="flex items-center gap-2" aria-hidden>
-                          <span className="h-2 w-2 rounded-full" style={{ background: DT.accent }} />
-                          <span className="h-2 w-2 rounded-full" style={{ background: "rgba(28,25,23,0.35)" }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <DesktopCompetencyScoreHero question={question} />
 
               <div>
                 <div className="text-[10.5px] font-bold uppercase" style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}>

@@ -6548,10 +6548,24 @@ function BelowAverageDashboard({
 
 // ── Main Dashboard ───────────────────────────────────────────────────────────
 
+export type DashboardPreviewCaseKey =
+  | "case-0"
+  | "case-1"
+  | "case-2"
+  | "case-3"
+  | "case-4"
+  | "case-6"
+  | "case-7"
+  | "case-8"
+  | "case-9";
+
 interface DashboardPreviewScreenProps {
   firstName: string;
   profile: FullProfile | null;
   hasCompletedInterview: boolean;
+  /** Controlled so parent can restore Case 9 (etc.) when returning from deep links. */
+  activeCaseKey: DashboardPreviewCaseKey;
+  onActiveCaseKeyChange: (key: DashboardPreviewCaseKey) => void;
   onStartInterview: () => void;
   onReviewJobs: () => void;
   onViewSavedJobs: () => void;
@@ -6567,6 +6581,8 @@ export function DashboardPreviewScreen({
   firstName,
   profile,
   hasCompletedInterview,
+  activeCaseKey,
+  onActiveCaseKeyChange,
   onStartInterview,
   onReviewJobs,
   onViewSavedJobs,
@@ -6579,9 +6595,6 @@ export function DashboardPreviewScreen({
 }: DashboardPreviewScreenProps) {
   const displayName = firstName || "Alex";
   const greeting = getTimeGreeting();
-  const [activeCaseKey, setActiveCaseKey] = useState<
-    "case-0" | "case-1" | "case-2" | "case-3" | "case-4" | "case-6" | "case-7" | "case-8" | "case-9"
-  >("case-1");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [case1RecapVariant, setCase1RecapVariant] = useState<Case1RecapVariant>("ready");
   const [liveGrowthVisible, setLiveGrowthVisible] = useState<boolean>(() => shouldShowLiveGrowth());
@@ -6655,15 +6668,15 @@ export function DashboardPreviewScreen({
       <DashboardHeader
         displayName={displayName}
         caseOptions={[
-          { key: "case-0", label: "Case 1", onSelect: () => setActiveCaseKey("case-0") },
-          { key: "case-1", label: "Case 2", onSelect: () => setActiveCaseKey("case-1") },
-          { key: "case-2", label: "Case 3", onSelect: () => setActiveCaseKey("case-2") },
-          { key: "case-4", label: "Case 4", onSelect: () => setActiveCaseKey("case-4") },
-          { key: "case-3", label: "Case 5", onSelect: () => setActiveCaseKey("case-3") },
-          { key: "case-6", label: "Case 6", onSelect: () => setActiveCaseKey("case-6") },
-          { key: "case-7", label: "Case 7", onSelect: () => setActiveCaseKey("case-7") },
-          { key: "case-8", label: "Case 8", onSelect: () => setActiveCaseKey("case-8") },
-          { key: "case-9", label: "Case 9", onSelect: () => setActiveCaseKey("case-9") },
+          { key: "case-0", label: "Case 1", onSelect: () => onActiveCaseKeyChange("case-0") },
+          { key: "case-1", label: "Case 2", onSelect: () => onActiveCaseKeyChange("case-1") },
+          { key: "case-2", label: "Case 3", onSelect: () => onActiveCaseKeyChange("case-2") },
+          { key: "case-4", label: "Case 4", onSelect: () => onActiveCaseKeyChange("case-4") },
+          { key: "case-3", label: "Case 5", onSelect: () => onActiveCaseKeyChange("case-3") },
+          { key: "case-6", label: "Case 6", onSelect: () => onActiveCaseKeyChange("case-6") },
+          { key: "case-7", label: "Case 7", onSelect: () => onActiveCaseKeyChange("case-7") },
+          { key: "case-8", label: "Case 8", onSelect: () => onActiveCaseKeyChange("case-8") },
+          { key: "case-9", label: "Case 9", onSelect: () => onActiveCaseKeyChange("case-9") },
         ]}
         activeCaseKey={activeCaseKey}
         isLowPerformer={isLowPerformer}

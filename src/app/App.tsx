@@ -10,7 +10,12 @@ import { OnboardingProfileScreen } from "./components/OnboardingProfileScreen";
 import { JobPreferencesScreen } from "./components/JobPreferencesScreen";
 import { ProfileSummaryScreen } from "./components/ProfileSummaryScreen";
 import { VoiceCallScreen } from "./components/VoiceCallScreen";
-import { CareerGuidanceScreen, DashboardPreviewScreen, InterviewPrepScreen } from "./components/DashboardPreviewScreen";
+import {
+  CareerGuidanceScreen,
+  DashboardPreviewScreen,
+  InterviewPrepScreen,
+  type DashboardPreviewCaseKey,
+} from "./components/DashboardPreviewScreen";
 import { JobReviewScreen } from "./components/JobReviewScreen";
 import { JobSeekerProfileScreen } from "./components/JobSeekerProfileScreen";
 import { MatchCelebrationScreen } from "./components/MatchCelebrationScreen";
@@ -189,6 +194,9 @@ export default function App() {
   );
   const [hasCompletedInterview, setHasCompletedInterview] = useState(false);
   const [jobReviewInitialTab, setJobReviewInitialTab] = useState<JobWorkspaceTab>("recommended");
+  /** Persists across navigations so returning from interview analysis can restore Case 9. */
+  const [mobileDashboardCaseKey, setMobileDashboardCaseKey] =
+    useState<DashboardPreviewCaseKey>("case-1");
 
   const STORAGE_KEY = "zappyfind.session.v1";
   const readSession = () => {
@@ -616,6 +624,8 @@ export default function App() {
                 firstName={firstName}
                 profile={parsedProfile}
                 hasCompletedInterview={hasCompletedInterview}
+                activeCaseKey={mobileDashboardCaseKey}
+                onActiveCaseKeyChange={setMobileDashboardCaseKey}
                 onStartInterview={() => goTo("voiceCall", "forward")}
                 onReviewJobs={() => {
                   setJobReviewInitialTab("recommended");
@@ -646,7 +656,12 @@ export default function App() {
               transition={SPRING}
               style={{ width: "100%" }}
             >
-              <InterviewQuestionAnalysisScreen onBack={() => goTo("dashboardPreview", "back")} />
+              <InterviewQuestionAnalysisScreen
+                onBack={() => {
+                  setMobileDashboardCaseKey("case-9");
+                  goTo("dashboardPreview", "back");
+                }}
+              />
             </motion.div>
           )}
 

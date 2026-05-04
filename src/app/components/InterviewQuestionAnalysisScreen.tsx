@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronDown, FileText, Sparkles, ListChecks, Target, TrendingUp, TrendingDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Lightbulb, ListChecks, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import { DT } from "../desktop/desktop-tokens";
 import { InterviewQuestionRadar } from "./InterviewQuestionRadar";
-import { INTERVIEW_QUESTION_ANALYSIS, type InterviewQuestionAnalysis } from "../interviewQuestionAnalysisCopy";
+import {
+  INTERVIEW_QUESTION_ANALYSIS,
+  aggregateCompetencyAxesForInterview,
+  formatCompetencyScore,
+  getPrimaryCompetencyForQuestion,
+  type CompetencyAxis,
+  type InterviewQuestionAnalysis,
+} from "../interviewQuestionAnalysisCopy";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -103,63 +110,40 @@ function IdealAnswerBlock({ text }: { text: string }) {
   );
 }
 
-function CompetencyMeter({ label, you, ideal }: { label: string; you: number; ideal: number }) {
-  const youPct = Math.max(0, Math.min(1, you)) * 100;
-  const idealPct = Math.max(0, Math.min(1, ideal)) * 100;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span
-        style={{
-          flex: 1,
-          minWidth: 0,
-          fontSize: 12,
-          fontWeight: 600,
-          color: "rgba(28,25,23,0.78)",
-          letterSpacing: "-0.01em",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {label}
-      </span>
-      <div
-        aria-hidden
-        style={{
-          position: "relative",
-          width: 92,
-          height: 6,
-          borderRadius: 999,
-          background: "rgba(28,25,23,0.06)",
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            height: "100%",
-            width: `${youPct}%`,
-            borderRadius: 999,
-            background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: `calc(${idealPct}% - 1px)`,
-            top: -3,
-            width: 2,
-            height: 12,
-            borderRadius: 1,
-            background: "rgba(28,25,23,0.55)",
-          }}
-        />
-      </div>
-    </div>
-  );
+type ScoreTier = "strong" | "solid" | "growing";
+
+function classifyScore(score01: number): ScoreTier {
+  if (score01 >= 0.78) return "strong";
+  if (score01 >= 0.65) return "solid";
+  return "growing";
 }
+
+const SCORE_TIER_PALETTE: Record<
+  ScoreTier,
+  { fg: string; bg: string; border: string; track: string; fill: string }
+> = {
+  strong: {
+    fg: "#15803D",
+    bg: "rgba(22,163,74,0.10)",
+    border: "rgba(22,163,74,0.22)",
+    track: "rgba(22,163,74,0.12)",
+    fill: "linear-gradient(90deg, #22C55E 0%, #15803D 100%)",
+  },
+  solid: {
+    fg: "#C2410C",
+    bg: "rgba(234,88,12,0.10)",
+    border: "rgba(234,88,12,0.22)",
+    track: "rgba(234,88,12,0.12)",
+    fill: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+  },
+  growing: {
+    fg: "#B45309",
+    bg: "rgba(217,119,6,0.10)",
+    border: "rgba(217,119,6,0.22)",
+    track: "rgba(217,119,6,0.14)",
+    fill: "linear-gradient(90deg, #F59E0B 0%, #B45309 100%)",
+  },
+};
 
 function QuestionCard({
   index,
@@ -170,18 +154,11 @@ function QuestionCard({
   q: InterviewQuestionAnalysis;
   onOpen: () => void;
 }) {
-  const visible = q.competencies.slice(0, 3);
-  const remaining = q.competencies.length - visible.length;
-  const avgGap = useMemo(() => {
-    const totals = q.competencies.reduce(
-      (acc, c) => {
-        acc.gap += Math.max(0, c.ideal - c.you);
-        return acc;
-      },
-      { gap: 0 },
-    );
-    return totals.gap / q.competencies.length;
-  }, [q.competencies]);
+  const competency = useMemo(() => getPrimaryCompetencyForQuestion(q), [q]);
+  const score = competency?.you ?? 0;
+  const tier = classifyScore(score);
+  const palette = SCORE_TIER_PALETTE[tier];
+  const pct = Math.max(0, Math.min(1, score)) * 100;
 
   return (
     <button
@@ -244,76 +221,97 @@ function QuestionCard({
         {q.prompt}
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          padding: "10px 12px",
-          borderRadius: 12,
-          background: "rgba(253,251,248,0.9)",
-          border: "1px solid rgba(28,25,23,0.05)",
-        }}
-      >
+      {competency ? (
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
+            flexDirection: "column",
+            gap: 8,
+            padding: "12px 12px",
+            borderRadius: 12,
+            background: "rgba(253,251,248,0.92)",
+            border: "1px solid rgba(28,25,23,0.05)",
           }}
         >
-          <span
-            style={{
-              fontSize: 9.5,
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "rgba(120,72,34,0.6)",
-            }}
-          >
-            Competencies evaluated
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }} aria-hidden>
-            <span
-              style={{
-                width: 8,
-                height: 3,
-                borderRadius: 999,
-                background: "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
-              }}
-            />
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(87,83,78,0.8)" }}>You</span>
-            <span
-              style={{
-                width: 2,
-                height: 8,
-                borderRadius: 1,
-                background: "rgba(28,25,23,0.55)",
-                marginLeft: 4,
-              }}
-            />
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(87,83,78,0.8)" }}>Ideal</span>
-          </div>
-        </div>
-
-        {visible.map((c) => (
-          <CompetencyMeter key={c.label} label={c.label} you={c.you} ideal={c.ideal} />
-        ))}
-
-        {remaining > 0 ? (
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: "rgba(87,83,78,0.78)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <span
+                aria-hidden
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  background: palette.fg,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "rgba(120,72,34,0.68)",
+                }}
+              >
+                Competency evaluated
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 800,
+                color: palette.fg,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {formatCompetencyScore(score)}
+            </span>
+          </div>
+
+          <div
+            style={{
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: "rgba(28,25,23,0.88)",
               letterSpacing: "-0.01em",
             }}
           >
-            +{remaining} more competenc{remaining === 1 ? "y" : "ies"}
+            {competency.label}
           </div>
-        ) : null}
-      </div>
+
+          <div
+            aria-hidden
+            style={{
+              position: "relative",
+              width: "100%",
+              height: 6,
+              borderRadius: 999,
+              background: palette.track,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                height: "100%",
+                width: `${pct}%`,
+                borderRadius: 999,
+                background: palette.fill,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div
         style={{
@@ -383,35 +381,8 @@ function DetailSheet({
     };
   }, [onClose]);
 
-  const axes = useMemo(() => q.competencies, [q.competencies]);
+  const competency = useMemo(() => getPrimaryCompetencyForQuestion(q), [q]);
   const yourLines = useMemo(() => q.transcript.filter((l) => l.role === "you"), [q.transcript]);
-  const competencyDeltas = useMemo(() => {
-    return q.competencies.map((c) => ({
-      ...c,
-      gap: c.ideal - c.you,
-    }));
-  }, [q.competencies]);
-  const strongest = useMemo(() => {
-    if (competencyDeltas.length === 0) return null;
-    return [...competencyDeltas].sort((a, b) => a.gap - b.gap)[0];
-  }, [competencyDeltas]);
-  const biggestGap = useMemo(() => {
-    if (competencyDeltas.length === 0) return null;
-    return [...competencyDeltas].sort((a, b) => b.gap - a.gap)[0];
-  }, [competencyDeltas]);
-  const improvables = useMemo(() => {
-    const labels = competencyDeltas
-      .filter((c) => c.gap > 0.01)
-      .sort((a, b) => b.gap - a.gap)
-      .map((c) => c.label);
-    return biggestGap ? labels.filter((l) => l !== biggestGap.label) : labels;
-  }, [competencyDeltas, biggestGap]);
-  const topGaps = useMemo(() => {
-    return [...competencyDeltas]
-      .filter((c) => c.gap > 0.01)
-      .sort((a, b) => b.gap - a.gap)
-      .slice(0, 2);
-  }, [competencyDeltas]);
 
   const sheet = (
     <AnimatePresence>
@@ -488,143 +459,16 @@ function DetailSheet({
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(120,72,34,0.72)" }}>
               Question {index + 1}
             </div>
-            <div style={{ marginTop: 4, fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "#1C1917", lineHeight: 1.25 }}>
+            <div style={{ marginTop: 4, fontSize: 17, fontWeight: 750, letterSpacing: "-0.02em", color: "#1C1917", lineHeight: 1.28 }}>
               {q.prompt}
             </div>
           </div>
         </div>
 
-        <div style={{ marginTop: 14 }}>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <InterviewQuestionRadar axes={axes} size={220} showAxisLabels />
-          </div>
+        {competency ? <CompetencyScoreHero competency={competency} /> : null}
 
-          <div style={{ marginTop: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
-              <LegendRow label="You" swatch="rgba(234,88,12,0.16)" stroke={DT.accent} />
-              <LegendRow label="Ideal" swatch="rgba(28,25,23,0.04)" stroke="rgba(28,25,23,0.35)" />
-            </div>
-
-            <div
-              style={{
-                marginTop: 12,
-                borderRadius: 16,
-                border: "1px solid rgba(28,25,23,0.08)",
-                background: "rgba(255,255,255,0.78)",
-                padding: 12,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <ListChecks size={14} strokeWidth={2.4} color="rgba(120,72,34,0.8)" aria-hidden />
-                    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.09em", textTransform: "uppercase", color: "rgba(120,72,34,0.78)" }}>
-                      Quick takeaways
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-                {strongest ? (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 10,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "rgba(99,102,241,0.12)", // indigo
-                          border: "1px solid rgba(99,102,241,0.18)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <TrendingUp size={14} strokeWidth={2.4} color="rgba(67,56,202,0.95)" />
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
-                          Strength: {strongest.label}
-                        </div>
-                        <div style={{ marginTop: 1, fontSize: 11, fontWeight: 600, color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
-                          Keep this pattern. It’s the most consistent part of your answer.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {biggestGap ? (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 10,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "rgba(13,148,136,0.10)", // teal
-                          border: "1px solid rgba(13,148,136,0.18)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Target size={14} strokeWidth={2.4} color="rgba(15,118,110,0.95)" />
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
-                          Biggest gap: {biggestGap.label}
-                        </div>
-                        <div style={{ marginTop: 1, fontSize: 11, fontWeight: 600, color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
-                          Focus next: add one concrete example and a clear outcome.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {improvables.length > 0 ? (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 10,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "rgba(234,88,12,0.10)",
-                          border: "1px solid rgba(234,88,12,0.18)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <TrendingDown size={14} strokeWidth={2.4} color="rgba(194,65,12,0.95)" />
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
-                          Needs improvement
-                        </div>
-                        <div style={{ marginTop: 1, fontSize: 11, fontWeight: 600, color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
-                          {improvables.join(" · ")}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+          {competency ? <QuickTakeawaysCard competency={competency} yourLines={yourLines} /> : null}
           <TranscriptBubbleList lines={yourLines} />
           <IdealAnswerBlock text={q.idealAnswer} />
         </div>
@@ -642,33 +486,271 @@ function DetailSheet({
   return sheet;
 }
 
-function LegendRow({ label, swatch, stroke }: { label: string; swatch: string; stroke: string }) {
+/**
+ * Hero score card shown inside DetailSheet for the single competency the
+ * question evaluates. Replaces the radar + Quick takeaways block.
+ */
+function CompetencyScoreHero({ competency }: { competency: CompetencyAxis }) {
+  const tier = classifyScore(competency.you);
+  const palette = SCORE_TIER_PALETTE[tier];
+  const pct = Math.max(0, Math.min(1, competency.you)) * 100;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span
+    <div
+      style={{
+        marginTop: 14,
+        padding: "2px 2px 0",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 10,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(255,255,255,0.9)",
+              border: `1px solid ${palette.border}`,
+              color: palette.fg,
+              flexShrink: 0,
+            }}
+          >
+            <Target size={14} strokeWidth={2.4} />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 10.5,
+                fontWeight: 900,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "rgba(120,72,34,0.74)",
+              }}
+            >
+              Competency evaluated
+            </div>
+            <div
+              style={{
+                marginTop: 2,
+                fontSize: 16,
+                fontWeight: 750,
+                color: "#1C1917",
+                letterSpacing: "-0.02em",
+                lineHeight: 1.2,
+              }}
+            >
+              {competency.label}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "inline-flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 26,
+              fontFamily: DT.serif,
+              fontWeight: 400,
+              color: palette.fg,
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+            }}
+          >
+            {formatCompetencyScore(competency.you)}
+          </span>
+        </div>
+      </div>
+
+      <div
         aria-hidden
         style={{
-          width: 18,
-          height: 10,
+          position: "relative",
+          width: "100%",
+          height: 6,
           borderRadius: 999,
-          background: swatch,
-          border: `2px solid ${stroke}`,
+          background: "rgba(28,25,23,0.08)",
+          overflow: "hidden",
         }}
-      />
-      <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(68,64,60,0.9)", letterSpacing: "-0.01em" }}>
-        {label}
-      </span>
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            height: "100%",
+            width: `${pct}%`,
+            borderRadius: 999,
+            background: palette.fill,
+          }}
+        />
+      </div>
     </div>
   );
 }
 
-function formatPct(n: number): number {
-  return Math.round(n * 100);
+function getCompetencyCoaching(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes("structure")) return "Use a 3-part flow: context, decision, outcome.";
+  if (l.includes("clarity")) return "Replace abstract wording with one concrete example.";
+  if (l.includes("ownership")) return "Highlight your decision and why you made it.";
+  if (l.includes("judgment")) return "State trade-offs explicitly, then defend your final call.";
+  if (l.includes("metrics")) return "Anchor impact with one metric before and after.";
+  if (l.includes("stakeholder")) return "Name who pushed back and how alignment was reached.";
+  if (l.includes("scope")) return "Show what you cut, what stayed, and why.";
+  if (l.includes("specificity")) return "Add one specific scenario, not a generic summary.";
+  if (l.includes("risk")) return "Call out risk, mitigation, and rollback criteria.";
+  return "Add one example, one decision rationale, and one measurable result.";
 }
 
-function formatDeltaPts(delta01: number): string {
-  const pts = Math.round(Math.abs(delta01) * 100);
-  return `${pts} pts`;
+function QuickTakeawaysCard({
+  competency,
+  yourLines,
+}: {
+  competency: CompetencyAxis;
+  yourLines: InterviewQuestionAnalysis["transcript"];
+}) {
+  const tier = classifyScore(competency.you);
+  const score = competency.you;
+  const words = yourLines
+    .map((l) => l.text.trim())
+    .join(" ")
+    .split(/\s+/)
+    .filter(Boolean).length;
+
+  const performanceSignal =
+    tier === "strong"
+      ? "This competency is a clear strength in this answer."
+      : tier === "solid"
+        ? "This competency is solid, but can be sharper."
+        : "This competency needs stronger evidence in your answer.";
+
+  const lengthSignal =
+    words < 20
+      ? "Your response is very short; add one concrete result."
+      : words > 70
+        ? "Your response may be too long; tighten to key points."
+        : "Response length is in a workable range.";
+
+  return (
+    <div
+      style={{
+        borderRadius: 16,
+        border: "1px solid rgba(28,25,23,0.08)",
+        background: "rgba(255,255,255,0.82)",
+        padding: 12,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <ListChecks size={14} strokeWidth={2.4} color="rgba(120,72,34,0.8)" aria-hidden />
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 900,
+            letterSpacing: "0.09em",
+            textTransform: "uppercase",
+            color: "rgba(120,72,34,0.78)",
+          }}
+        >
+          Quick takeaways
+        </div>
+      </div>
+
+      <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 9,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(99,102,241,0.12)",
+              border: "1px solid rgba(99,102,241,0.18)",
+              flexShrink: 0,
+            }}
+          >
+            <TrendingUp size={13} strokeWidth={2.4} color="rgba(67,56,202,0.95)" />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              Performance signal ({formatCompetencyScore(score)})
+            </div>
+            <div style={{ marginTop: 1, fontSize: 11, fontWeight: 600, color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
+              {performanceSignal}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 9,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(13,148,136,0.10)",
+              border: "1px solid rgba(13,148,136,0.18)",
+              flexShrink: 0,
+            }}
+          >
+            <Lightbulb size={13} strokeWidth={2.4} color="rgba(15,118,110,0.95)" />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              Next answer upgrade
+            </div>
+            <div style={{ marginTop: 1, fontSize: 11, fontWeight: 600, color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
+              {getCompetencyCoaching(competency.label)}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 9,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(234,88,12,0.10)",
+              border: "1px solid rgba(234,88,12,0.18)",
+              flexShrink: 0,
+            }}
+          >
+            <Sparkles size={13} strokeWidth={2.4} color="rgba(194,65,12,0.95)" />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              Delivery note
+            </div>
+            <div style={{ marginTop: 1, fontSize: 11, fontWeight: 600, color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
+              {lengthSignal}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function InterviewQuestionAnalysisScreen({
@@ -686,34 +768,29 @@ export function InterviewQuestionAnalysisScreen({
     [active],
   );
 
+  const sessionRadarAxes = useMemo(
+    () => aggregateCompetencyAxesForInterview(INTERVIEW_QUESTION_ANALYSIS),
+    [],
+  );
+
   const summary = useMemo(() => {
-    let totalGap = 0;
-    let count = 0;
     let bestLabel = "";
-    let bestGap = Number.POSITIVE_INFINITY;
+    let bestScore = Number.NEGATIVE_INFINITY;
     let focusLabel = "";
-    let focusGap = Number.NEGATIVE_INFINITY;
+    let focusScore = Number.POSITIVE_INFINITY;
     for (const q of INTERVIEW_QUESTION_ANALYSIS) {
-      for (const c of q.competencies) {
-        const gap = c.ideal - c.you;
-        totalGap += gap;
-        count++;
-        if (gap < bestGap) {
-          bestGap = gap;
-          bestLabel = c.label;
-        }
-        if (gap > focusGap) {
-          focusGap = gap;
-          focusLabel = c.label;
-        }
+      const primary = getPrimaryCompetencyForQuestion(q);
+      if (!primary) continue;
+      if (primary.you > bestScore) {
+        bestScore = primary.you;
+        bestLabel = primary.label;
+      }
+      if (primary.you < focusScore) {
+        focusScore = primary.you;
+        focusLabel = primary.label;
       }
     }
-    return {
-      questionCount: INTERVIEW_QUESTION_ANALYSIS.length,
-      avgGap: count > 0 ? totalGap / count : 0,
-      bestLabel,
-      focusLabel,
-    };
+    return { bestLabel, focusLabel };
   }, []);
 
   const pageStyle: CSSProperties = {
@@ -775,69 +852,160 @@ export function InterviewQuestionAnalysisScreen({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: EASE }}
-        style={{ marginTop: 14, position: "relative" }}
+        style={{ marginTop: 12, position: "relative" }}
       >
+        {/* Soft warm backdrop behind the hero */}
         <div
           aria-hidden
           style={{
             position: "absolute",
             inset: 0,
-            top: -10,
-            height: 160,
-            borderRadius: 24,
+            top: -16,
+            height: 220,
+            borderRadius: 28,
             background:
-              "radial-gradient(ellipse 72% 84% at 50% 0%, rgba(255,210,170,0.60) 0%, rgba(255,240,228,0.25) 52%, rgba(253,251,248,0) 78%)",
+              "radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,210,170,0.55) 0%, rgba(255,240,228,0.22) 50%, rgba(253,251,248,0) 80%)",
             filter: "blur(2px)",
             pointerEvents: "none",
           }}
         />
-        <div style={{ position: "relative", padding: "6px 2px 4px" }}>
-        <div
-          style={{
-            marginTop: 10,
-            fontSize: 26,
-            fontFamily: DT.serif,
-            fontWeight: 400,
-            letterSpacing: "-0.02em",
-            lineHeight: 1.08,
-            color: "#1C1917",
-          }}
-        >
-          Performance breakdown
-        </div>
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 13,
-            fontWeight: 500,
-            color: "rgba(68,64,60,0.86)",
-            letterSpacing: "-0.01em",
-            lineHeight: 1.45,
-            maxWidth: 340,
-          }}
-        >
-          See how each response compares to the ideal and where you can improve.
-        </div>
 
-        <div
-          style={{
-            marginTop: 14,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
-          }}
-        >
-          <SummaryStat
-            icon={<Target size={13} strokeWidth={2.4} aria-hidden />}
-            label="Strongest"
-            value={summary.bestLabel}
-          />
-          <SummaryStat
-            icon={<TrendingUp size={13} strokeWidth={2.4} aria-hidden />}
-            label="Focus area"
-            value={summary.focusLabel}
-          />
-        </div>
+        <div style={{ position: "relative", padding: "6px 2px 4px" }}>
+          {/* Section heading */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div
+              style={{
+                fontSize: 26,
+                fontFamily: DT.serif,
+                fontWeight: 400,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.08,
+                color: "#1C1917",
+              }}
+            >
+              Performance breakdown
+            </div>
+          </div>
+
+          {/* Hero card — chart + highlights together */}
+          <div
+            style={{
+              marginTop: 14,
+              borderRadius: 22,
+              border: "1px solid rgba(28,25,23,0.06)",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(253,251,248,0.92) 100%)",
+              boxShadow:
+                "0 1px 2px rgba(28,25,23,0.04), 0 12px 30px rgba(28,25,23,0.06)",
+              padding: "18px 16px 14px",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* Subtle accent ring behind chart */}
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                top: -40,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 320,
+                height: 320,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(234,88,12,0.06) 0%, rgba(234,88,12,0.02) 50%, rgba(234,88,12,0) 70%)",
+                pointerEvents: "none",
+              }}
+            />
+
+            <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+              <InterviewQuestionRadar
+                axes={sessionRadarAxes}
+                size={224}
+                showAxisLabels
+                ariaLabel="Your performance across evaluated competencies"
+              />
+            </div>
+
+            {/* Inline subtle legend */}
+            <div
+              style={{
+                position: "relative",
+                marginTop: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 7,
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 999,
+                  background: DT.accent,
+                  boxShadow: "0 0 0 3px rgba(234,88,12,0.14)",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "rgba(87,83,78,0.86)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                Your performance across {sessionRadarAxes.length} competencies
+              </span>
+            </div>
+
+            {/* Hairline divider */}
+            <div
+              aria-hidden
+              style={{
+                position: "relative",
+                marginTop: 14,
+                marginBottom: 12,
+                height: 1,
+                background:
+                  "linear-gradient(90deg, rgba(28,25,23,0) 0%, rgba(28,25,23,0.08) 50%, rgba(28,25,23,0) 100%)",
+              }}
+            />
+
+            {/* Highlights split row: Strongest | Focus area */}
+            <div
+              style={{
+                position: "relative",
+                display: "grid",
+                gridTemplateColumns: "1fr 1px 1fr",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <HighlightStat
+                tone="positive"
+                icon={<TrendingUp size={14} strokeWidth={2.6} aria-hidden />}
+                label="Strongest"
+                value={summary.bestLabel}
+              />
+              <span
+                aria-hidden
+                style={{
+                  alignSelf: "stretch",
+                  background:
+                    "linear-gradient(180deg, rgba(28,25,23,0) 0%, rgba(28,25,23,0.10) 50%, rgba(28,25,23,0) 100%)",
+                }}
+              />
+              <HighlightStat
+                tone="focus"
+                icon={<TrendingDown size={14} strokeWidth={2.6} aria-hidden />}
+                label="Focus area"
+                value={summary.focusLabel}
+              />
+            </div>
+          </div>
         </div>
       </motion.div>
 
@@ -871,6 +1039,85 @@ export function InterviewQuestionAnalysisScreen({
       {active ? (
         <DetailSheet q={active} index={activeIndex} onClose={() => setActiveId(null)} />
       ) : null}
+    </div>
+  );
+}
+
+function HighlightStat({
+  tone,
+  icon,
+  label,
+  value,
+}: {
+  tone: "positive" | "focus";
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  const palette =
+    tone === "positive"
+      ? {
+          dot: "#16A34A",
+          dotGlow: "rgba(22,163,74,0.16)",
+          kicker: "rgba(21,128,61,0.78)",
+        }
+      : {
+          dot: "#D97706",
+          dotGlow: "rgba(217,119,6,0.18)",
+          kicker: "rgba(146,64,14,0.78)",
+        };
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        minWidth: 0,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          flex: "0 0 auto",
+          width: 28,
+          height: 28,
+          borderRadius: 999,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: palette.dot,
+          background: palette.dotGlow,
+        }}
+      >
+        {icon}
+      </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+        <span
+          style={{
+            fontSize: 9.5,
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: palette.kicker,
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 14.5,
+            fontWeight: 700,
+            color: "#1C1917",
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          title={value}
+        >
+          {value}
+        </span>
+      </div>
     </div>
   );
 }

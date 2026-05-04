@@ -127,6 +127,31 @@ export const INTERVIEW_QUESTION_ANALYSIS: InterviewQuestionAnalysis[] = [
     idealAnswer:
       "I’m looking for a senior product design role on a product-led team where I can own a core surface end-to-end—discovery through iteration—with tight PM/engineering partnership. I’m strongest in high-ambiguity problems, and I’m excited by teams that ship, measure outcomes, and iterate quickly based on user feedback.",
   },
+  {
+    id: "q5-handling-pushback",
+    prompt: "Tell me about a time you handled pushback on your design direction and still moved the work forward.",
+    competencies: [
+      { label: "Stakeholder alignment", you: 0.71, ideal: 0.86 },
+      { label: "Influence", you: 0.68, ideal: 0.84 },
+      { label: "Decision framing", you: 0.66, ideal: 0.84 },
+      { label: "Communication", you: 0.74, ideal: 0.86 },
+      { label: "Conflict handling", you: 0.69, ideal: 0.84 },
+    ],
+    transcript: [
+      {
+        role: "ai",
+        at: "04:52",
+        text: "Tell me about a time you handled pushback on your design direction and still moved the work forward.",
+      },
+      {
+        role: "you",
+        at: "05:14",
+        text: "Engineering pushed back on complexity, so I reframed the proposal into a phased plan with clear success metrics. We shipped phase one in two sprints and got enough lift to justify the full rollout.",
+      },
+    ],
+    idealAnswer:
+      "In one project, engineering challenged the implementation cost of my proposed flow. Instead of defending the design as-is, I reframed it around outcomes and phased risk: phase one delivered the highest-impact interaction with reduced complexity, with clear success metrics and a rollback path. After phase one improved conversion, we aligned on phase two. That approach kept trust high and moved the work forward without sacrificing the core user outcome.",
+  },
 ];
 
 export function clamp01(n: number): number {
@@ -136,5 +161,81 @@ export function clamp01(n: number): number {
 
 export function normalizeCompetencies(axes: CompetencyAxis[]): CompetencyAxis[] {
   return axes.map((a) => ({ ...a, you: clamp01(a.you), ideal: clamp01(a.ideal) }));
+}
+
+/**
+ * Each interview question evaluates a single primary competency.
+ * The first entry in `competencies` is treated as the evaluated one;
+ * any additional entries in the source data are ignored by the UI.
+ */
+export function getPrimaryCompetencyForQuestion(
+  q: InterviewQuestionAnalysis,
+): CompetencyAxis | null {
+  const primary = q.competencies[0];
+  if (!primary) return null;
+  return { ...primary, you: clamp01(primary.you), ideal: clamp01(primary.ideal) };
+}
+
+/**
+ * Build the session-level radar axes: one spoke per question, using each
+ * question's evaluated competency. Duplicate labels are merged (averaged) so
+ * the chart never shows the same axis twice. Capped at `maxAxes` (default 5).
+ */
+export function aggregateCompetencyAxesForInterview(
+  questions: InterviewQuestionAnalysis[],
+  maxAxes = 5,
+): CompetencyAxis[] {
+  const byLabel = new Map<string, { sumYou: number; sumIdeal: number; n: number }>();
+  const primaryLabels = new Set<string>();
+  for (const q of questions) {
+    const primary = getPrimaryCompetencyForQuestion(q);
+    if (!primary) continue;
+    primaryLabels.add(primary.label);
+    const cur = byLabel.get(primary.label) ?? { sumYou: 0, sumIdeal: 0, n: 0 };
+    cur.sumYou += primary.you;
+    cur.sumIdeal += primary.ideal;
+    cur.n += 1;
+    byLabel.set(primary.label, cur);
+  }
+  const merged: CompetencyAxis[] = [...byLabel.entries()].map(([label, v]) => ({
+    label,
+    you: clamp01(v.sumYou / v.n),
+    ideal: clamp01(v.sumIdeal / v.n),
+  }));
+
+  // If we have fewer unique primary competencies than requested (e.g. 4 questions),
+  // backfill with other evaluated competencies so the overview can still show 5.
+  if (merged.length < maxAxes) {
+    const fallbackByLabel = new Map<string, { sumYou: number; sumIdeal: number; n: number }>();
+    for (const q of questions) {
+      for (const c of q.competencies) {
+        if (primaryLabels.has(c.label) || byLabel.has(c.label)) continue;
+        const cur = fallbackByLabel.get(c.label) ?? { sumYou: 0, sumIdeal: 0, n: 0 };
+        cur.sumYou += c.you;
+        cur.sumIdeal += c.ideal;
+        cur.n += 1;
+        fallbackByLabel.set(c.label, cur);
+      }
+    }
+    const fallback = [...fallbackByLabel.entries()].map(([label, v]) => ({
+      label,
+      you: clamp01(v.sumYou / v.n),
+      ideal: clamp01(v.sumIdeal / v.n),
+    }));
+    fallback.sort((a, b) => b.you - a.you || a.label.localeCompare(b.label));
+    for (const c of fallback) {
+      if (merged.length >= maxAxes) break;
+      merged.push(c);
+    }
+  }
+
+  // Strongest performance first so the chart leads with positives.
+  merged.sort((a, b) => b.you - a.you || a.label.localeCompare(b.label));
+  return normalizeCompetencies(merged.slice(0, maxAxes));
+}
+
+/** Convert a 0..1 score to a rounded percentage string ("78%"). */
+export function formatCompetencyScore(score01: number): string {
+  return `${Math.round(clamp01(score01) * 100)}%`;
 }
 
