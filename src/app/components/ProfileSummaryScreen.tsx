@@ -97,6 +97,8 @@ interface ProfileSummaryScreenProps {
   email: string;
   onEditProfile: (section?: "personal" | "experience" | "education" | "skills" | "preferences") => void;
   onContinue: () => void;
+  /** Called after the user verifies email with the on-screen OTP (so you can persist `emailVerified: true` on the profile). */
+  onEmailVerified?: () => void;
   /** When true (e.g. desktop onboarding chrome), no cream fill — content uses the parent glass surface. */
   transparentSurface?: boolean;
 }
@@ -106,6 +108,7 @@ export function ProfileSummaryScreen({
   email,
   onEditProfile,
   onContinue,
+  onEmailVerified,
   transparentSurface = false,
 }: ProfileSummaryScreenProps) {
   const p = (profile || {}) as any;
@@ -241,14 +244,18 @@ export function ProfileSummaryScreen({
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
 
+  const [emailOtpStage, setEmailOtpStage] = useState<"idle" | "sending" | "sent" | "verifying" | "verified">("idle");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailOtpError, setEmailOtpError] = useState<string | null>(null);
+
   const normalizePhone = (raw: string) => raw.replace(/[^\d+]/g, "").trim();
   const isLikelyValidPhone = (raw: string) => normalizePhone(raw).replace(/[^\d]/g, "").length >= 10;
   const hasPhone = phoneDisplay.length > 0;
   const phoneVerified = otpStage === "verified";
-  const canContinue = hasPhone && phoneVerified;
-  const phoneVerificationRef = useRef<HTMLDivElement>(null);
+  const emailVerifiedFromProfile = p.emailVerified === true;
+  const emailVerified = emailVerifiedFromProfile || emailOtpStage === "verified";
   const otpDigitRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const [continueGateHint, setContinueGateHint] = useState<string | null>(null);
+  const emailOtpDigitRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const updateOtpDigits = (next: string) => {
     setOtp(next.replace(/\D/g, "").slice(0, 4));
@@ -297,6 +304,57 @@ export function ProfileSummaryScreen({
     otpDigitRefs.current[Math.min(pasted.length - 1, 3)]?.focus();
   };
 
+  const isLikelyValidEmail = (raw: string) => {
+    const t = raw.trim();
+    return t.length >= 5 && t.includes("@") && !t.startsWith("@") && !t.endsWith("@");
+  };
+
+  const updateEmailOtpDigits = (next: string) => {
+    setEmailOtp(next.replace(/\D/g, "").slice(0, 4));
+  };
+
+  const handleEmailOtpDigitChange = (index: number, raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) {
+      const current = emailOtp.padEnd(4, " ").split("");
+      current[index] = " ";
+      updateEmailOtpDigits(current.join("").trim());
+      return;
+    }
+
+    if (digits.length === 1) {
+      const current = emailOtp.padEnd(4, " ").split("");
+      current[index] = digits;
+      updateEmailOtpDigits(current.join(""));
+      if (index < 3) emailOtpDigitRefs.current[index + 1]?.focus();
+      return;
+    }
+
+    const current = emailOtp.padEnd(4, " ").split("");
+    for (let i = index; i < 4; i += 1) {
+      current[i] = digits[i - index] ?? current[i];
+    }
+    updateEmailOtpDigits(current.join(""));
+    const focusIdx = Math.min(index + digits.length, 3);
+    emailOtpDigitRefs.current[focusIdx]?.focus();
+  };
+
+  const handleEmailOtpDigitKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Backspace") return;
+    const digit = emailOtp[index] ?? "";
+    if (digit) return;
+    if (index === 0) return;
+    emailOtpDigitRefs.current[index - 1]?.focus();
+  };
+
+  const handleEmailOtpPaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    if (!pasted) return;
+    e.preventDefault();
+    updateEmailOtpDigits(pasted);
+    emailOtpDigitRefs.current[Math.min(pasted.length - 1, 3)]?.focus();
+  };
+
   const sendOtp = async () => {
     if (!isLikelyValidPhone(phoneDisplay) || otpStage === "sending" || otpStage === "verifying" || phoneVerified) return;
     setOtpError(null);
@@ -320,6 +378,36 @@ export function ProfileSummaryScreen({
     setOtpError("Incorrect code. Please try again.");
   };
 
+  const sendEmailOtp = async () => {
+    if (
+      !isLikelyValidEmail(emailDisplay) ||
+      emailOtpStage === "sending" ||
+      emailOtpStage === "verifying" ||
+      emailVerified
+    )
+      return;
+    setEmailOtpError(null);
+    setEmailOtpStage("sending");
+    await new Promise((r) => setTimeout(r, 650));
+    setEmailOtp("");
+    setEmailOtpStage("sent");
+  };
+
+  const verifyEmailOtp = async () => {
+    if (emailOtpStage !== "sent" || emailOtp.trim().length < 4) return;
+    setEmailOtpError(null);
+    setEmailOtpStage("verifying");
+    await new Promise((r) => setTimeout(r, 550));
+    if (emailOtp.trim() === "1234") {
+      setEmailOtpStage("verified");
+      onEmailVerified?.();
+      return;
+    }
+    setEmailOtpStage("sent");
+    setEmailOtp("");
+    setEmailOtpError("Incorrect code. Please try again.");
+  };
+
   useEffect(() => {
     if (otpStage !== "sent") return;
     if (otp.trim().length !== 4) return;
@@ -328,8 +416,11 @@ export function ProfileSummaryScreen({
   }, [otp, otpStage]);
 
   useEffect(() => {
-    if (phoneVerified) setContinueGateHint(null);
-  }, [phoneVerified]);
+    if (emailOtpStage !== "sent") return;
+    if (emailOtp.trim().length !== 4) return;
+    void verifyEmailOtp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailOtp, emailOtpStage]);
 
   useEffect(() => {
     if (!hasPhone || !isLikelyValidPhone(phoneDisplay)) {
@@ -339,6 +430,15 @@ export function ProfileSummaryScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phoneDisplay]);
+
+  useEffect(() => {
+    if (!emailDisplay.trim() || !isLikelyValidEmail(emailDisplay)) {
+      setEmailOtpStage("idle");
+      setEmailOtp("");
+      setEmailOtpError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailDisplay]);
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 300);
@@ -565,45 +665,307 @@ export function ProfileSummaryScreen({
             <Section
               icon={<Contact size={14} color="#EA580C" strokeWidth={2} />}
               title="Basic details"
+              needsAttention={!phoneVerified || (phoneVerified && Boolean(emailDisplay) && !emailVerified)}
               delay={0.02}
               onEdit={() => onEditProfile("personal")}
               editAriaLabel="Edit basic details"
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {emailDisplay ? (
-                  <PrefItem icon={<Mail size={13} strokeWidth={2} />} label="Email" value={emailDisplay} />
-                ) : null}
-                {phoneDisplay ? (
+                {!phoneVerified && phoneDisplay ? (
                   <PrefItem
                     icon={<Phone size={13} strokeWidth={2} />}
                     label="Phone"
-                    value={
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                        <span>{phoneDisplay}</span>
-                        {phoneVerified && (
-                          <span
-                            style={{
-                              width: 18,
-                              height: 18,
-                              borderRadius: 999,
-                              background: "#10B981",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                            aria-label="Phone verified"
-                            title="Phone verified"
-                          >
-                            <Check size={11} color="white" strokeWidth={2.8} />
-                          </span>
-                        )}
-                      </span>
-                    }
+                    value={phoneDisplay}
+                    unverified
                   />
                 ) : null}
-                {locationDisplay ? (
-                  <PrefItem icon={<MapPin size={13} strokeWidth={2} />} label="Location" value={locationDisplay} />
+                {!phoneVerified ? (
+                <div
+                  id="profile-phone-verify-block"
+                  className={cn(
+                    "flex flex-col gap-3 rounded-[12px]",
+                    "bg-gradient-to-b from-orange-50 to-orange-100/55",
+                    "px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-inset ring-orange-500/15",
+                  )}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-white/90 text-orange-600 shadow-sm ring-1 ring-orange-200/60"
+                      aria-hidden
+                    >
+                      <Phone size={15} strokeWidth={2.2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="m-0 text-[12px] font-semibold leading-tight tracking-[-0.02em] text-stone-900">
+                        Phone verification
+                      </p>
+                      <p className="m-0 mt-1 text-[11px] font-medium leading-relaxed tracking-[-0.01em] text-stone-600">
+                        Recruiters reach you here; ZappyFind sends job updates on WhatsApp.
+                      </p>
+                    </div>
+                  </div>
+                  {(otpStage === "sent" || otpStage === "verifying") && !phoneVerified && (
+                    <div className="flex items-center gap-2" onPaste={handleOtpPaste}>
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <input
+                          key={`otp-${i}`}
+                          ref={(el) => {
+                            otpDigitRefs.current[i] = el;
+                          }}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={1}
+                          value={otp[i] ?? ""}
+                          onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                          onKeyDown={(e) => handleOtpDigitKeyDown(i, e)}
+                          aria-label={`OTP digit ${i + 1}`}
+                          style={{
+                            width: 34,
+                            minWidth: 34,
+                            height: 34,
+                            borderRadius: 8,
+                            border: "1px solid rgba(28,25,23,0.12)",
+                            background: "white",
+                            textAlign: "center",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#1C1917",
+                            fontFamily: "Inter, sans-serif",
+                            outline: "none",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {otpError && (
+                    <p style={{ margin: 0, fontSize: 11, color: "#B91C1C", fontWeight: 600 }}>
+                      {otpError}
+                    </p>
+                  )}
+                  <div className="flex w-full">
+                    <button
+                      type="button"
+                      onClick={sendOtp}
+                      disabled={otpStage === "sending" || otpStage === "verifying" || phoneVerified || !isLikelyValidPhone(phoneDisplay)}
+                      style={{
+                        width: "100%",
+                        minHeight: 34,
+                        padding: "0 10px",
+                        borderRadius: 8,
+                        background: phoneVerified
+                          ? "rgba(5,150,105,0.12)"
+                          : otpStage === "sent" || otpStage === "verifying"
+                            ? "transparent"
+                            : "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+                        color:
+                          phoneVerified
+                            ? "#047857"
+                            : otpStage === "sent" || otpStage === "verifying"
+                              ? "#EA580C"
+                              : "white",
+                        boxShadow:
+                          phoneVerified
+                            ? "none"
+                            : otpStage === "sent" || otpStage === "verifying"
+                              ? "none"
+                              : "0 4px 12px rgba(255,107,53,0.25)",
+                        border:
+                          otpStage === "sent" || otpStage === "verifying"
+                            ? "1px solid rgba(234,88,12,0.2)"
+                            : "none",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "-0.01em",
+                        cursor:
+                          otpStage === "sending" || otpStage === "verifying" || phoneVerified || !isLikelyValidPhone(phoneDisplay)
+                            ? "default"
+                            : "pointer",
+                        fontFamily: "Inter, sans-serif",
+                        whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {phoneVerified
+                        ? "Verified"
+                        : otpStage === "sending"
+                          ? "Sending…"
+                          : otpStage === "sent" || otpStage === "verifying"
+                            ? "Resend"
+                            : "Send Code"}
+                    </button>
+                  </div>
+                </div>
+                ) : null}
+                {phoneVerified ? (
+                  <>
+                    {phoneDisplay ? (
+                      <PrefItem
+                        icon={<Phone size={13} strokeWidth={2} />}
+                        label="Phone"
+                        value={phoneDisplay}
+                        verified
+                      />
+                    ) : null}
+                    {locationDisplay ? (
+                      <PrefItem icon={<MapPin size={13} strokeWidth={2} />} label="Location" value={locationDisplay} />
+                    ) : null}
+                    {emailDisplay ? (
+                      <PrefItem
+                        icon={<Mail size={13} strokeWidth={2} />}
+                        label="Email"
+                        value={emailDisplay}
+                        verified={emailVerified}
+                        unverified={!emailVerified && Boolean(emailDisplay)}
+                      />
+                    ) : null}
+                    {phoneVerified && !emailVerified && emailDisplay ? (
+                      <div
+                        id="profile-email-verify-block"
+                        className={cn(
+                          "flex flex-col gap-3 rounded-[12px]",
+                          "bg-gradient-to-b from-orange-50 to-orange-100/55",
+                          "px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ring-1 ring-inset ring-orange-500/15",
+                        )}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-white/90 text-orange-600 shadow-sm ring-1 ring-orange-200/60"
+                            aria-hidden
+                          >
+                            <Mail size={15} strokeWidth={2.2} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="m-0 text-[12px] font-semibold leading-tight tracking-[-0.02em] text-stone-900">
+                              Email verification
+                            </p>
+                            <p className="m-0 mt-1 text-[11px] font-medium leading-relaxed tracking-[-0.01em] text-stone-600">
+                              Recruiters and ZappyFind will reach out in this inbox. Confirm it's yours.
+                            </p>
+                          </div>
+                        </div>
+                        {(emailOtpStage === "sent" || emailOtpStage === "verifying") && !emailVerified && (
+                          <div className="flex items-center gap-2" onPaste={handleEmailOtpPaste}>
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <input
+                                key={`email-otp-${i}`}
+                                ref={(el) => {
+                                  emailOtpDigitRefs.current[i] = el;
+                                }}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                maxLength={1}
+                                value={emailOtp[i] ?? ""}
+                                onChange={(e) => handleEmailOtpDigitChange(i, e.target.value)}
+                                onKeyDown={(e) => handleEmailOtpDigitKeyDown(i, e)}
+                                aria-label={`Email verification code digit ${i + 1}`}
+                                style={{
+                                  width: 34,
+                                  minWidth: 34,
+                                  height: 34,
+                                  borderRadius: 8,
+                                  border: "1px solid rgba(28,25,23,0.12)",
+                                  background: "white",
+                                  textAlign: "center",
+                                  fontSize: 13,
+                                  fontWeight: 700,
+                                  color: "#1C1917",
+                                  fontFamily: "Inter, sans-serif",
+                                  outline: "none",
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {emailOtpError && (
+                          <p style={{ margin: 0, fontSize: 11, color: "#B91C1C", fontWeight: 600 }}>
+                            {emailOtpError}
+                          </p>
+                        )}
+                        <div className="flex w-full">
+                          <button
+                            type="button"
+                            onClick={sendEmailOtp}
+                            disabled={
+                              emailOtpStage === "sending" ||
+                              emailOtpStage === "verifying" ||
+                              emailVerified ||
+                              !isLikelyValidEmail(emailDisplay)
+                            }
+                            style={{
+                              width: "100%",
+                              minHeight: 34,
+                              padding: "0 10px",
+                              borderRadius: 8,
+                              background: emailVerified
+                                ? "rgba(5,150,105,0.12)"
+                                : emailOtpStage === "sent" || emailOtpStage === "verifying"
+                                  ? "transparent"
+                                  : "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
+                              color:
+                                emailVerified
+                                  ? "#047857"
+                                  : emailOtpStage === "sent" || emailOtpStage === "verifying"
+                                    ? "#EA580C"
+                                    : "white",
+                              boxShadow:
+                                emailVerified
+                                  ? "none"
+                                  : emailOtpStage === "sent" || emailOtpStage === "verifying"
+                                    ? "none"
+                                    : "0 4px 12px rgba(255,107,53,0.25)",
+                              border:
+                                emailOtpStage === "sent" || emailOtpStage === "verifying"
+                                  ? "1px solid rgba(234,88,12,0.2)"
+                                  : "none",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              letterSpacing: "-0.01em",
+                              cursor:
+                                emailOtpStage === "sending" ||
+                                emailOtpStage === "verifying" ||
+                                emailVerified ||
+                                !isLikelyValidEmail(emailDisplay)
+                                  ? "default"
+                                  : "pointer",
+                              fontFamily: "Inter, sans-serif",
+                              whiteSpace: "nowrap",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {emailVerified
+                              ? "Verified"
+                              : emailOtpStage === "sending"
+                                ? "Sending…"
+                                : emailOtpStage === "sent" || emailOtpStage === "verifying"
+                                  ? "Resend"
+                                  : "Send Code"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+                {!phoneVerified ? (
+                  <>
+                    {emailDisplay ? (
+                      <PrefItem
+                        icon={<Mail size={13} strokeWidth={2} />}
+                        label="Email"
+                        value={emailDisplay}
+                        verified={emailVerified}
+                        unverified={false}
+                      />
+                    ) : null}
+                    {locationDisplay ? (
+                      <PrefItem icon={<MapPin size={13} strokeWidth={2} />} label="Location" value={locationDisplay} />
+                    ) : null}
+                  </>
                 ) : null}
                 {portfolioRaw ? (
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
@@ -654,149 +1016,6 @@ export function ProfileSummaryScreen({
                       )}
                     </div>
                   </div>
-                ) : null}
-                {!phoneVerified ? (
-                <div
-                  ref={phoneVerificationRef}
-                  className={cn(
-                    "mt-2 flex flex-col gap-1.5 rounded-[12px]",
-                    "bg-gradient-to-b from-orange-50 to-orange-100/55",
-                    "px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]",
-                  )}
-                >
-                  {continueGateHint && (
-                    <div
-                      role="status"
-                      style={{
-                        margin: 0,
-                        padding: "5px 8px",
-                        borderRadius: 8,
-                        background: "rgba(234,88,12,0.08)",
-                        border: "1px solid rgba(234,88,12,0.16)",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: DT.accent,
-                        letterSpacing: "-0.01em",
-                        lineHeight: 1.35,
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 6,
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width={14}
-                        height={14}
-                        viewBox="0 0 24 24"
-                        className="mt-0.5 shrink-0 text-red-600"
-                        aria-hidden
-                      >
-                        <circle cx="12" cy="12" r="10" fill="currentColor" />
-                        <circle cx="12" cy="8" r="1.5" fill="white" />
-                        <rect x="11" y="11" width="2" height="7.5" rx="1" fill="white" />
-                      </svg>
-                      <span style={{ minWidth: 0 }}>{continueGateHint}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 pr-0.5">
-                      <p className="m-0 text-[12px] font-semibold leading-tight tracking-[-0.02em] text-stone-900">
-                        Phone verification
-                      </p>
-                      <p className="m-0 mt-0.5 text-[11px] font-medium leading-snug tracking-[-0.01em] text-stone-600">
-                        We need to verify your phone first.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={sendOtp}
-                      disabled={otpStage === "sending" || otpStage === "verifying" || phoneVerified || !isLikelyValidPhone(phoneDisplay)}
-                      style={{
-                        minHeight: 34,
-                        padding: "0 10px",
-                        borderRadius: 8,
-                        border: "none",
-                        background: phoneVerified
-                          ? "rgba(5,150,105,0.12)"
-                          : otpStage === "sent" || otpStage === "verifying"
-                            ? "transparent"
-                            : "linear-gradient(90deg, #FF8F56 0%, #EA580C 100%)",
-                        color:
-                          phoneVerified
-                            ? "#047857"
-                            : otpStage === "sent" || otpStage === "verifying"
-                              ? "#EA580C"
-                              : "white",
-                        boxShadow:
-                          phoneVerified
-                            ? "none"
-                            : otpStage === "sent" || otpStage === "verifying"
-                              ? "none"
-                              : "0 4px 12px rgba(255,107,53,0.25)",
-                        border:
-                          otpStage === "sent" || otpStage === "verifying"
-                            ? "1px solid rgba(234,88,12,0.2)"
-                            : "none",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "-0.01em",
-                        cursor:
-                          otpStage === "sending" || otpStage === "verifying" || phoneVerified || !isLikelyValidPhone(phoneDisplay)
-                            ? "default"
-                            : "pointer",
-                        fontFamily: "Inter, sans-serif",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {phoneVerified
-                        ? "Verified"
-                        : otpStage === "sending"
-                          ? "Sending…"
-                          : otpStage === "sent" || otpStage === "verifying"
-                            ? "Resend"
-                            : "Send Code"}
-                    </button>
-                  </div>
-                  {(otpStage === "sent" || otpStage === "verifying") && !phoneVerified && (
-                    <div className="flex items-center gap-1.5" onPaste={handleOtpPaste}>
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <input
-                          key={`otp-${i}`}
-                          ref={(el) => {
-                            otpDigitRefs.current[i] = el;
-                          }}
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          maxLength={1}
-                          value={otp[i] ?? ""}
-                          onChange={(e) => handleOtpDigitChange(i, e.target.value)}
-                          onKeyDown={(e) => handleOtpDigitKeyDown(i, e)}
-                          aria-label={`OTP digit ${i + 1}`}
-                          style={{
-                            width: 34,
-                            minWidth: 34,
-                            height: 34,
-                            borderRadius: 8,
-                            border: "1px solid rgba(28,25,23,0.12)",
-                            background: "white",
-                            textAlign: "center",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: "#1C1917",
-                            fontFamily: "Inter, sans-serif",
-                            outline: "none",
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {otpError && (
-                    <p style={{ margin: 0, fontSize: 11, color: "#B91C1C", fontWeight: 600 }}>
-                      {otpError}
-                    </p>
-                  )}
-                </div>
                 ) : null}
               </div>
             </Section>
@@ -1102,29 +1321,15 @@ export function ProfileSummaryScreen({
                 : "14px 0 calc(14px + env(safe-area-inset-bottom))",
               background: "transparent",
               display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
-              gap: 12,
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: 8,
             }}
           >
             <motion.button
               whileTap={{ scale: 0.97 }}
               type="button"
-              onClick={() => {
-                if (canContinue) {
-                  setContinueGateHint(null);
-                  onContinue();
-                  return;
-                }
-                setContinueGateHint(
-                  !isLikelyValidPhone(phoneDisplay)
-                    ? "Add a valid phone number in your profile, then send the code and verify before continuing."
-                    : "Please verify your phone number before continuing.",
-                );
-                requestAnimationFrame(() => {
-                  phoneVerificationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                });
-              }}
+              onClick={() => onContinue()}
               style={{
                 width: "auto",
                 height: 50,
@@ -1140,15 +1345,17 @@ export function ProfileSummaryScreen({
                 letterSpacing: "-0.01em",
                 cursor: "pointer",
                 fontFamily: "Inter, sans-serif",
-                boxShadow: transparentSurface ? "none" : "0 6px 24px rgba(234,88,12,0.3)",
+                boxShadow:
+                  !transparentSurface ? "0 6px 24px rgba(234,88,12,0.3)" : "none",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
+                opacity: 1,
               }}
             >
               Continue
-              <ChevronRight size={16} strokeWidth={2.2} />
+              <ChevronRight size={16} strokeWidth={2.2} aria-hidden />
             </motion.button>
           </motion.div>
         </div>
@@ -1171,6 +1378,8 @@ const prefRowIconInline: React.CSSProperties = {
 function Section({
   icon,
   title,
+  titleAccessory,
+  needsAttention,
   delay = 0,
   onEdit,
   editAriaLabel,
@@ -1178,6 +1387,8 @@ function Section({
 }: {
   icon: React.ReactNode;
   title: string;
+  titleAccessory?: ReactNode;
+  needsAttention?: boolean;
   delay?: number;
   onEdit?: () => void;
   editAriaLabel?: string;
@@ -1192,11 +1403,23 @@ function Section({
         borderRadius: 18,
         padding: "16px 18px",
         background: "white",
-        border: "1px solid rgba(28,25,23,0.06)",
-        boxShadow: "0 2px 12px rgba(28,25,23,0.04)",
+        border: needsAttention ? "1px solid rgba(234,88,12,0.34)" : "1px solid rgba(28,25,23,0.06)",
+        boxShadow: needsAttention
+          ? "0 3px 14px rgba(28,25,23,0.055), 0 10px 28px -10px rgba(234,88,12,0.11), 0 0 0 3px rgba(234,88,12,0.11)"
+          : "0 2px 12px rgba(28,25,23,0.04)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          gap: 8,
+          marginBottom: 12,
+          flexWrap: "nowrap",
+          minWidth: 0,
+        }}
+      >
         <div
           style={{
             width: 28,
@@ -1211,13 +1434,54 @@ function Section({
         >
           {icon}
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#1C1917", letterSpacing: "-0.02em" }}>{title}</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+            minWidth: 0,
+            justifyContent: "flex-start",
+            columnGap: 10,
+            flexWrap: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#1C1917",
+              letterSpacing: "-0.02em",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              lineHeight: 1.15,
+            }}
+          >
+            {title}
+          </span>
+          {titleAccessory ? (
+            <>
+              <div
+                aria-hidden
+                style={{
+                  width: 1,
+                  height: 15,
+                  flexShrink: 0,
+                  borderRadius: 1,
+                  background: "rgba(120, 113, 108, 0.28)",
+                  marginBottom: 1,
+                }}
+              />
+              <div style={{ flexShrink: 0, height: 29 }}>{titleAccessory}</div>
+            </>
+          ) : null}
+        </div>
         {onEdit ? (
           <button
             type="button"
             aria-label={editAriaLabel || `Edit ${title}`}
             onClick={onEdit}
             style={{
+              flexShrink: 0,
               marginLeft: "auto",
               width: 44,
               height: 44,
@@ -1254,7 +1518,31 @@ function Section({
   );
 }
 
-function PrefItem({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+const verifiedFieldBadgeStyle: React.CSSProperties = {
+  width: 18,
+  height: 18,
+  borderRadius: 999,
+  background: "#10B981",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+function PrefItem({
+  icon,
+  label,
+  value,
+  verified,
+  unverified,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: ReactNode;
+  verified?: boolean;
+  /** Shown next to value when profile phone is not yet verified (mutually exclusive with `verified` in normal use). */
+  unverified?: boolean;
+}) {
   const iconMuted = isValidElement(icon)
     ? cloneElement(icon as ReactElement<{ size?: number; color?: string; strokeWidth?: number }>, {
         size: 12,
@@ -1262,6 +1550,8 @@ function PrefItem({ icon, label, value }: { icon: ReactNode; label: string; valu
         strokeWidth: 1.75,
       })
     : icon;
+  const verifiedLabel = label === "Phone" ? "Phone verified" : "Email on file";
+  const unverifiedLabel = label === "Email" ? "Email not verified" : "Phone not verified";
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
       <div style={prefRowIconInline} aria-hidden>
@@ -1269,7 +1559,36 @@ function PrefItem({ icon, label, value }: { icon: ReactNode; label: string; valu
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <p style={{ fontSize: 11, color: "#A8A29E", margin: 0, fontWeight: 500 }}>{label}</p>
-        <p style={{ fontSize: 13, color: "#1C1917", margin: "2px 0 0", letterSpacing: "-0.01em", fontWeight: 600 }}>{value}</p>
+        <p
+          style={{
+            fontSize: 13,
+            color: "#1C1917",
+            margin: "2px 0 0",
+            letterSpacing: "-0.01em",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ minWidth: 0, wordBreak: "break-word" as const }}>{value}</span>
+          {verified ? (
+            <span style={verifiedFieldBadgeStyle} aria-label={verifiedLabel} title={verifiedLabel}>
+              <Check size={11} color="white" strokeWidth={2.8} />
+            </span>
+          ) : unverified ? (
+            <span
+              className="inline-flex shrink-0 items-center rounded-md border border-stone-300/70 bg-stone-50 px-1.5 py-0.5"
+              aria-label={unverifiedLabel}
+              title={unverifiedLabel}
+            >
+              <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-stone-600">
+                Unverified
+              </span>
+            </span>
+          ) : null}
+        </p>
       </div>
     </div>
   );

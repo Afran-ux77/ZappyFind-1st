@@ -54,3 +54,40 @@ export function traitAccent(level: TraitLevel): string {
       return "#6366F1";
   }
 }
+
+/**
+ * Sharp, action-first focus areas shown when a user expands "Detailed analysis".
+ * Each item: short hook + one-line tip. Keep copy tight — scannable cards, not paragraphs.
+ */
+export const IMPROVEMENT_FOCUS: Array<{
+  id: string;
+  area: string;
+  /** ~3–6 word title — the move. */
+  hook: string;
+  /** One-line "do this" tip; keep it under ~80 chars. */
+  tip: string;
+}> = [
+  {
+    id: "pacing",
+    area: "Pacing",
+    hook: "Pause before the punchline",
+    tip: "One beat of thought before key answers makes them land sharper.",
+  },
+  {
+    id: "metrics",
+    area: "Specifics",
+    hook: "Lead with the number",
+    tip: "Open the example with the metric, then the move that drove it.",
+  },
+  {
+    id: "close",
+    area: "Closing",
+    hook: "End with a clean ask",
+    tip: "Wrap each answer with a one-line takeaway, not a trailing thought.",
+  },
+];
+
+/** Single-line framing for the focus block — keep concise. */
+export const IMPROVEMENT_FOCUS_TITLE = "Sharpen these for real recruiter calls";
+export const IMPROVEMENT_FOCUS_SUBTITLE =
+  "Three small moves that lift how a live conversation lands.";

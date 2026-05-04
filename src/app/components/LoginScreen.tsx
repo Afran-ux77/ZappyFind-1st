@@ -26,6 +26,8 @@ interface LoginScreenProps {
   fullName: string;
   setFullName: (name: string) => void;
   onContinue: () => void;
+  /** Opens the standalone unsubscribe flow (e.g. from login footer). */
+  onOpenUnsubscribe?: () => void;
   /** Desktop auth column: tighter layout, no hero ticker, form-first. */
   layout?: "mobile" | "desktop";
 }
@@ -38,6 +40,7 @@ export function LoginScreen({
   fullName,
   setFullName,
   onContinue,
+  onOpenUnsubscribe,
   layout = "mobile",
 }: LoginScreenProps) {
   const isDesktop = layout === "desktop";
@@ -508,6 +511,29 @@ export function LoginScreen({
             </button>
           )}
         </div>
+
+        {onOpenUnsubscribe ? (
+          <div className="mb-3 flex w-full justify-center">
+            <button
+              type="button"
+              onClick={onOpenUnsubscribe}
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif",
+                fontSize: "12px",
+                letterSpacing: "0.01em",
+                color: C.textSecondary,
+                fontWeight: 500,
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+              }}
+            >
+              Unsubscribe from job emails
+            </button>
+          </div>
+        ) : null}
 
       </div>
       {/* ── Hiring link (pinned to viewport bottom, safe-area aware) ─────────── */}

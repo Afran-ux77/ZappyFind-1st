@@ -55,6 +55,8 @@ export interface FullProfile {
   location: string; headline: string; skills: string[];
   experiences: WorkExp[]; education: Edu[];
   preferences?: JobPreferences;
+  /** When `true`, Basic details shows a green check on email and hides the email intimation. Omitted/`false` = not verified until you set this after the user confirms email. */
+  emailVerified?: boolean;
 }
 
 /** Coerce partial / legacy profile data into a full editable profile. */
@@ -69,6 +71,7 @@ export function normalizeToFullProfile(p: FullProfile | null): FullProfile {
       skills: [],
       experiences: [],
       education: [],
+      emailVerified: undefined,
     };
   }
   return {
@@ -81,6 +84,7 @@ export function normalizeToFullProfile(p: FullProfile | null): FullProfile {
     experiences: Array.isArray(p.experiences) ? p.experiences.map((e) => ({ ...e })) : [],
     education: Array.isArray(p.education) ? p.education.map((e) => ({ ...e })) : [],
     preferences: p.preferences ? { ...p.preferences } : undefined,
+    emailVerified: p.emailVerified,
   };
 }
 

@@ -11,6 +11,7 @@ import { VoiceCallScreen } from "../components/VoiceCallScreen";
 import { JobSeekerProfileScreen } from "../components/JobSeekerProfileScreen";
 import { MatchCelebrationScreen } from "../components/MatchCelebrationScreen";
 import { CallInitiationScreen } from "../components/CallInitiationScreen";
+import { UnsubscribeFeedbackScreen } from "../components/UnsubscribeScreens";
 import { DesktopAuthLayout } from "./DesktopAuthLayout";
 import { DesktopAppShell, type DesktopNavId } from "./DesktopAppShell";
 import {
@@ -39,7 +40,8 @@ type Screen =
   | "dashboardPreview"
   | "voiceCall"
   | "jobReview"
-  | "jobSeekerProfile";
+  | "jobSeekerProfile"
+  | "unsubscribeFeedback";
 
 const slide = {
   fromRight: { x: "1.5%", opacity: 0 },
@@ -306,6 +308,7 @@ export function DesktopAppRoot({
                         fullName={signupFullName}
                         setFullName={setSignupFullName}
                         onContinue={() => goTo("otp", "forward")}
+                        onOpenUnsubscribe={() => goTo("unsubscribeFeedback", "forward")}
                       />
                     </motion.div>
                   )}
@@ -355,6 +358,23 @@ export function DesktopAppRoot({
                 </AnimatePresence>
               </div>
             </DesktopAuthLayout>
+          </motion.div>
+        )}
+
+        {screen === "unsubscribeFeedback" && (
+          <motion.div
+            key="unsub-feedback-d"
+            initial={enterFrom(direction)}
+            animate={slide.center}
+            exit={exitTo(direction)}
+            transition={SPRING}
+            className="min-h-screen w-full"
+          >
+            <UnsubscribeFeedbackScreen
+              layout="desktop"
+              onBack={() => goTo("login", "back")}
+              onDone={() => goTo("login", "back")}
+            />
           </motion.div>
         )}
 
@@ -511,6 +531,14 @@ export function DesktopAppRoot({
                   setProfileEditSection(section);
                   goTo("profileEdit", "forward");
                 }}
+                onEmailVerified={() => {
+                  setParsedProfile((prev) => {
+                    if (!prev) return prev;
+                    const updated = { ...prev, emailVerified: true };
+                    writeSession({ profile: updated });
+                    return updated;
+                  });
+                }}
                 onContinue={() => goTo("matchCelebration", "forward")}
               />
             </motion.div>,
@@ -666,12 +694,6 @@ export function DesktopAppRoot({
                         firstName={firstName || "Alex"}
                         email={email}
                         profile={parsedProfile}
-                        onNavigateHome={() => goTo("dashboardPreview", "back")}
-                        onNavigateJobs={() => {
-                          setJobReviewInitialTab("recommended");
-                          goTo("jobReview", "forward");
-                        }}
-                        onNavigateProfile={() => {}}
                         onEditProfile={() => {
                           setProfileReturnScreen("jobSeekerProfile");
                           setProfileEditSection(undefined);

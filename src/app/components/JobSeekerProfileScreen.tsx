@@ -574,9 +574,6 @@ interface JobSeekerProfileScreenProps {
   firstName: string;
   email: string;
   profile: FullProfile | null;
-  onNavigateHome: () => void;
-  onNavigateJobs: () => void;
-  onNavigateProfile: () => void;
   onEditProfile: () => void;
   /** Settings → Account: sign out (clears session and returns to login). */
   onLogout?: () => void;
@@ -589,9 +586,6 @@ export function JobSeekerProfileScreen({
   firstName,
   email,
   profile,
-  onNavigateHome,
-  onNavigateJobs,
-  onNavigateProfile,
   onEditProfile,
   onLogout,
   onDeleteAccount,
@@ -770,10 +764,6 @@ export function JobSeekerProfileScreen({
           displayName={displayName}
           onAvatarClick={undefined}
           isLowPerformer={false}
-          currentPage="profile"
-          onNavigateHome={onNavigateHome}
-          onNavigateJobs={onNavigateJobs}
-          onNavigateProfile={onNavigateProfile}
           onOpenSettings={() => setSettingsOpen(true)}
         />
       )}
@@ -1224,7 +1214,7 @@ export function JobSeekerProfileScreen({
 
           <ProfileZappyCoach workingWellItems={workingWellItems} improveItems={improveItems} />
 
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16, marginBottom: 32 }}>
             <InterviewRecordingCompactCard />
           </div>
 

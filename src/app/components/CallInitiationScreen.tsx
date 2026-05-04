@@ -44,17 +44,20 @@ interface CallInitiationScreenProps {
 
 const OUTCOMES = [
   {
-    icon: <BarChart3 size={15} color={C.brand} strokeWidth={2} />,
+    icon: <BarChart3 size={15} color="#2563EB" strokeWidth={2} />,
+    iconBg: "rgba(37,99,235,0.04)",
     title: "5× more visibility",
     desc: "Your profile gets surfaced to recruiters actively hiring.",
   },
   {
-    icon: <Users size={15} color={C.brand} strokeWidth={2} />,
+    icon: <Users size={15} color="#7C3AED" strokeWidth={2} />,
+    iconBg: "rgba(124,58,237,0.04)",
     title: "Direct recruiter intros",
     desc: "Zappy pitches you to hiring managers, no cold applications.",
   },
   {
-    icon: <Eye size={15} color={C.brand} strokeWidth={2} />,
+    icon: <Eye size={15} color="#0F766E" strokeWidth={2} />,
+    iconBg: "rgba(15,118,110,0.04)",
     title: "Smarter matches",
     desc: "We learn what makes you unique to refine your job recommendations.",
   },
@@ -360,7 +363,7 @@ export function CallInitiationScreen({
                           textAlign: "center",
                           fontSize: 11,
                           fontWeight: 700,
-                          color: C.textSec,
+                          color: C.textMuted,
                           lineHeight: 1.4,
                           letterSpacing: "0.12em",
                           textTransform: "uppercase",
@@ -382,70 +385,77 @@ export function CallInitiationScreen({
                     </div>
                     <div
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                        gap: 28,
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "stretch",
+                        gap: 0,
+                        maxWidth: 720,
+                        margin: "0 auto",
                       }}
                     >
-                    {OUTCOMES.map((o, i) => (
-                      <motion.div
-                        key={o.title}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45, delay: 0.26 + i * 0.07, ease: EASE }}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                          gap: 10,
-                          padding: "4px 2px",
-                        }}
-                      >
-                        <span
-                          aria-hidden
+                      {OUTCOMES.map((o, i) => (
+                        <motion.div
+                          key={o.title}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.45, delay: 0.26 + i * 0.07, ease: EASE }}
                           style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 10,
-                            background: "rgba(234,88,12,0.08)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            flex: 1,
+                            minWidth: 0,
+                            paddingLeft: i === 0 ? 2 : 22,
+                            paddingRight: i === OUTCOMES.length - 1 ? 2 : 10,
+                            borderLeft: i === 0 ? "none" : `1px solid ${C.border}`,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-start",
+                            gap: 10,
                           }}
                         >
-                          {isValidElement(o.icon)
-                            ? cloneElement(
-                                o.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>,
-                                { size: 17, strokeWidth: 2 },
-                              )
-                            : o.icon}
-                        </span>
+                          <span
+                            aria-hidden
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 10,
+                            background: o.iconBg,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {isValidElement(o.icon)
+                              ? cloneElement(
+                                  o.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>,
+                                  { size: 17, strokeWidth: 2 },
+                                )
+                              : o.icon}
+                          </span>
 
-                        <p
-                          style={{
-                            fontSize: 13.5,
-                            fontWeight: 700,
-                            color: C.primary,
-                            margin: 0,
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {o.title}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: 12.5,
-                            color: C.textMuted,
-                            margin: 0,
-                            lineHeight: 1.5,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {o.desc}
-                        </p>
-                      </motion.div>
-                    ))}
+                          <p
+                            style={{
+                              fontSize: 13.5,
+                              fontWeight: 700,
+                              color: C.primary,
+                              margin: 0,
+                              letterSpacing: "-0.02em",
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {o.title}
+                          </p>
+                          <p
+                            style={{
+                              fontSize: 12.5,
+                              color: C.textMuted,
+                              margin: 0,
+                              lineHeight: 1.5,
+                              letterSpacing: "-0.01em",
+                            }}
+                          >
+                            {o.desc}
+                          </p>
+                        </motion.div>
+                      ))}
                     </div>
                   </div>
                 ) : (
@@ -478,7 +488,7 @@ export function CallInitiationScreen({
                           textAlign: "center",
                           fontSize: 10.5,
                           fontWeight: 700,
-                          color: C.textSec,
+                          color: C.textMuted,
                           lineHeight: 1.4,
                           letterSpacing: "0.12em",
                           textTransform: "uppercase",
@@ -498,99 +508,72 @@ export function CallInitiationScreen({
                         }}
                       />
                     </div>
-                    <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 6,
-                      gridTemplateRows: "auto auto",
-                    }}
-                  >
-                    {OUTCOMES.slice(0, 2).map((o, i) => (
-                      <motion.div
-                        key={o.title}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.3 + i * 0.06, ease: EASE }}
-                        style={{
-                          borderRadius: 12,
-                          padding: "10px 10px 9px",
-                          background: "rgba(255,255,255,0.38)",
-                          border: "1px solid rgba(28,25,23,0.045)",
-                          minHeight: 0,
-                        }}
-                      >
-                        <div style={{ marginBottom: 7, opacity: 0.88 }}>{o.icon}</div>
-                        <p
+                    <div style={{ maxWidth: 340, margin: "0 auto", width: "100%" }}>
+                      {OUTCOMES.map((o, i) => (
+                        <motion.div
+                          key={o.title}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.3 + i * 0.06, ease: EASE }}
                           style={{
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            color: C.primary,
-                            margin: 0,
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.28,
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "flex-start",
+                            gap: 12,
+                            padding: "12px 0",
+                            borderBottom:
+                              i < OUTCOMES.length - 1 ? `1px solid ${C.border}` : "none",
                           }}
                         >
-                          {o.title}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: 11,
-                            color: C.textMuted,
-                            margin: "6px 0 0",
-                            lineHeight: 1.4,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {o.desc}
-                        </p>
-                      </motion.div>
-                    ))}
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.42, ease: EASE }}
-                      style={{
-                        gridColumn: "1 / -1",
-                        borderRadius: 12,
-                        padding: "10px 12px",
-                        background: "rgba(255,255,255,0.36)",
-                        border: "1px solid rgba(28,25,23,0.045)",
-                        minHeight: 0,
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 8,
-                      }}
-                    >
-                      <div style={{ opacity: 0.88, flexShrink: 0, lineHeight: 0 }}>{OUTCOMES[2].icon}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p
-                          style={{
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            color: C.primary,
-                            margin: 0,
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.28,
-                          }}
-                        >
-                          {OUTCOMES[2].title}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: 11,
-                            color: C.textMuted,
-                            margin: "5px 0 0",
-                            lineHeight: 1.45,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {OUTCOMES[2].desc}
-                        </p>
-                      </div>
-                    </motion.div>
-                  </div>
+                          <span
+                            aria-hidden
+                            style={{
+                              flexShrink: 0,
+                              width: 32,
+                              height: 32,
+                              borderRadius: 10,
+                              marginTop: 1,
+                              background: o.iconBg,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {isValidElement(o.icon)
+                              ? cloneElement(
+                                  o.icon as React.ReactElement<{ size?: number; strokeWidth?: number }>,
+                                  { size: 15, strokeWidth: 2 },
+                                )
+                              : o.icon}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p
+                              style={{
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                color: C.primary,
+                                margin: 0,
+                                letterSpacing: "-0.02em",
+                                lineHeight: 1.28,
+                              }}
+                            >
+                              {o.title}
+                            </p>
+                            <p
+                              style={{
+                                fontSize: 11,
+                                color: C.textMuted,
+                                margin: "5px 0 0",
+                                lineHeight: 1.45,
+                                letterSpacing: "-0.01em",
+                              }}
+                            >
+                              {o.desc}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </motion.div>
@@ -614,177 +597,292 @@ export function CallInitiationScreen({
               marginRight: "auto",
             }}
           >
-            <div
-              style={{
-                position: "relative",
-                borderRadius: 18,
-                padding: transparentSurface ? "14px 16px" : "13px 14px",
-                background:
-                  "linear-gradient(150deg, rgba(255,255,255,0.88) 0%, rgba(255,247,241,0.72) 100%)",
-                border: `1px solid ${C.brandBorder}`,
-                boxShadow:
-                  "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(28,25,23,0.04), 0 10px 28px rgba(234,88,12,0.06)",
-                display: "grid",
-                columnGap: 12,
-                rowGap: hasMultipleFocusOptions && !desktopCallFocusChrome ? 8 : 0,
-                alignItems:
-                  hasMultipleFocusOptions && !desktopCallFocusChrome ? "center" : "start",
-                gridTemplateColumns: "auto minmax(0, 1fr)",
-                gridTemplateRows:
-                  hasMultipleFocusOptions && !desktopCallFocusChrome ? "auto auto" : "auto",
-              }}
-            >
-              <span
-                aria-hidden
-                style={{
-                  gridColumn: 1,
-                  gridRow: 1,
-                  alignSelf: "start",
-                  marginTop: 2,
-                  flexShrink: 0,
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background:
-                    "linear-gradient(145deg, rgba(234,88,12,0.16) 0%, rgba(234,88,12,0.04) 100%)",
-                  border: "1px solid rgba(234,88,12,0.22)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
-                }}
-              >
-                <Focus size={18} color={C.brand} strokeWidth={2.1} />
-              </span>
-
+            {hasMultipleFocusOptions ? (
               <div
                 style={{
-                  gridColumn: 2,
-                  gridRow: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  minWidth: 0,
-                  justifySelf: "stretch",
-                  alignSelf: "start",
-                  paddingRight: desktopCallFocusChrome ? 108 : undefined,
+                  position: "relative",
+                  borderRadius: 20,
+                  padding: transparentSurface ? "18px 18px 16px" : "16px 14px 14px",
+                  background:
+                    "linear-gradient(165deg, rgba(255,255,255,1) 0%, rgba(255,247,241,0.22) 48%, rgba(255,255,255,1) 100%)",
+                  border: `1.5px solid ${C.brandBorder}`,
+                  boxShadow:
+                    "0 0 0 1px rgba(255,255,255,0.75) inset, 0 8px 24px rgba(234,88,12,0.07), 0 2px 8px rgba(28,25,23,0.04)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: -48,
+                    right: -36,
+                    width: 140,
+                    height: 140,
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle, rgba(255,143,86,0.2) 0%, rgba(255,143,86,0.04) 45%, transparent 70%)",
+                    pointerEvents: "none",
+                  }}
+                />
+                <div
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    bottom: -32,
+                    left: -28,
+                    width: 120,
+                    height: 120,
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle, rgba(234,88,12,0.1) 0%, transparent 68%)",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                <div style={{ position: "relative", zIndex: 1 }}>
+                  {/* Header — what's happening + why */}
+                  <div style={{ textAlign: "center", marginBottom: 14 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        color: C.brand,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <span
+                        aria-hidden
+                        style={{
+                          width: 5,
+                          height: 5,
+                          borderRadius: 999,
+                          background: C.brand,
+                          boxShadow: "0 0 0 3px rgba(234,88,12,0.14)",
+                        }}
+                      />
+                      For your AI voice call
+                    </p>
+                    <p
+                      style={{
+                        margin: "6px 0 0",
+                        fontSize: 12.5,
+                        lineHeight: 1.45,
+                        letterSpacing: "-0.01em",
+                        color: C.textMuted,
+                      }}
+                    >
+                      You picked{" "}
+                      <span style={{ color: C.primary, fontWeight: 600 }}>more than one department</span>
+                      . The choice below is what your{" "}
+                      <span style={{ color: C.primary, fontWeight: 600 }}>AI voice call</span>{" "}
+                      with Zappy will focus on.
+                    </p>
+                  </div>
+
+                  {/* Radio cards */}
+                  <div
+                    role="radiogroup"
+                    aria-label="Topic for your AI voice call—pick a domain"
+                    style={{ display: "flex", flexDirection: "column", gap: 9 }}
+                  >
+                  {labels.map((label, i) => {
+                    const active = i === focusIndex;
+                    const isPick = i === 0;
+                    return (
+                      <motion.button
+                        key={label}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        whileTap={{ scale: 0.985 }}
+                        onClick={() => setFocusIndex(i)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          width: "100%",
+                          padding: "12px 14px",
+                          borderRadius: 14,
+                          textAlign: "left",
+                          cursor: "pointer",
+                          fontFamily: "Inter, sans-serif",
+                          border: active
+                            ? `1.5px solid ${C.brand}`
+                            : "1px solid rgba(28,25,23,0.08)",
+                          background: active
+                            ? "linear-gradient(150deg, rgba(255,255,255,0.95) 0%, rgba(255,247,241,0.85) 100%)"
+                            : C.white,
+                          boxShadow: active
+                            ? "0 8px 22px rgba(234,88,12,0.10), inset 0 1px 0 rgba(255,255,255,0.85)"
+                            : "0 1px 2px rgba(28,25,23,0.04)",
+                          transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+                          WebkitTapHighlightColor: "transparent",
+                        }}
+                      >
+                        <span
+                          aria-hidden
+                          style={{
+                            flexShrink: 0,
+                            width: 20,
+                            height: 20,
+                            borderRadius: 999,
+                            border: active
+                              ? `1.5px solid ${C.brand}`
+                              : "1.5px solid rgba(168,162,158,0.6)",
+                            background: C.white,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "border-color 0.18s ease",
+                          }}
+                        >
+                          {active && (
+                            <motion.span
+                              layoutId="focus-radio-dot"
+                              transition={{ type: "spring", stiffness: 520, damping: 32 }}
+                              style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: 999,
+                                background: C.brand,
+                              }}
+                            />
+                          )}
+                        </span>
+
+                        <span
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 14,
+                            fontWeight: active ? 700 : 600,
+                            color: C.primary,
+                            letterSpacing: "-0.02em",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={label}
+                        >
+                          {label}
+                        </span>
+
+                        {isPick && (
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                              fontSize: 9.5,
+                              fontWeight: 700,
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                              padding: "3px 8px",
+                              borderRadius: 999,
+                              color: C.brand,
+                              background: C.brandLight,
+                              border: `1px solid ${C.brandBorder}`,
+                            }}
+                          >
+                            <Check
+                              size={10}
+                              color={C.brand}
+                              strokeWidth={2.6}
+                              aria-hidden
+                            />
+                            Best match
+                          </span>
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  position: "relative",
+                  borderRadius: 18,
+                  padding: transparentSurface ? "14px 16px" : "13px 14px",
+                  background:
+                    "linear-gradient(150deg, rgba(255,255,255,0.88) 0%, rgba(255,247,241,0.72) 100%)",
+                  border: `1px solid ${C.brandBorder}`,
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(28,25,23,0.04), 0 10px 28px rgba(234,88,12,0.06)",
+                  display: "grid",
+                  columnGap: 12,
+                  alignItems: "start",
+                  gridTemplateColumns: "auto minmax(0, 1fr)",
                 }}
               >
                 <span
+                  aria-hidden
                   style={{
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    color: C.textSec,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  This call will focus on
-                </span>
-                <span
-                  style={{
-                    fontSize: transparentSurface ? 15.5 : 14.5,
-                    fontWeight: 700,
-                    color: C.primary,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.25,
+                    gridColumn: 1,
+                    gridRow: 1,
+                    alignSelf: "start",
                     marginTop: 2,
+                    flexShrink: 0,
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background:
+                      "linear-gradient(145deg, rgba(234,88,12,0.16) 0%, rgba(234,88,12,0.04) 100%)",
+                    border: "1px solid rgba(234,88,12,0.22)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
                   }}
-                  title={focusedLabel}
                 >
-                  {focusedLabel}
+                  <Focus size={18} color={C.brand} strokeWidth={2.1} />
                 </span>
-              </div>
 
-              {hasMultipleFocusOptions && (
-                <motion.button
-                  ref={focusButtonRef}
-                  type="button"
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    if (isDesktopFocusUi) setFocusDropdownOpen((o) => !o);
-                    else setFocusSheetOpen(true);
+                <div
+                  style={{
+                    gridColumn: 2,
+                    gridRow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minWidth: 0,
                   }}
-                  aria-haspopup={isDesktopFocusUi ? "listbox" : "dialog"}
-                  aria-expanded={isDesktopFocusUi ? focusDropdownOpen : focusSheetOpen}
-                  aria-label={`Change call focus. Currently ${focusedLabel}.`}
-                  style={
-                    desktopCallFocusChrome
-                      ? {
-                          position: "absolute",
-                          top: 2,
-                          right: 0,
-                          zIndex: 2,
-                          width: "auto",
-                          boxSizing: "border-box",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "flex-end",
-                          padding: 0,
-                          margin: 0,
-                          border: "none",
-                          background: "transparent",
-                          cursor: "pointer",
-                          WebkitTapHighlightColor: "transparent",
-                        }
-                      : {
-                          gridColumn: "1 / -1",
-                          gridRow: 2,
-                          width: "100%",
-                          minHeight: 40,
-                          boxSizing: "border-box",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 0,
-                          margin: 0,
-                          border: "none",
-                          background: "transparent",
-                          cursor: "pointer",
-                          WebkitTapHighlightColor: "transparent",
-                        }
-                  }
                 >
                   <span
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
-                      height: 34,
-                      width: desktopCallFocusChrome ? "auto" : "100%",
-                      maxWidth: desktopCallFocusChrome ? "none" : "100%",
-                      padding: desktopCallFocusChrome ? "0 12px" : "0 14px",
-                      borderRadius: 999,
-                      background: C.white,
-                      border: `1px solid ${C.brandBorder}`,
-                      color: C.brand,
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      letterSpacing: "-0.01em",
-                      boxShadow: "0 1px 2px rgba(234,88,12,0.06)",
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: C.textSec,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    Change
-                    <ChevronDown
-                      size={14}
-                      color={C.brand}
-                      strokeWidth={2.2}
-                      aria-hidden
-                      style={{
-                        transform:
-                          (isDesktopFocusUi && focusDropdownOpen) ||
-                          (!isDesktopFocusUi && focusSheetOpen)
-                            ? "rotate(180deg)"
-                            : undefined,
-                        transition: "transform 0.2s ease",
-                      }}
-                    />
+                    This call will focus on
                   </span>
-                </motion.button>
-              )}
-            </div>
+                  <span
+                    style={{
+                      fontSize: transparentSurface ? 16 : 15,
+                      fontWeight: 700,
+                      color: C.primary,
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.25,
+                      marginTop: 2,
+                    }}
+                    title={focusedLabel}
+                  >
+                    {focusedLabel}
+                  </span>
+                </div>
+              </div>
+            )}
           </motion.div>
 
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import type { CSSProperties } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Mic, MessageCircle, Send, Sparkles, ArrowRight, Users, CheckCircle2, Shield } from "lucide-react";
@@ -10,17 +10,125 @@ import { OnboardingProfileScreen } from "./components/OnboardingProfileScreen";
 import { JobPreferencesScreen } from "./components/JobPreferencesScreen";
 import { ProfileSummaryScreen } from "./components/ProfileSummaryScreen";
 import { VoiceCallScreen } from "./components/VoiceCallScreen";
-import { DashboardPreviewScreen } from "./components/DashboardPreviewScreen";
+import { CareerGuidanceScreen, DashboardPreviewScreen, InterviewPrepScreen } from "./components/DashboardPreviewScreen";
 import { JobReviewScreen } from "./components/JobReviewScreen";
 import { JobSeekerProfileScreen } from "./components/JobSeekerProfileScreen";
 import { MatchCelebrationScreen } from "./components/MatchCelebrationScreen";
 import { CallInitiationScreen } from "./components/CallInitiationScreen";
 import { OnboardingJourneyScreen } from "./components/OnboardingJourneyScreen";
+import { InterviewQuestionAnalysisScreen } from "./components/InterviewQuestionAnalysisScreen";
 import { useIsDesktop } from "./hooks/use-desktop";
 import { DesktopAppRoot } from "./desktop/DesktopAppRoot";
 import type { JobWorkspaceTab } from "./desktop/DesktopJobReviewView";
 import { JOB_DEPARTMENT_LABEL_BY_ID } from "./components/jobPrefDepartmentsData";
 import { DT } from "./desktop/desktop-tokens";
+import { UnsubscribeFeedbackScreen } from "./components/UnsubscribeScreens";
+import {
+  MobileBottomNav,
+  MOBILE_BOTTOM_NAV_RESERVED,
+  type MobileBottomNavTab,
+} from "./components/MobileBottomNav";
+
+class ScreenErrorBoundary extends React.Component<
+  { children: React.ReactNode; onRecover: () => void; screenName: string },
+  { error: unknown }
+> {
+  state: { error: unknown } = { error: null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error };
+  }
+
+  componentDidCatch(error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error("Screen render failed", error);
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    const message =
+      this.state.error instanceof Error
+        ? this.state.error.message
+        : typeof this.state.error === "string"
+          ? this.state.error
+          : "Unknown error";
+
+    const stack =
+      this.state.error instanceof Error ? this.state.error.stack : undefined;
+
+    return (
+      <div style={{ padding: "22px 18px", fontFamily: "Inter, sans-serif" }}>
+        <div
+          style={{
+            borderRadius: 18,
+            padding: 16,
+            background: "#FFFFFF",
+            border: "1px solid rgba(28,25,23,0.08)",
+            boxShadow: "0 8px 24px rgba(28,25,23,0.08)",
+            color: "#1C1917",
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>
+            Something went wrong
+          </div>
+          <div style={{ marginTop: 6, fontSize: 13.5, color: "rgba(87,83,78,0.88)" }}>
+            This screen failed to render:{" "}
+            <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+              {this.props.screenName}
+            </span>
+          </div>
+          <div style={{ marginTop: 8, fontSize: 13.5, color: "rgba(87,83,78,0.88)" }}>
+            Error:{" "}
+            <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+              {message}
+            </span>
+          </div>
+          {stack ? (
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ fontSize: 13, fontWeight: 700, color: "rgba(87,83,78,0.88)" }}>
+                Details
+              </summary>
+              <pre
+                style={{
+                  marginTop: 8,
+                  padding: 10,
+                  borderRadius: 12,
+                  background: "rgba(28,25,23,0.04)",
+                  border: "1px solid rgba(28,25,23,0.08)",
+                  overflowX: "auto",
+                  fontSize: 11.5,
+                  lineHeight: 1.45,
+                  color: "rgba(28,25,23,0.85)",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {stack}
+              </pre>
+            </details>
+          ) : null}
+          <button
+            type="button"
+            onClick={this.props.onRecover}
+            style={{
+              marginTop: 12,
+              border: "none",
+              background: "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
+              color: "#FFFFFF",
+              padding: "10px 12px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Back to dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
 
 type Screen =
   | "login"
@@ -36,9 +144,13 @@ type Screen =
   | "callInitiation"
   | "success"
   | "dashboardPreview"
+  | "careerGuidance"
+  | "interviewPrep"
+  | "interviewQuestionAnalysis"
   | "voiceCall"
   | "jobReview"
-  | "jobSeekerProfile";
+  | "jobSeekerProfile"
+  | "unsubscribeFeedback";
 
 const slide = {
   fromRight:  { x: "100%",  opacity: 0 },
@@ -225,7 +337,11 @@ export default function App() {
         className="relative mx-auto min-h-0 overflow-x-hidden"
         style={{ maxWidth: "390px", minHeight: "100vh" }}
       >
-        <AnimatePresence mode="wait" initial={false}>
+        <ScreenErrorBoundary
+          screenName={screen}
+          onRecover={() => goTo("dashboardPreview", "back")}
+        >
+          <AnimatePresence mode="wait" initial={false}>
 
           {screen === "login" && (
             <motion.div key="login" initial={direction === "back" ? slide.fromLeft : { opacity: 0, scale: 0.97 }} animate={slide.center} exit={slide.toLeft} transition={SPRING} style={{ width: "100%" }}>
@@ -237,6 +353,25 @@ export default function App() {
                 fullName={signupFullName}
                 setFullName={setSignupFullName}
                 onContinue={() => goTo("otp", "forward")}
+                onOpenUnsubscribe={() => goTo("unsubscribeFeedback", "forward")}
+              />
+            </motion.div>
+          )}
+
+          {/* Single-step unsubscribe: opens feedback (success + optional reasons) directly — no intro screen. */}
+          {screen === "unsubscribeFeedback" && (
+            <motion.div
+              key="unsub-feedback"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              style={{ width: "100%" }}
+            >
+              <UnsubscribeFeedbackScreen
+                layout="mobile"
+                onBack={() => goTo("login", "back")}
+                onDone={() => goTo("login", "back")}
               />
             </motion.div>
           )}
@@ -409,6 +544,9 @@ export default function App() {
                   setProfileEditSection(section);
                   goTo("profileEdit", "forward");
                 }}
+                onEmailVerified={() => {
+                  setParsedProfile((prev) => (prev ? { ...prev, emailVerified: true } : null));
+                }}
                 onContinue={() => goTo("matchCelebration", "forward")}
               />
             </motion.div>
@@ -472,7 +610,7 @@ export default function App() {
               animate={slide.center}
               exit={exitTo(direction)}
               transition={SPRING}
-              style={{ width: "100%" }}
+              style={{ width: "100%", paddingBottom: MOBILE_BOTTOM_NAV_RESERVED }}
             >
               <DashboardPreviewScreen
                 firstName={firstName}
@@ -488,9 +626,53 @@ export default function App() {
                   goTo("jobReview", "forward");
                 }}
                 onViewProfile={() => goTo("jobSeekerProfile", "forward")}
+                onOpenInterviewQuestionAnalysis={() =>
+                  goTo("interviewQuestionAnalysis", "forward")
+                }
+                onOpenCareerGuidance={() => goTo("careerGuidance", "forward")}
+                onOpenInterviewPrep={() => goTo("interviewPrep", "forward")}
                 onLogout={handleLogout}
                 onDeleteAccount={handleLogout}
               />
+            </motion.div>
+          )}
+
+          {screen === "interviewQuestionAnalysis" && (
+            <motion.div
+              key="interviewQuestionAnalysis"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              style={{ width: "100%" }}
+            >
+              <InterviewQuestionAnalysisScreen onBack={() => goTo("dashboardPreview", "back")} />
+            </motion.div>
+          )}
+
+          {screen === "interviewPrep" && (
+            <motion.div
+              key="interviewPrep"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              style={{ width: "100%", paddingBottom: MOBILE_BOTTOM_NAV_RESERVED }}
+            >
+              <InterviewPrepScreen displayName={firstName || "Alex"} onRetakeInterview={() => goTo("voiceCall", "forward")} />
+            </motion.div>
+          )}
+
+          {screen === "careerGuidance" && (
+            <motion.div
+              key="careerGuidance"
+              initial={enterFrom(direction)}
+              animate={slide.center}
+              exit={exitTo(direction)}
+              transition={SPRING}
+              style={{ width: "100%", paddingBottom: MOBILE_BOTTOM_NAV_RESERVED }}
+            >
+              <CareerGuidanceScreen displayName={firstName || "Alex"} />
             </motion.div>
           )}
 
@@ -501,18 +683,12 @@ export default function App() {
               animate={slide.center}
               exit={exitTo(direction)}
               transition={SPRING}
-              style={{ width: "100%" }}
+              style={{ width: "100%", paddingBottom: MOBILE_BOTTOM_NAV_RESERVED }}
             >
               <JobSeekerProfileScreen
                 firstName={firstName || "Alex"}
                 email={email}
                 profile={parsedProfile}
-                onNavigateHome={() => goTo("dashboardPreview", "back")}
-                onNavigateJobs={() => {
-                  setJobReviewInitialTab("recommended");
-                  goTo("jobReview", "forward");
-                }}
-                onNavigateProfile={() => {}}
                 onEditProfile={() => {
                   setProfileReturnScreen("jobSeekerProfile");
                   setProfileEditSection(undefined);
@@ -551,10 +727,11 @@ export default function App() {
               animate={slide.center}
               exit={exitTo(direction)}
               transition={SPRING}
-              style={{ width: "100%" }}
+              style={{ width: "100%", paddingBottom: MOBILE_BOTTOM_NAV_RESERVED }}
             >
               <JobReviewScreen
                 firstName={firstName || "Alex"}
+                profileSkills={profileForEdit?.skills ?? []}
                 initialTab={
                   jobReviewInitialTab === "recommended"
                     ? "new"
@@ -569,10 +746,54 @@ export default function App() {
             </motion.div>
           )}
 
-        </AnimatePresence>
+          </AnimatePresence>
+        </ScreenErrorBoundary>
+
+        {(() => {
+          const navTab = screenToBottomTab(screen);
+          if (!navTab) return null;
+          const handleSelect = (tab: MobileBottomNavTab) => {
+            switch (tab) {
+              case "home":
+                if (screen !== "dashboardPreview") goTo("dashboardPreview", "back");
+                return;
+              case "jobs":
+                setJobReviewInitialTab("recommended");
+                if (screen !== "jobReview") goTo("jobReview", "forward");
+                return;
+              case "profile":
+                if (screen !== "jobSeekerProfile") goTo("jobSeekerProfile", "forward");
+                return;
+              case "career":
+              case "interview":
+                if (tab === "interview" && screen !== "interviewPrep") goTo("interviewPrep", "forward");
+                if (tab === "career" && screen !== "careerGuidance") goTo("careerGuidance", "forward");
+                return;
+            }
+          };
+          return <MobileBottomNav active={navTab} onSelect={handleSelect} />;
+        })()}
       </div>
     </div>
   );
+}
+
+/** Pick the active bottom-nav tab for the current screen, or `null` to hide. */
+function screenToBottomTab(screen: Screen): MobileBottomNavTab | null {
+  switch (screen) {
+    case "dashboardPreview":
+      return "home";
+    case "jobReview":
+      return "jobs";
+    case "careerGuidance":
+      return "career";
+    case "interviewPrep":
+      return "interview";
+    case "jobSeekerProfile":
+      return "profile";
+    default:
+      return null;
+  }
 }
 
 // ── Setting up your profile (after step 5: upload resume) ─────────────────────

@@ -141,7 +141,7 @@ const INTERVIEW_RECORDING_GLASS: CSSProperties = {
   WebkitBackdropFilter: "blur(26px) saturate(1.45)",
   border: "1px solid rgba(255,255,255,0.55)",
   boxShadow:
-    "0 10px 40px rgba(234,88,12,0.09), 0 2px 14px rgba(234,88,12,0.05), inset 0 1px 0 rgba(255,255,255,0.72), inset 0 -1px 0 rgba(255,255,255,0.28)",
+    "0 8px 26px rgba(234,88,12,0.07), 0 2px 10px rgba(234,88,12,0.035), inset 0 1px 0 rgba(255,255,255,0.72), inset 0 -1px 0 rgba(255,255,255,0.28)",
 };
 
 /** Compact play strip + optional full transcript — shared by dashboard and profile. */
@@ -188,12 +188,6 @@ export function InterviewRecordingCompactCard() {
             · Full recording
           </span>
         </div>
-        <span
-          className="shrink-0 font-mono text-[10.5px] font-semibold tabular-nums"
-          style={{ color: "#5C5651", letterSpacing: "-0.02em" }}
-        >
-          {INTERVIEW_DURATION_FULL}
-        </span>
       </div>
 
       <div className="relative z-[1] flex flex-col gap-2.5">

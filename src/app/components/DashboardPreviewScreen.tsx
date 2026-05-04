@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useEffect, useRef, useId, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { FullProfile } from "./WelcomeScreen";
 import {
   ANALYSIS_TRAITS,
+  IMPROVEMENT_FOCUS,
+  IMPROVEMENT_FOCUS_SUBTITLE,
+  IMPROVEMENT_FOCUS_TITLE,
   INTERVIEW_RECAP_SUMMARY,
   INTERVIEW_RECAP_VERDICT,
   traitAccent,
@@ -11,7 +14,6 @@ import { InterviewRecordingCompactCard } from "./InterviewTranscriptScroll";
 import {
   Sparkles,
   Bell,
-  Brain,
   Settings,
   User,
   House,
@@ -34,7 +36,6 @@ import {
   Trophy,
   TrendingUp,
   ArrowUpRight,
-  Flame,
   Star,
   Layers,
   Lock,
@@ -42,6 +43,12 @@ import {
   Clock3,
   Loader2,
   LogOut,
+  X,
+  BookOpen,
+  HelpCircle,
+  CalendarClock,
+  RotateCcw,
+  ChevronLeft,
 } from "lucide-react";
 
 // ── Design Tokens ────────────────────────────────────────────────────────────
@@ -186,24 +193,6 @@ const AI_INSIGHTS = [
   },
 ];
 
-const SKILLS_DATA: { name: string; demand: "high" | "medium" | "growing" }[] =
-  [
-    { name: "React", demand: "high" },
-    { name: "Figma", demand: "high" },
-    { name: "TypeScript", demand: "high" },
-    { name: "User Research", demand: "high" },
-    { name: "Design Systems", demand: "medium" },
-    { name: "Prototyping", demand: "medium" },
-    { name: "SQL", demand: "medium" },
-    { name: "AI/ML Design", demand: "growing" },
-  ];
-
-const DEMAND_THEME = {
-  high: { label: "High demand", color: "#059669", bg: "rgba(5,150,105,0.08)" },
-  medium: { label: "Moderate", color: "#D97706", bg: "rgba(217,119,6,0.08)" },
-  growing: { label: "Growing", color: "#2563EB", bg: "rgba(37,99,235,0.08)" },
-} as const;
-
 // ── AI Understanding Data ────────────────────────────────────────────────────
 
 const UNDERSTANDING_SOURCES = [
@@ -242,48 +231,6 @@ const UNDERSTANDING_SOURCES = [
     source: "From voice interview",
     insight:
       "Your communication is structured and confident (top 15%). You demonstrate strong domain conviction and a natural collaborative leadership style.",
-  },
-];
-
-const COMPETITIVE_EDGE = [
-  {
-    dimension: "Communication",
-    percentile: 92,
-    color: "#059669",
-    icon: "message" as const,
-    tip: "Exceptional clarity — top-tier among designers",
-  },
-  {
-    dimension: "Domain Depth",
-    percentile: 82,
-    color: "#6366F1",
-    icon: "layers" as const,
-    tip: "Add case studies to break into the Top 10%",
-  },
-  {
-    dimension: "Role Fit",
-    percentile: 74,
-    color: "#D97706",
-    icon: "target" as const,
-    tip: "Refine preferences to sharpen your match score",
-  },
-];
-
-const GROWTH_INSIGHTS = [
-  {
-    tag: "Skill gap",
-    text: "Data storytelling is the #2 most-requested skill across your target roles",
-    color: "#2563EB",
-  },
-  {
-    tag: "Competency",
-    text: "Add a structured case study to push your domain depth into the Top 10%",
-    color: "#6366F1",
-  },
-  {
-    tag: "Stand out",
-    text: "Only 8% of designers at your level have a video intro — 3× more recruiter attention",
-    color: "#EA580C",
   },
 ];
 
@@ -473,10 +420,6 @@ export function DashboardHeader({
   isLowPerformer,
   caseOptions,
   activeCaseKey,
-  currentPage,
-  onNavigateHome,
-  onNavigateJobs,
-  onNavigateProfile,
   onOpenSettings,
 }: {
   displayName: string;
@@ -484,28 +427,17 @@ export function DashboardHeader({
   isLowPerformer?: boolean;
   caseOptions?: Array<{ key: string; label: string; onSelect: () => void }>;
   activeCaseKey?: string;
-  currentPage: "home" | "jobs" | "profile";
-  onNavigateHome?: () => void;
-  onNavigateJobs?: () => void;
-  onNavigateProfile?: () => void;
   onOpenSettings?: () => void;
 }) {
   const initial = displayName.charAt(0).toUpperCase();
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [caseMenuOpen, setCaseMenuOpen] = useState(false);
-  const switcherRef = useRef<HTMLDivElement | null>(null);
   const caseMenuRef = useRef<HTMLDivElement | null>(null);
-  const label =
-    currentPage === "jobs" ? "Jobs" : currentPage === "profile" ? "Profile" : "Home";
 
   useEffect(() => {
-    if (!switcherOpen) return;
+    if (!caseMenuOpen) return;
     const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (switcherRef.current && !switcherRef.current.contains(target)) {
-        setSwitcherOpen(false);
-      }
-      if (caseMenuRef.current && !caseMenuRef.current.contains(target)) {
+      const t = event.target as Node;
+      if (caseMenuRef.current && !caseMenuRef.current.contains(t)) {
         setCaseMenuOpen(false);
       }
     };
@@ -513,7 +445,7 @@ export function DashboardHeader({
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
     };
-  }, [switcherOpen]);
+  }, [caseMenuOpen]);
 
   return (
     <header
@@ -528,131 +460,12 @@ export function DashboardHeader({
         borderBottom: `1px solid ${T.border}`,
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "flex-end",
+        gap: 12,
         padding: "0 18px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div ref={switcherRef} style={{ position: "relative" }}>
-          <button
-            type="button"
-            onClick={() => setSwitcherOpen((v) => !v)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              padding: 0,
-              fontFamily: T.serif,
-              fontSize: 22,
-              fontWeight: 400,
-              color: T.text,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {label}
-            <ChevronDown
-              size={18}
-              color={T.textSec}
-              strokeWidth={2}
-              style={{
-                transform: switcherOpen ? "rotate(180deg)" : "none",
-                transition: "transform 0.18s ease",
-              }}
-            />
-          </button>
-
-          {switcherOpen && (
-            <div
-              role="menu"
-              style={{
-                position: "absolute",
-                top: 40,
-                left: 0,
-                minWidth: 180,
-                borderRadius: 14,
-                padding: 6,
-                background: "#FFFFFF",
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
-                border: "1px solid rgba(28,25,23,0.08)",
-                boxShadow:
-                  "0 10px 30px rgba(28,25,23,0.10), 0 2px 6px rgba(28,25,23,0.06)",
-              }}
-            >
-              {[
-                {
-                  key: "home",
-                  text: "Home",
-                  icon: <House size={14} strokeWidth={2} />,
-                  onClick: () => onNavigateHome?.(),
-                },
-                {
-                  key: "jobs",
-                  text: "Jobs",
-                  icon: <Briefcase size={14} strokeWidth={2} />,
-                  onClick: () => onNavigateJobs?.(),
-                },
-                {
-                  key: "profile",
-                  text: "Profile",
-                  icon: <User size={14} strokeWidth={2} />,
-                  onClick: () => onNavigateProfile?.(),
-                },
-              ].map((item) => {
-                const active = item.key === currentPage;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    role="menuitem"
-                    disabled={active}
-                    onClick={() => {
-                      setSwitcherOpen(false);
-                      item.onClick();
-                    }}
-                    style={{
-                      width: "100%",
-                      border: "none",
-                      background: active ? "rgba(28,25,23,0.04)" : "transparent",
-                      cursor: active ? "default" : "pointer",
-                      padding: "10px 10px",
-                      borderRadius: 10,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "flex-start",
-                      fontFamily: T.sans,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: active ? T.text : T.textSec,
-                      letterSpacing: "-0.01em",
-                      opacity: active ? 1 : 0.95,
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: active ? T.text : T.textSec,
-                        opacity: active ? 1 : 0.9,
-                        marginRight: 8,
-                      }}
-                    >
-                      {item.icon}
-                    </span>
-                    <span>{item.text}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <motion.button
           type="button"
           whileHover={{ y: -1, boxShadow: "0 6px 14px rgba(28,25,23,0.10)" }}
@@ -2673,22 +2486,289 @@ function MobileInterviewRecapPendingCard() {
             </div>
           ))}
         </div>
-
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-          <Brain size={14} strokeWidth={2} color="#C2410C" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden />
-          <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(68,64,60,0.82)", lineHeight: 1.5 }}>
-            You can listen back to the recording below. We&rsquo;ll drop your recap here as soon as
-            it&rsquo;s ready.
-          </span>
-        </div>
       </div>
     </motion.div>
   );
 }
 
-function InterviewAnalysisCard() {
-  const [showDetails, setShowDetails] = useState(false);
+/* ── Early-days inventory note (dismissible) ──
+ * For users who may see a thin match list: reassurance + light stats + how
+ * we will notify them. Remembers dismissal in localStorage; re-shows after 7d.
+ */
+const LIVE_GROWTH_STORAGE_KEY = "zappy.livegrowth.dismissedAt";
+const LIVE_GROWTH_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
 
+function shouldShowLiveGrowth(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = window.localStorage.getItem(LIVE_GROWTH_STORAGE_KEY);
+    if (!raw) return true;
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) return true;
+    return Date.now() - ts > LIVE_GROWTH_COOLDOWN_MS;
+  } catch {
+    return true;
+  }
+}
+
+function dismissLiveGrowthStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LIVE_GROWTH_STORAGE_KEY, String(Date.now()));
+  } catch {
+    /* storage blocked — fall back to in-memory state */
+  }
+}
+
+/** Mock counts. In production, replace with API-driven figures. */
+const LIVE_GROWTH_SNAPSHOT = {
+  newRolesThisWeek: 28,
+  newCompanies: 4,
+};
+
+/** Product age for launch messaging (keep in sync with backend / marketing). */
+const ZAPPYFIND_AGE_DAYS = 7;
+
+/** Small inline scene: stacked listings + growth badge (not a single lucide icon). */
+function LiveGrowthIllustration() {
+  const uid = useId().replace(/:/g, "");
+  const g = `lgf-${uid}-g`;
+
+  return (
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={g} x1="8" y1="8" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#A5B4FC" />
+          <stop offset="1" stopColor="#4F46E5" />
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width="46" height="46" rx="13" fill="#EEF2FF" stroke="#C7D2FE" strokeWidth="1" />
+      <rect
+        x="7"
+        y="18"
+        width="30"
+        height="20"
+        rx="4"
+        fill="#C7D2FE"
+        opacity="0.95"
+        transform="rotate(-8 22 28)"
+      />
+      <rect
+        x="8"
+        y="15"
+        width="30"
+        height="20"
+        rx="4"
+        fill="#A5B4FC"
+        opacity="0.98"
+        transform="rotate(-4 23 25)"
+      />
+      <rect x="9" y="11" width="30" height="22" rx="4" fill={`url(#${g})`} />
+      <rect x="13" y="15" width="14" height="2.6" rx="1.3" fill="white" fillOpacity="0.95" />
+      <rect x="13" y="19.5" width="22" height="2.4" rx="1.2" fill="white" fillOpacity="0.5" />
+      <rect x="13" y="23.8" width="18" height="2.4" rx="1.2" fill="white" fillOpacity="0.38" />
+      <circle cx="36" cy="12" r="7" fill="#312E81" />
+      <path
+        d="M36 14.8V10M33.2 12.2L36 9.2L38.8 12.2"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function LiveGrowthPanel({ onDismiss }: { onDismiss: () => void }) {
+  const reduceMotion = useReducedMotion();
+  const { newRolesThisWeek, newCompanies } = LIVE_GROWTH_SNAPSHOT;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.18 } }}
+      transition={{ duration: 0.4, delay: 0.06, ease: EASE }}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        paddingTop: 8,
+        paddingLeft: 10,
+        paddingBottom: 10,
+        paddingRight: 42,
+        borderRadius: 14,
+        overflow: "hidden",
+        position: "relative",
+        border: "1px solid rgba(99, 102, 241, 0.18)",
+        background:
+          "linear-gradient(125deg, rgba(255,255,255,0.94) 0%, rgba(245,243,255,0.88) 45%, rgba(255,251,247,0.92) 100%)",
+        backdropFilter: "blur(14px) saturate(1.2)",
+        WebkitBackdropFilter: "blur(14px) saturate(1.2)",
+        boxShadow:
+          "0 2px 3px rgba(79, 70, 229, 0.04), 0 10px 28px rgba(79, 70, 229, 0.07), inset 0 1px 0 rgba(255,255,255,0.85)",
+      }}
+      aria-live="polite"
+    >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(120% 80% at 0% 0%, rgba(99,102,241,0.09) 0%, transparent 55%), radial-gradient(90% 70% at 100% 100%, rgba(234,88,12,0.06) 0%, transparent 50%)",
+        }}
+      />
+
+      <motion.div
+        aria-hidden
+        style={{
+          position: "relative",
+          flexShrink: 0,
+          width: 48,
+          height: 48,
+          borderRadius: 13,
+          overflow: "hidden",
+          boxShadow: "0 6px 18px rgba(79, 70, 229, 0.18)",
+          border: "1px solid rgba(99, 102, 241, 0.22)",
+          background: "linear-gradient(180deg, #FFFFFF 0%, #F5F7FF 100%)",
+        }}
+        animate={reduceMotion ? undefined : { y: [0, -1.5, 0] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <LiveGrowthIllustration />
+      </motion.div>
+
+      <div
+        style={{
+          position: "relative",
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          paddingTop: 0,
+        }}
+      >
+        <span
+          style={{
+            display: "inline-block",
+            marginBottom: 4,
+            fontFamily: T.sans,
+            fontSize: 9.5,
+            fontWeight: 700,
+            letterSpacing: "0.11em",
+            textTransform: "uppercase",
+            color: "#4F46E5",
+          }}
+        >
+          {ZAPPYFIND_AGE_DAYS} days live
+        </span>
+        <p
+          style={{
+            margin: 0,
+            fontFamily: T.sans,
+            fontSize: 13,
+            lineHeight: 1.25,
+            letterSpacing: "-0.022em",
+            color: T.text,
+            fontWeight: 700,
+          }}
+        >
+          ZappyFind is brand new. We just launched.
+        </p>
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontFamily: T.sans,
+            fontSize: 12,
+            lineHeight: 1.32,
+            letterSpacing: "-0.016em",
+            color: "#3F3A36",
+            fontWeight: 600,
+          }}
+        >
+          We&rsquo;re actively adding jobs to ZappyFind.
+        </p>
+        <div
+          aria-hidden
+          style={{
+            height: 1,
+            margin: "8px 0 6px",
+            borderRadius: 1,
+            background: "linear-gradient(90deg, rgba(99,102,241,0.35), rgba(234,88,12,0.2), transparent)",
+            opacity: 0.85,
+          }}
+        />
+        <p
+          style={{
+            margin: 0,
+            fontFamily: T.sans,
+            fontSize: 11,
+            lineHeight: 1.32,
+            letterSpacing: "-0.01em",
+            color: T.textSec,
+            fontWeight: 500,
+          }}
+        >
+          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#4F46E5" }}>
+            +{newRolesThisWeek}
+          </span>{" "}
+          roles ·{" "}
+          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#4F46E5" }}>
+            +{newCompanies}
+          </span>{" "}
+          companies · {ZAPPYFIND_AGE_DAYS}d · We&rsquo;ll WhatsApp or email you when more jobs are
+          added to ZappyFind.
+        </p>
+      </div>
+
+      <motion.button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss notice"
+        title="Dismiss"
+        whileTap={{ scale: 0.96 }}
+        transition={{ type: "spring", stiffness: 520, damping: 28 }}
+        style={{
+          position: "absolute",
+          top: 6,
+          right: 6,
+          zIndex: 4,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 36,
+          height: 36,
+          padding: 0,
+          borderRadius: 999,
+          border: "1px solid rgba(28,25,23,0.1)",
+          background: "rgba(255,255,255,0.88)",
+          color: T.textTer,
+          cursor: "pointer",
+          boxShadow: "0 1px 2px rgba(28,25,23,0.06)",
+        }}
+      >
+        <X size={15} strokeWidth={2.4} aria-hidden />
+      </motion.button>
+    </motion.div>
+  );
+}
+
+function InterviewAnalysisCard({
+  onOpenQuestionAnalysis,
+}: {
+  onOpenQuestionAnalysis?: () => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -2752,28 +2832,40 @@ function InterviewAnalysisCard() {
         }}
       >
         <div>
-          <p
+          <div
             style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
               margin: 0,
-              fontSize: 10,
-              fontWeight: 600,
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              color: "#7C4A13",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
+              paddingBottom: 4,
             }}
           >
-            AI Interview summary
-          </p>
+            <Sparkles size={12} color="#5C370F" strokeWidth={2.2} aria-hidden />
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: T.sans,
+                color: "#5C370F",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                lineHeight: 1.25,
+              }}
+            >
+              AI Interview summary
+            </p>
+          </div>
           <h2
             style={{
               margin: 0,
               marginTop: 8,
-              fontSize: 20,
-              fontWeight: 600,
-              lineHeight: 1.18,
-              letterSpacing: "-0.02em",
-              color: T.text,
+              fontSize: 17,
+              fontWeight: 500,
+              lineHeight: 1.28,
+              letterSpacing: "-0.015em",
+              color: "rgba(28,25,23,0.78)",
               fontFamily: T.sans,
             }}
           >
@@ -2782,10 +2874,11 @@ function InterviewAnalysisCard() {
           <p
             style={{
               margin: 0,
-              marginTop: 10,
-              fontSize: 13.5,
-              lineHeight: 1.55,
-              color: "rgba(68,64,60,0.9)",
+              marginTop: 5,
+              fontSize: 12.5,
+              fontWeight: 500,
+              lineHeight: 1.5,
+              color: "rgba(68,64,60,0.72)",
               letterSpacing: "-0.01em",
             }}
           >
@@ -2873,19 +2966,21 @@ function InterviewAnalysisCard() {
           })}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", width: "100%" }}>
           <button
             type="button"
-            onClick={() => setShowDetails((v) => !v)}
+            onClick={onOpenQuestionAnalysis}
             style={{
-              display: "inline-flex",
+              display: "flex",
+              width: "100%",
               alignItems: "center",
+              justifyContent: "center",
               gap: 6,
               minHeight: 40,
               padding: "8px 14px",
-              borderRadius: 999,
-              border: "1px solid rgba(234,88,12,0.42)",
-              background: showDetails ? "rgba(234,88,12,0.1)" : "rgba(255,255,255,0.78)",
+              borderRadius: 12,
+              border: "none",
+              background: "transparent",
               color: T.accent,
               fontSize: 12.5,
               fontWeight: 600,
@@ -2893,93 +2988,2023 @@ function InterviewAnalysisCard() {
               cursor: "pointer",
               fontFamily: T.sans,
             }}
+            aria-label="View question-by-question analysis"
           >
-            {showDetails ? "Hide detailed analysis" : "View detailed analysis"}
+            View detailed analysis
             <ChevronDown
               size={14}
               strokeWidth={2.3}
               color={T.accent}
-              style={{
-                transform: showDetails ? "rotate(180deg)" : "none",
-                transition: "transform 0.2s ease",
-              }}
+              style={{ transform: "rotate(-90deg)" }}
             />
           </button>
         </div>
-
-        <AnimatePresence initial={false}>
-          {showDetails && (
-            <motion.div
-              initial={{ opacity: 0, y: 6, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -4, height: 0 }}
-              transition={{ duration: 0.26, ease: EASE }}
-              style={{ overflow: "hidden" }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 2 }}>
-                {ANALYSIS_TRAITS.map((trait) => {
-                  const accent = traitAccent(trait.level);
-                  return (
-                    <div
-                      key={`${trait.label}-detail`}
-                      style={{
-                        borderRadius: 14,
-                        border: "1px solid rgba(120,72,34,0.1)",
-                        background: "rgba(255,253,250,0.85)",
-                        padding: "12px 12px 12px",
-                      }}
-                    >
-                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-                        <span
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: T.text,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {trait.label}
-                        </span>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            borderRadius: 999,
-                            padding: "3px 8px",
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.08em",
-                            background: `${accent}14`,
-                            color: accent,
-                          }}
-                        >
-                          {trait.level}
-                        </span>
-                      </div>
-                      <p
-                        style={{
-                          margin: "8px 0 0",
-                          fontSize: 12.5,
-                          lineHeight: 1.55,
-                          color: "rgba(68,64,60,0.9)",
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        {trait.detail}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </motion.div>
   );
 }
 
+
+// ── Career Trajectory Card ──────────────────────────────────────────────────
+
+type TrajectoryStage = {
+  id: "now" | "next" | "future";
+  stage: string;
+  timeframe: string;
+  role: string;
+  icon: typeof Star;
+  accent: string;
+  accentSoft: string;
+  accentBorder: string;
+  headline: string;
+  working: string[];
+  improve: string[];
+  skills: string[];
+};
+
+const CAREER_TRAJECTORY: TrajectoryStage[] = [
+  {
+    id: "now",
+    stage: "Now",
+    timeframe: "Best fit today",
+    role: "Senior Product Designer",
+    icon: Star,
+    accent: "#0F766E",
+    accentSoft: "rgba(13,148,136,0.10)",
+    accentBorder: "rgba(13,148,136,0.22)",
+    headline: "You're ready for this role today.",
+    working: [
+      "Design systems thinking with measurable outcomes",
+      "Cross-functional collaboration with PMs and engineering",
+      "Strong craft across Figma, prototyping and motion",
+    ],
+    improve: [
+      "Frame product opportunities in business terms",
+      "Quantify impact with crisper metrics",
+    ],
+    skills: ["Stakeholder storytelling", "Pricing & growth literacy", "OKR drafting"],
+  },
+  {
+    id: "next",
+    stage: "Next",
+    timeframe: "1–2 years",
+    role: "Lead Product Designer",
+    icon: TrendingUp,
+    accent: "#C2410C",
+    accentSoft: "rgba(234,88,12,0.10)",
+    accentBorder: "rgba(234,88,12,0.22)",
+    headline: "Move from doing to deciding — own a domain end‑to‑end.",
+    working: [
+      "Mentoring designers informally already pays off",
+      "Comfort presenting to senior leadership",
+      "End‑to‑end ownership across squads",
+    ],
+    improve: [
+      "Set the craft bar as your team's quality reviewer",
+      "Translate research into roadmap calls, not just shipping",
+    ],
+    skills: ["Design strategy", "Roadmap planning", "Hiring & feedback", "Tradeoff frameworks"],
+  },
+  {
+    id: "future",
+    stage: "Future",
+    timeframe: "3–5 years",
+    role: "Director of Design",
+    icon: Trophy,
+    accent: "#6D28D9",
+    accentSoft: "rgba(109,40,217,0.10)",
+    accentBorder: "rgba(109,40,217,0.22)",
+    headline: "Build the team that shapes the product, not just the screens.",
+    working: [
+      "Vision storytelling that lands with non‑designers",
+      "Systems thinking applied to small teams",
+    ],
+    improve: [
+      "Shift from individual output to team output",
+      "Read P&L, headcount and org‑level OKRs",
+    ],
+    skills: ["Org design", "Hiring funnels", "Coaching ICs", "Budgeting", "Cross‑org influence"],
+  },
+];
+
+/** Distinct from AI recap / hero cards: clean surface + neutral editorial accent (light only). */
+const CAREER_GUIDANCE_SURFACE = "#FFFFFF";
+const CAREER_GUIDANCE_BORDER = "rgba(28, 25, 23, 0.085)";
+const CAREER_GUIDANCE_SHADOW =
+  "0 2px 10px rgba(28, 25, 23, 0.055), 0 12px 32px rgba(28, 25, 23, 0.045)";
+
+export function CareerTrajectoryCard({
+  variant = "card",
+  interactiveStages = false,
+  onOpenGrowthPlan,
+}: {
+  variant?: "card" | "page";
+  interactiveStages?: boolean;
+  onOpenGrowthPlan?: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const [openId, setOpenId] = useState<TrajectoryStage["id"] | null>(() =>
+    interactiveStages ? (variant === "page" ? "now" : null) : null,
+  );
+
+  const content = (
+    <div
+      style={{
+        position: "relative",
+        zIndex: 1,
+        padding: variant === "page" ? "18px 16px 22px" : "18px 17px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 18,
+      }}
+    >
+        <div>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 11,
+              fontWeight: 600,
+              color: "rgba(87, 83, 78, 0.92)",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              fontFamily: T.sans,
+            }}
+          >
+            Career guidance
+          </p>
+          <h2
+            style={{
+              margin: 0,
+              marginTop: 8,
+              fontSize: 22,
+              fontWeight: 500,
+              lineHeight: 1.16,
+              letterSpacing: "-0.025em",
+              color: T.text,
+              fontFamily: T.serif,
+            }}
+          >
+            Your next moves
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              marginTop: 8,
+              fontSize: 13,
+              lineHeight: 1.52,
+              color: "rgba(68,64,60,0.88)",
+              letterSpacing: "-0.01em",
+              fontFamily: T.sans,
+            }}
+          >
+            Where you fit today, what’s worth aiming for next, and the direction you’re building toward.
+          </p>
+        </div>
+
+        <div
+          role="list"
+          style={{ display: "flex", flexDirection: "column", gap: 10 }}
+        >
+          {CAREER_TRAJECTORY.map((stage, i) => (
+            <TrajectoryStageRow
+              key={stage.id}
+              stage={stage}
+              index={i}
+              isLast={i === CAREER_TRAJECTORY.length - 1}
+              isOpen={interactiveStages ? openId === stage.id : false}
+              reduceMotion={!!reduceMotion}
+              onSelect={() =>
+                interactiveStages ? setOpenId((prev) => (prev === stage.id ? null : stage.id)) : undefined
+              }
+              variant={variant}
+              interactive={interactiveStages}
+              staticPresentation={
+                interactiveStages ? "accordion" : variant === "page" ? "expanded" : "collapsed"
+              }
+            />
+          ))}
+        </div>
+
+        {!interactiveStages && variant === "card" && onOpenGrowthPlan ? (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 520, damping: 28 }}
+            onClick={onOpenGrowthPlan}
+            style={{
+              alignSelf: "stretch",
+              marginTop: 2,
+              borderRadius: 14,
+              border: "1px solid rgba(120, 100, 78, 0.22)",
+              background: "rgba(255,252,248,0.92)",
+              color: T.text,
+              fontFamily: T.sans,
+              fontSize: 14,
+              fontWeight: 650,
+              letterSpacing: "-0.01em",
+              padding: "12px 14px",
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(28,25,23,0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              minHeight: 44,
+            }}
+          >
+            View personalized growth plan
+            <ChevronRight size={16} strokeWidth={2.2} aria-hidden />
+          </motion.button>
+        ) : null}
+    </div>
+  );
+
+  if (variant === "page") {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE }}
+        aria-label="Career trajectory guidance"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: "100%",
+          position: "relative",
+          overflow: "hidden",
+          background: T.pageBg,
+          fontFamily: T.sans,
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            height: "100%",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            padding: "0 0 calc(16px + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          <div style={{ maxWidth: 420, margin: "0 auto" }}>{content}</div>
+        </div>
+      </motion.section>
+    );
+  }
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, delay: 0.5, ease: EASE }}
+      aria-label="Career trajectory guidance"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 20,
+        border: `1px solid ${CAREER_GUIDANCE_BORDER}`,
+        background: CAREER_GUIDANCE_SURFACE,
+        boxShadow: CAREER_GUIDANCE_SHADOW,
+      }}
+    >
+      {/* Soft cool wash at top — reads as light from above, not orange “AI” recap */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 72,
+          background:
+            "linear-gradient(180deg, rgba(255,240,224,0.9) 0%, rgba(255,247,237,0.58) 42%, rgba(255,255,255,0) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 16,
+          right: 16,
+          top: 0,
+          height: 3,
+          borderRadius: "0 0 10px 10px",
+          background:
+            "linear-gradient(90deg, rgba(251,146,60,0.24) 0%, rgba(234,88,12,0.35) 50%, rgba(245,158,11,0.24) 100%)",
+          opacity: 0.9,
+          boxShadow: "0 1px 0 rgba(255,255,255,0.65) inset, 0 6px 16px rgba(234,88,12,0.10)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {content}
+    </motion.section>
+  );
+}
+
+function TrajectoryStageRow({
+  stage,
+  index,
+  isLast,
+  isOpen,
+  reduceMotion,
+  onSelect,
+  variant,
+  interactive,
+  staticPresentation = "accordion",
+}: {
+  stage: TrajectoryStage;
+  index: number;
+  isLast: boolean;
+  isOpen: boolean;
+  reduceMotion: boolean;
+  onSelect?: () => void;
+  variant: "card" | "page";
+  interactive: boolean;
+  /** When not accordion: dashboard card = collapsed summaries only; full page = all details, no toggles. */
+  staticPresentation?: "accordion" | "collapsed" | "expanded";
+}) {
+  const Icon = stage.icon;
+  const headerId = `trajectory-stage-${stage.id}`;
+  const panelId = `trajectory-panel-${stage.id}`;
+  const expanded = interactive ? isOpen : staticPresentation === "expanded";
+
+  const detailPanel = (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        padding: "0 12px 14px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12.5,
+          fontWeight: 500,
+          color: "rgba(68,64,60,0.86)",
+          letterSpacing: "-0.01em",
+          lineHeight: 1.45,
+        }}
+      >
+        {stage.headline}
+      </div>
+
+      <TrajectoryGroup
+        label="What's working"
+        iconBg="rgba(13,148,136,0.10)"
+        iconBorder="rgba(13,148,136,0.22)"
+        iconColor="#0F766E"
+        icon={<CheckCircle2 size={11} strokeWidth={2.6} />}
+        items={stage.working}
+      />
+      <TrajectoryGroup
+        label="What to improve"
+        iconBg="rgba(217,119,6,0.10)"
+        iconBorder="rgba(217,119,6,0.22)"
+        iconColor="#B45309"
+        icon={<Target size={11} strokeWidth={2.6} />}
+        items={stage.improve}
+      />
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 6,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: stage.accentSoft,
+              border: `1px solid ${stage.accentBorder}`,
+              color: stage.accent,
+            }}
+          >
+            <BookOpen size={11} strokeWidth={2.6} />
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "rgba(68,64,60,0.86)",
+            }}
+          >
+            Skills to add
+          </span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+          }}
+        >
+          {stage.skills.map((skill) => (
+            <span
+              key={skill}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "5px 9px",
+                borderRadius: 999,
+                background: stage.accentSoft,
+                border: `1px solid ${stage.accentBorder}`,
+                color: stage.accent,
+                fontSize: 11.5,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.2,
+              }}
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {index === 0 ? (
+        <div
+          style={{
+            marginTop: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            color: "rgba(113,106,102,0.85)",
+          }}
+        >
+          <Briefcase size={12} strokeWidth={2.4} aria-hidden />
+          Grounded in your profile and recent interview.
+        </div>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <div
+      role="listitem"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "32px 1fr",
+        columnGap: 10,
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          paddingTop: 10,
+        }}
+      >
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 999,
+            background: "#FFFFFF",
+            border: `1px solid ${stage.accentBorder}`,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: stage.accent,
+            boxShadow: expanded
+              ? `0 0 0 4px ${stage.accentSoft}`
+              : "0 1px 2px rgba(28,25,23,0.04)",
+            transition: "box-shadow 180ms ease",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={14} strokeWidth={2.4} />
+        </div>
+        {!isLast ? (
+          <div
+            style={{
+              flex: 1,
+              width: 2,
+              marginTop: 4,
+              background:
+                "linear-gradient(180deg, rgba(113,106,102,0.22) 0%, rgba(113,106,102,0.06) 100%)",
+              borderRadius: 2,
+              minHeight: 20,
+            }}
+          />
+        ) : null}
+      </div>
+
+      <div
+        style={{
+          borderRadius: 14,
+          border: `1px solid ${expanded ? "rgba(28,25,23,0.09)" : "rgba(28,25,23,0.065)"}`,
+          background: expanded ? "#FFFFFF" : variant === "page" ? "#FFFFFF" : "#F9FAFB",
+          boxShadow: expanded
+            ? "0 2px 8px rgba(28,25,23,0.055)"
+            : "inset 0 1px 0 rgba(255,255,255,0.9)",
+          overflow: "hidden",
+        }}
+      >
+        {interactive ? (
+          <button
+            id={headerId}
+            type="button"
+            aria-expanded={isOpen}
+            aria-controls={panelId}
+            onClick={onSelect}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              padding: "12px 12px",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              textAlign: "left",
+              fontFamily: T.sans,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: stage.accent,
+                }}
+              >
+                <span>{stage.stage}</span>
+              </div>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  color: T.text,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {stage.role}
+              </div>
+              {!isOpen ? (
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 500,
+                    color: "rgba(87,83,78,0.86)",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {stage.headline}
+                </div>
+              ) : null}
+            </div>
+
+            <span
+              aria-hidden
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 26,
+                height: 26,
+                borderRadius: 999,
+                background: "rgba(234,88,12,0.10)",
+                color: "#C2410C",
+                flexShrink: 0,
+              }}
+            >
+              <ChevronDown
+                size={14}
+                strokeWidth={2.4}
+                style={{
+                  transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 200ms ease",
+                }}
+              />
+            </span>
+          </button>
+        ) : (
+          <div
+            id={headerId}
+            style={{
+              width: "100%",
+              padding: "12px 12px",
+              background: "transparent",
+              textAlign: "left",
+              fontFamily: T.sans,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: stage.accent,
+                }}
+              >
+                <span>{stage.stage}</span>
+              </div>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  color: T.text,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {stage.role}
+              </div>
+              {staticPresentation === "collapsed" ? (
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 500,
+                    color: "rgba(87,83,78,0.86)",
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {stage.headline}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {interactive ? (
+          <AnimatePresence initial={false}>
+            {isOpen ? (
+              <motion.div
+                key="content"
+                id={panelId}
+                role="region"
+                aria-labelledby={headerId}
+                initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                animate={reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                transition={{ duration: 0.28, ease: EASE }}
+                style={{ overflow: "hidden" }}
+              >
+                {detailPanel}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        ) : staticPresentation === "expanded" ? (
+          <div id={panelId} role="region" aria-labelledby={headerId}>
+            {detailPanel}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function TrajectoryGroup({
+  label,
+  icon,
+  iconBg,
+  iconBorder,
+  iconColor,
+  items,
+}: {
+  label: string;
+  icon: ReactNode;
+  iconBg: string;
+  iconBorder: string;
+  iconColor: string;
+  items: string[];
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+        <span
+          aria-hidden
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 6,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: iconBg,
+            border: `1px solid ${iconBorder}`,
+            color: iconColor,
+          }}
+        >
+          {icon}
+        </span>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "rgba(68,64,60,0.86)",
+          }}
+        >
+          {label}
+        </span>
+      </div>
+      <ul
+        style={{
+          margin: 0,
+          padding: 0,
+          listStyle: "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+        }}
+      >
+        {items.map((item) => (
+          <li
+            key={item}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "10px 1fr",
+              columnGap: 8,
+              alignItems: "start",
+              fontSize: 12.5,
+              lineHeight: 1.45,
+              color: "rgba(68,64,60,0.92)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                marginTop: 7,
+                width: 4,
+                height: 4,
+                borderRadius: 999,
+                background: iconColor,
+                opacity: 0.55,
+              }}
+            />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
+// ── Interview Prep Card ─────────────────────────────────────────────────────
+
+type PrepCompetency = {
+  id: string;
+  name: string;
+  score: number; // 0–5
+  isStrength?: boolean;
+  hints: string[];
+};
+
+const INTERVIEW_PREP_COMPETENCIES: PrepCompetency[] = [
+  {
+    id: "storytelling",
+    name: "Storytelling",
+    score: 5,
+    isStrength: true,
+    hints: [
+      "Leverage: lead with this strength.",
+      "Use: 30-sec story (user, stakes, outcome).",
+    ],
+  },
+  {
+    id: "metrics",
+    name: "Business impact",
+    score: 3,
+    hints: [
+      "Gap: outcomes lack hard numbers.",
+      "Add: one metric per example.",
+    ],
+  },
+  {
+    id: "framing",
+    name: "Stakeholder framing",
+    score: 3,
+    hints: [
+      "Gap: business outcome is not explicit.",
+      "Lead: revenue, retention, time first.",
+    ],
+  },
+  {
+    id: "concision",
+    name: "Concision",
+    score: 2,
+    hints: [
+      "Gap: setup is too long.",
+      "Do: action verb in sentence one.",
+    ],
+  },
+];
+
+type PrepChecklistItem = { id: string; label: string; hint: string };
+
+const INTERVIEW_PREP_CHECKLIST: PrepChecklistItem[] = [
+  {
+    id: "story",
+    label: "Refresh your “tell me about yourself” story",
+    hint: "Aim for 90 seconds, role, focus, recent win.",
+  },
+  {
+    id: "metrics",
+    label: "Pick 3 wins with measurable outcomes",
+    hint: "Numbers beat adjectives. Bring conversion lifts, NPS, time saved.",
+  },
+  {
+    id: "questions",
+    label: "Prepare 5 thoughtful questions for them",
+    hint: "Mix team, product and craft questions.",
+  },
+  {
+    id: "company",
+    label: "Skim the last 2 product releases",
+    hint: "Reference one in your answers, shows intent.",
+  },
+];
+
+type PrepQuestionPack = {
+  id: "behavioral" | "craft" | "system";
+  label: string;
+  blurb: string;
+  icon: typeof MessageCircle;
+  iconColor: string;
+  iconSoft: string;
+  iconBorder: string;
+  questions: string[];
+};
+
+const INTERVIEW_PREP_QUESTIONS: PrepQuestionPack[] = [
+  {
+    id: "behavioral",
+    label: "Behavioral",
+    blurb: "Ownership, conflict, decision‑making.",
+    icon: MessageCircle,
+    iconColor: "#0F766E",
+    iconSoft: "rgba(13,148,136,0.10)",
+    iconBorder: "rgba(13,148,136,0.22)",
+    questions: [
+      "Tell me about a project where you owned outcomes, not just outputs.",
+      "Describe a time you disagreed with a PM. How did you resolve it?",
+      "Walk me through a moment you changed direction based on user signal.",
+    ],
+  },
+  {
+    id: "craft",
+    label: "Craft",
+    blurb: "Process, critique, design quality.",
+    icon: Sparkles,
+    iconColor: "#C2410C",
+    iconSoft: "rgba(234,88,12,0.10)",
+    iconBorder: "rgba(234,88,12,0.22)",
+    questions: [
+      "Pick one screen from your portfolio — what would you redesign now and why?",
+      "How do you raise the craft bar on a team that ships fast?",
+      "Show your design system contribution and the tradeoffs you made.",
+    ],
+  },
+  {
+    id: "system",
+    label: "Systems & strategy",
+    blurb: "Tradeoffs, scope, business impact.",
+    icon: Layers,
+    iconColor: "#6D28D9",
+    iconSoft: "rgba(109,40,217,0.10)",
+    iconBorder: "rgba(109,40,217,0.22)",
+    questions: [
+      "How would you measure success for our onboarding flow?",
+      "If we cut your scope in half, what would you keep?",
+      "Walk me through a tradeoff between user delight and business outcome.",
+    ],
+  },
+];
+
+export function InterviewPrepCard({
+  onRetakeInterview,
+  onOpenInterviewPrep,
+  variant = "card",
+}: {
+  onRetakeInterview?: () => void;
+  /** When set (e.g. mobile dashboard), “Show personalized growth plan” opens the Interview tab / full prep screen. */
+  onOpenInterviewPrep?: () => void;
+  variant?: "card" | "page";
+}) {
+  const reduceMotion = useReducedMotion();
+  const [prepDetailsRevealed, setPrepDetailsRevealed] = useState(variant === "page");
+  const [completed, setCompleted] = useState<Set<string>>(() => new Set());
+  const [openPackId, setOpenPackId] = useState<PrepQuestionPack["id"] | null>(null);
+  const [activePrepTab, setActivePrepTab] = useState<"checklist" | "questions">("checklist");
+
+  const total = INTERVIEW_PREP_CHECKLIST.length;
+  const done = completed.size;
+  const pct = Math.round((done / total) * 100);
+  const readiness = Math.min(100, 62 + Math.round((done / total) * 38));
+  const toggle = (id: string) => {
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const content = (
+    <>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(87, 83, 78, 0.92)",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                fontFamily: T.sans,
+              }}
+            >
+              Interview prep
+            </p>
+            <h2
+              style={{
+                margin: 0,
+                marginTop: 8,
+                fontSize: 22,
+                fontWeight: 500,
+                lineHeight: 1.16,
+                letterSpacing: "-0.025em",
+                color: T.text,
+                fontFamily: T.serif,
+              }}
+            >
+              Get ready for the real one
+            </h2>
+            <p
+              style={{
+                margin: 0,
+                marginTop: 4,
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "rgba(68,64,60,0.88)",
+                letterSpacing: "-0.01em",
+                fontFamily: T.sans,
+              }}
+            >
+              Tuned to your domain, role and recent ZappyFind interview.
+            </p>
+          </div>
+
+          <ReadinessRing pct={readiness} />
+        </div>
+
+        {/* Competencies — strength vs. prep focus */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginTop: 8,
+          }}
+        >
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <span
+              aria-hidden
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 6,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(234,88,12,0.10)",
+                border: "1px solid rgba(234,88,12,0.22)",
+                color: "#C2410C",
+                flexShrink: 0,
+              }}
+            >
+              <Layers size={11} strokeWidth={2.6} />
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: "rgba(68,64,60,0.86)",
+              }}
+            >
+              Where to focus
+            </span>
+          </div>
+        </div>
+
+        <ul
+          style={{
+            listStyle: "none",
+            margin: 0,
+            marginTop: 4,
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          {INTERVIEW_PREP_COMPETENCIES.map((c) => (
+            <PrepCompetencyRow key={c.id} c={c} />
+          ))}
+        </ul>
+
+        {!prepDetailsRevealed ? (
+          <motion.button
+            type="button"
+            aria-expanded={false}
+            onClick={() => {
+              if (onOpenInterviewPrep) onOpenInterviewPrep();
+              else setPrepDetailsRevealed(true);
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 520, damping: 28 }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              minHeight: 44,
+              padding: "10px 14px",
+              borderRadius: 12,
+              border: "1px solid rgba(120, 100, 78, 0.22)",
+              background: "rgba(255,252,248,0.92)",
+              color: T.text,
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              fontFamily: T.sans,
+              boxShadow: "0 1px 2px rgba(28,25,23,0.06)",
+              alignSelf: "stretch",
+            }}
+          >
+            Show personalized growth plan
+            <ChevronRight size={16} strokeWidth={2.2} aria-hidden />
+          </motion.button>
+        ) : (
+          <>
+        <div
+          role="tablist"
+          aria-label="Interview prep sections"
+          style={{
+            display: "inline-flex",
+            alignSelf: "flex-start",
+            alignItems: "center",
+            gap: 4,
+            borderRadius: 999,
+            border: "1px solid rgba(28,25,23,0.09)",
+            background: "rgba(68,64,60,0.16)",
+            padding: 4,
+          }}
+        >
+          {[
+            { id: "checklist", label: "Prep checklist" },
+            { id: "questions", label: "Practice questions" },
+          ].map((tab) => {
+            const active = activePrepTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActivePrepTab(tab.id as "checklist" | "questions")}
+                style={{
+                  position: "relative",
+                  border: "none",
+                  borderRadius: 999,
+                  minWidth: 119,
+                  padding: "6px 11px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                  cursor: "pointer",
+                  color: active ? "rgba(28,25,23,0.92)" : "rgba(87,83,78,0.92)",
+                  background: "transparent",
+                  fontFamily: T.sans,
+                  textAlign: "center",
+                }}
+              >
+                {active ? (
+                  <motion.span
+                    layoutId="prep-tab-pill"
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 999,
+                      background: "#FFFFFF",
+                      border: "1px solid rgba(28,25,23,0.10)",
+                      boxShadow: "0 1px 3px rgba(28,25,23,0.10)",
+                    }}
+                    transition={{ type: "spring", stiffness: 520, damping: 34 }}
+                  />
+                ) : null}
+                <span style={{ position: "relative" }}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence mode="wait" initial={false}>
+          {activePrepTab === "checklist" ? (
+            <motion.div
+              key="checklist-tab"
+              role="tabpanel"
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.24, ease: EASE }}
+            >
+              <div
+                style={{
+                  border: "1px solid rgba(28,25,23,0.07)",
+                  borderRadius: 14,
+                  background: "#FCFCFB",
+                  padding: "12px 12px 10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 6,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(234,88,12,0.10)",
+                        border: "1px solid rgba(234,88,12,0.22)",
+                        color: "#C2410C",
+                      }}
+                    >
+                      <CalendarClock size={11} strokeWidth={2.6} />
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "rgba(68,64,60,0.86)",
+                      }}
+                    >
+                      Prep checklist
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: "-0.01em",
+                      color: "rgba(87,83,78,0.86)",
+                      fontFamily: T.sans,
+                    }}
+                  >
+                    {done}/{total} · {pct}%
+                  </span>
+                </div>
+
+                <div
+                  aria-hidden
+                  style={{
+                    position: "relative",
+                    height: 4,
+                    borderRadius: 999,
+                    background: "rgba(28,25,23,0.06)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <motion.span
+                    initial={false}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: reduceMotion ? 0 : 0.4, ease: EASE }}
+                    style={{
+                      position: "absolute",
+                      inset: "0 auto 0 0",
+                      background:
+                        "linear-gradient(90deg, #FB923C 0%, #EA580C 100%)",
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    margin: 0,
+                    padding: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  {INTERVIEW_PREP_CHECKLIST.map((item) => {
+                    const isDone = completed.has(item.id);
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          aria-pressed={isDone}
+                          onClick={() => toggle(item.id)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            display: "grid",
+                            gridTemplateColumns: "20px 1fr",
+                            columnGap: 10,
+                            alignItems: "start",
+                            padding: "8px 6px",
+                            border: "none",
+                            borderRadius: 10,
+                            background: "transparent",
+                            cursor: "pointer",
+                            fontFamily: T.sans,
+                          }}
+                        >
+                          <span
+                            aria-hidden
+                            style={{
+                              marginTop: 1,
+                              width: 18,
+                              height: 18,
+                              borderRadius: 6,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: isDone ? "#EA580C" : "#FFFFFF",
+                              border: `1.5px solid ${
+                                isDone ? "#EA580C" : "rgba(28,25,23,0.18)"
+                              }`,
+                              color: "#FFFFFF",
+                              transition: "all 160ms ease",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {isDone ? <Check size={12} strokeWidth={3} /> : null}
+                          </span>
+                          <span style={{ minWidth: 0 }}>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                fontWeight: 600,
+                                letterSpacing: "-0.01em",
+                                color: isDone ? "rgba(87,83,78,0.7)" : T.text,
+                                textDecoration: isDone ? "line-through" : "none",
+                                textDecorationColor: "rgba(87,83,78,0.4)",
+                                lineHeight: 1.35,
+                              }}
+                            >
+                              {item.label}
+                            </span>
+                            <span
+                              style={{
+                                display: "block",
+                                marginTop: 2,
+                                fontSize: 12,
+                                fontWeight: 500,
+                                color: "rgba(87,83,78,0.78)",
+                                letterSpacing: "-0.01em",
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {item.hint}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="questions-tab"
+              role="tabpanel"
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={{ duration: 0.24, ease: EASE }}
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 6,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(234,88,12,0.10)",
+                      border: "1px solid rgba(234,88,12,0.22)",
+                      color: "#C2410C",
+                    }}
+                  >
+                    <HelpCircle size={11} strokeWidth={2.6} />
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: "rgba(68,64,60,0.86)",
+                    }}
+                  >
+                    Practice questions for you
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "rgba(87,83,78,0.78)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {INTERVIEW_PREP_QUESTIONS.reduce(
+                    (sum, p) => sum + p.questions.length,
+                    0,
+                  )}{" "}
+                  total
+                </span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {INTERVIEW_PREP_QUESTIONS.map((pack) => (
+                  <PrepQuestionRow
+                    key={pack.id}
+                    pack={pack}
+                    isOpen={openPackId === pack.id}
+                    reduceMotion={!!reduceMotion}
+                    onToggle={() =>
+                      setOpenPackId((prev) => (prev === pack.id ? null : pack.id))
+                    }
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Footer CTA */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 8,
+            paddingTop: 4,
+          }}
+        >
+          <button
+            type="button"
+            onClick={onRetakeInterview}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              minHeight: 44,
+              padding: "10px 14px",
+              borderRadius: 12,
+              border: "none",
+              background: T.accentGradient,
+              color: "#FFFFFF",
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              fontFamily: T.sans,
+              boxShadow:
+                "0 6px 18px rgba(234,88,12,0.28), 0 1px 2px rgba(234,88,12,0.18)",
+            }}
+            aria-label="Retake the ZappyFind interview"
+          >
+            <Mic size={15} strokeWidth={2.4} />
+            Practice with ZappyFind Interview
+          </button>
+        </div>
+          </>
+        )}
+    </>
+  );
+
+  if (variant === "page") {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE }}
+        aria-label="Interview preparation"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: "100%",
+          position: "relative",
+          overflow: "hidden",
+          background: T.pageBg,
+          fontFamily: T.sans,
+        }}
+      >
+        {/* Super subtle texture */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(rgba(120, 100, 78, 0.10) 1px, transparent 1px)",
+            backgroundSize: "18px 18px",
+            opacity: 0.25,
+            pointerEvents: "none",
+            maskImage: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 65%)",
+            WebkitMaskImage: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 65%)",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            height: "100%",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            padding: "14px 16px calc(16px + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          <div style={{ maxWidth: 420, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+            {content}
+          </div>
+        </div>
+      </motion.section>
+    );
+  }
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, delay: 0.55, ease: EASE }}
+      aria-label="Interview preparation"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 18,
+        border: "1px solid rgba(120, 100, 78, 0.20)",
+        background: "#FAF6EE",
+        boxShadow:
+          "0 1px 0 rgba(255,255,255,0.85) inset, 0 1px 2px rgba(28,25,23,0.04), 0 6px 18px rgba(28,25,23,0.05)",
+      }}
+    >
+      {/* Subtle dot-grid texture (notebook / playbook feel) */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage:
+            "radial-gradient(rgba(120, 100, 78, 0.16) 1px, transparent 1px)",
+          backgroundSize: "16px 16px",
+          backgroundPosition: "0 0",
+          opacity: 0.55,
+          pointerEvents: "none",
+          maskImage:
+            "linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.35) 100%)",
+          WebkitMaskImage:
+            "linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.35) 100%)",
+        }}
+      />
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          padding: "16px 16px 16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
+        {content}
+      </div>
+    </motion.section>
+  );
+}
+
+export function InterviewPrepScreen({
+  onRetakeInterview,
+  displayName,
+}: {
+  onRetakeInterview?: () => void;
+  displayName: string;
+}) {
+  return (
+    <div style={{ width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <DashboardHeader displayName={displayName} />
+      <InterviewPrepCard onRetakeInterview={onRetakeInterview} variant="page" />
+    </div>
+  );
+}
+
+export function CareerGuidanceScreen({ displayName }: { displayName: string }) {
+  return (
+    <div style={{ width: "100%", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <DashboardHeader displayName={displayName} />
+      <CareerTrajectoryCard variant="page" interactiveStages />
+    </div>
+  );
+}
+
+function ReadinessRing({ pct }: { pct: number }) {
+  const size = 56;
+  const stroke = 5;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.max(0, Math.min(100, pct)) / 100) * c;
+
+  return (
+    <div
+      aria-label={`Readiness ${pct} percent`}
+      role="img"
+      style={{
+        position: "relative",
+        width: size,
+        height: size,
+        flexShrink: 0,
+      }}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(28,25,23,0.08)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="url(#readinessGradient)"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+        <defs>
+          <linearGradient id="readinessGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FB923C" />
+            <stop offset="100%" stopColor="#EA580C" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: T.text,
+            letterSpacing: "-0.02em",
+            fontFamily: T.sans,
+            lineHeight: 1,
+          }}
+        >
+          {pct}
+          <span style={{ fontSize: 9, fontWeight: 600, marginLeft: 1 }}>%</span>
+        </span>
+        <span
+          style={{
+            fontSize: 8.5,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "rgba(87,83,78,0.78)",
+            marginTop: 1,
+          }}
+        >
+          Ready
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function PrepCompetencyRow({ c }: { c: PrepCompetency }) {
+  const accent = c.isStrength ? "#0F766E" : "#C2410C";
+  const accentBg = c.isStrength ? "rgba(13,148,136,0.08)" : "rgba(234,88,12,0.07)";
+  const accentBorder = c.isStrength
+    ? "rgba(13,148,136,0.22)"
+    : "rgba(234,88,12,0.20)";
+  const roleLabel = c.isStrength ? "Emphasize" : "Prep more";
+
+  return (
+    <li
+      style={{
+        position: "relative",
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        rowGap: 4,
+        padding: "9px 10px",
+        borderRadius: 10,
+        background: accentBg,
+        border: `1px solid ${accentBorder}`,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+          <span
+            aria-hidden
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 18,
+              height: 18,
+              borderRadius: 6,
+              background: c.isStrength
+                ? "rgba(13,148,136,0.14)"
+                : "rgba(234,88,12,0.12)",
+              border: `1px solid ${
+                c.isStrength ? "rgba(13,148,136,0.28)" : "rgba(234,88,12,0.26)"
+              }`,
+              color: accent,
+              flexShrink: 0,
+            }}
+          >
+            {c.isStrength ? (
+              <Star size={10} strokeWidth={2.6} />
+            ) : (
+              <Target size={10} strokeWidth={2.6} />
+            )}
+          </span>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              color: T.text,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minWidth: 0,
+            }}
+            aria-label={`${c.name} — ${c.isStrength ? "strong signal: make this visible in your answers" : "worth extra prep before the interview"}`}
+          >
+            {c.name}
+          </span>
+        </div>
+        <span
+          aria-hidden
+          style={{
+            flexShrink: 0,
+            maxWidth: "38%",
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            lineHeight: 1.25,
+            textAlign: "right",
+            color: accent,
+            fontFamily: T.sans,
+            opacity: 0.95,
+          }}
+        >
+          {roleLabel}
+        </span>
+      </div>
+
+      <ul
+        style={{
+          margin: 0,
+          marginLeft: 25,
+          padding: 0,
+          listStyle: "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        {c.hints.map((hint) => (
+          <li
+            key={hint}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "8px 1fr",
+              columnGap: 7,
+              alignItems: "start",
+              fontSize: 11.5,
+              fontWeight: 500,
+              color: c.isStrength ? "rgba(15,118,110,0.95)" : "rgba(87,63,48,0.9)",
+              letterSpacing: "-0.01em",
+              lineHeight: 1.35,
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                marginTop: 6,
+                width: 4,
+                height: 4,
+                borderRadius: 999,
+                background: accent,
+                opacity: 0.55,
+              }}
+            />
+            <span>{hint}</span>
+          </li>
+        ))}
+      </ul>
+    </li>
+  );
+}
+
+function PrepQuestionRow({
+  pack,
+  isOpen,
+  reduceMotion,
+  onToggle,
+}: {
+  pack: PrepQuestionPack;
+  isOpen: boolean;
+  reduceMotion: boolean;
+  onToggle: () => void;
+}) {
+  const Icon = pack.icon;
+  const headerId = `prep-pack-${pack.id}`;
+  const panelId = `prep-pack-panel-${pack.id}`;
+
+  return (
+    <div
+      style={{
+        borderRadius: 12,
+        border: `1px solid ${
+          isOpen ? "rgba(28,25,23,0.09)" : "rgba(28,25,23,0.065)"
+        }`,
+        background: "#FFFFFF",
+        boxShadow: isOpen
+          ? "0 2px 8px rgba(28,25,23,0.055)"
+          : "inset 0 1px 0 rgba(255,255,255,0.9)",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        id={headerId}
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={onToggle}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          padding: "10px 12px",
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+          textAlign: "left",
+          fontFamily: T.sans,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 8,
+              background: pack.iconSoft,
+              border: `1px solid ${pack.iconBorder}`,
+              color: pack.iconColor,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={13} strokeWidth={2.4} />
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+                color: T.text,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {pack.label}
+            </span>
+            <span
+              style={{
+                fontSize: 11.5,
+                fontWeight: 500,
+                letterSpacing: "-0.01em",
+                color: "rgba(87,83,78,0.86)",
+                lineHeight: 1.3,
+              }}
+            >
+              {pack.blurb}
+            </span>
+          </div>
+        </div>
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 22,
+            height: 22,
+            borderRadius: 999,
+            background: "rgba(234,88,12,0.10)",
+            color: "#C2410C",
+            flexShrink: 0,
+          }}
+        >
+          <ChevronDown
+            size={12}
+            strokeWidth={2.6}
+            style={{
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 200ms ease",
+            }}
+          />
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen ? (
+          <motion.div
+            key="content"
+            id={panelId}
+            role="region"
+            aria-labelledby={headerId}
+            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.26, ease: EASE }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "0 12px 12px" }}>
+              <ol
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  listStyle: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                {pack.questions.map((q, qi) => (
+                  <li
+                    key={q}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "20px 1fr",
+                      columnGap: 10,
+                      alignItems: "start",
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      style={{
+                        marginTop: 1,
+                        width: 20,
+                        height: 20,
+                        borderRadius: 6,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: pack.iconSoft,
+                        border: `1px solid ${pack.iconBorder}`,
+                        color: pack.iconColor,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {qi + 1}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12.5,
+                        lineHeight: 1.45,
+                        color: "rgba(68,64,60,0.92)",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {q}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ── Mini Arc Card ───────────────────────────────────────────────────────────
 
@@ -3634,696 +5659,6 @@ function ZappyUnderstandingCard({
         </div>
       )}
     </motion.div>
-  );
-}
-
-// ── Competitive Edge Card ────────────────────────────────────────────────────
-
-const EDGE_ICON_MAP: Record<string, (c: string) => React.ReactNode> = {
-  message: (c) => <MessageCircle size={14} color={c} strokeWidth={2} />,
-  layers: (c) => <Layers size={14} color={c} strokeWidth={2} />,
-  target: (c) => <Target size={14} color={c} strokeWidth={2} />,
-  video: (c) => <Video size={14} color={c} strokeWidth={2} />,
-  briefcase: (c) => <Briefcase size={14} color={c} strokeWidth={2} />,
-  mic: (c) => <Mic size={14} color={c} strokeWidth={2} />,
-};
-
-function CompetitiveEdgeCard({
-  hasInterview,
-  onStartInterview,
-}: {
-  hasInterview: boolean;
-  onStartInterview: () => void;
-}) {
-  const overallPercentile = 88;
-  const topPercent = 100 - overallPercentile;
-  const totalCandidates = 2340;
-  const [showFocusAreas, setShowFocusAreas] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.35, ease: EASE }}
-      style={{
-        borderRadius: 22,
-        overflow: "hidden",
-        background: T.cardBg,
-        border: `1px solid ${T.border}`,
-        boxShadow: T.shadowLg,
-      }}
-    >
-      {/* Hero Ranking Banner */}
-      <div
-        style={{
-          position: "relative",
-          padding: "26px 22px 22px",
-          background: "linear-gradient(135deg, #1A1613 0%, #2D2926 60%, #3D3530 100%)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Subtle decorative circles */}
-        <div
-          style={{
-            position: "absolute",
-            top: -30,
-            right: -20,
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            background: "rgba(234,88,12,0.08)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: -40,
-            left: -20,
-            width: 100,
-            height: 100,
-            borderRadius: "50%",
-            background: "rgba(234,88,12,0.05)",
-          }}
-        />
-
-        <div style={{ position: "relative" }}>
-          {/* Trophy + label */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 16,
-            }}
-          >
-            <motion.div
-              animate={{ rotate: [0, -6, 6, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: "rgba(234,88,12,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Trophy size={17} color="#EA580C" strokeWidth={2} />
-            </motion.div>
-            <div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "rgba(255,255,255,0.5)",
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Your standing
-              </div>
-            </div>
-          </div>
-
-          {/* Big stat */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 10,
-            }}
-          >
-            <motion.span
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.4, ease: EASE }}
-              style={{
-                fontFamily: T.serif,
-                fontSize: 52,
-                fontWeight: 400,
-                color: "#EA580C",
-                lineHeight: 1,
-                letterSpacing: "-0.03em",
-              }}
-            >
-              Top {topPercent}%
-            </motion.span>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
-            style={{
-              fontSize: 14,
-              color: "rgba(255,255,255,0.7)",
-              marginTop: 6,
-              letterSpacing: "-0.01em",
-              lineHeight: 1.5,
-            }}
-          >
-            among{" "}
-            <span style={{ color: "rgba(255,255,255,0.95)", fontWeight: 600 }}>
-              {totalCandidates.toLocaleString()} Product Designers
-            </span>{" "}
-            on ZappyFind
-          </motion.div>
-
-          {/* Confidence note */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.6, ease: EASE }}
-            style={{
-              marginTop: 14,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 12px",
-              borderRadius: 10,
-              background: "rgba(234,88,12,0.1)",
-              width: "fit-content",
-            }}
-          >
-            <Flame size={13} color="#EA580C" strokeWidth={2} />
-            <span
-              style={{
-                fontSize: 12,
-                color: "rgba(255,255,255,0.85)",
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              You're ahead of {Math.round(totalCandidates * overallPercentile / 100).toLocaleString()} candidates
-            </span>
-          </motion.div>
-        </div>
-      </div>
-
-      {hasInterview ? (
-        <>
-          {/* Dimension Breakdowns */}
-          <div style={{ padding: "18px 22px 6px" }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: T.textTer,
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                marginBottom: 14,
-              }}
-            >
-              Breakdown by dimension
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {COMPETITIVE_EDGE.map((item, i) => {
-                const iconFn = EDGE_ICON_MAP[item.icon];
-                return (
-                  <motion.div
-                    key={item.dimension}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.5 + i * 0.08,
-                      ease: EASE,
-                    }}
-                    style={{
-                      padding: "14px 0",
-                      borderBottom:
-                        i < COMPETITIVE_EDGE.length - 1
-                          ? `1px solid ${T.border}`
-                          : "none",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div
-                          style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: 8,
-                            background: `${item.color}12`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {iconFn?.(item.color)}
-                        </div>
-                        <span
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: T.text,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {item.dimension}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <TrendingUp size={12} color={item.color} strokeWidth={2} />
-                        <span
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: item.color,
-                            letterSpacing: "-0.02em",
-                          }}
-                        >
-                          Top {100 - item.percentile}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div
-                      style={{
-                        position: "relative",
-                        height: 6,
-                        borderRadius: 999,
-                        background: "rgba(28,25,23,0.04)",
-                        overflow: "hidden",
-                        marginBottom: 6,
-                      }}
-                    >
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.percentile}%` }}
-                        transition={{
-                          duration: 1.2,
-                          delay: 0.6 + i * 0.12,
-                          ease: EASE,
-                        }}
-                        style={{
-                          height: "100%",
-                          borderRadius: 999,
-                          background: `linear-gradient(90deg, ${item.color}88, ${item.color})`,
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 11.5,
-                        color: item.percentile >= 90 ? T.textSec : item.color,
-                        fontWeight: 400,
-                        letterSpacing: "-0.01em",
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {item.percentile < 90 && (
-                        <ArrowUpRight size={11} color={item.color} strokeWidth={2.5} style={{ flexShrink: 0 }} />
-                      )}
-                      {item.tip}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Growth Insights */}
-          <div style={{ padding: "0 22px 22px" }}>
-            <div
-              style={{
-                padding: 16,
-                borderRadius: 14,
-                background: "rgba(28,25,23,0.018)",
-                border: `1px solid ${T.border}`,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Sparkles size={12} color={T.accent} strokeWidth={2.2} />
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: T.text,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    Where to focus next
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowFocusAreas((v) => !v)}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                    cursor: "pointer",
-                    color: T.accent,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "-0.01em",
-                    fontFamily: T.sans,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  {showFocusAreas ? "Hide focus areas" : "View focus areas"}
-                  <ChevronDown
-                    size={13}
-                    strokeWidth={2.2}
-                    style={{
-                      transform: showFocusAreas ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.2s ease",
-                    }}
-                  />
-                </button>
-              </div>
-
-              {showFocusAreas && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 12 }}>
-                  {GROWTH_INSIGHTS.map((item, i) => (
-                    <motion.div
-                      key={item.tag}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{
-                        duration: 0.35,
-                        delay: 0.9 + i * 0.08,
-                        ease: EASE,
-                      }}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        padding: "11px 0",
-                        borderBottom:
-                          i < GROWTH_INSIGHTS.length - 1
-                            ? `1px solid ${T.border}`
-                            : "none",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          background: item.color,
-                          marginTop: 6,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <div>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: item.color,
-                            letterSpacing: "0.04em",
-                            textTransform: "uppercase" as const,
-                          }}
-                        >
-                          {item.tag}
-                        </span>
-                        <div
-                          style={{
-                            fontSize: 12.5,
-                            color: T.textSec,
-                            lineHeight: 1.5,
-                            letterSpacing: "-0.01em",
-                            marginTop: 2,
-                          }}
-                        >
-                          {item.text}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div style={{ padding: "18px 22px 22px" }}>
-          {/* Teaser dimensions — blurred bars to build curiosity */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {COMPETITIVE_EDGE.map((item, i) => {
-              const iconFn = EDGE_ICON_MAP[item.icon];
-              return (
-                <motion.div
-                  key={item.dimension}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.35, delay: 0.5 + i * 0.06, ease: EASE }}
-                  style={{
-                    padding: "12px 0",
-                    borderBottom:
-                      i < COMPETITIVE_EDGE.length - 1
-                        ? `1px solid ${T.border}`
-                        : "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: 7,
-                          background: `${item.color}10`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {iconFn?.(item.color)}
-                      </div>
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: T.text,
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        {item.dimension}
-                      </span>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: T.textTer,
-                        letterSpacing: "-0.01em",
-                        filter: "blur(5px)",
-                        userSelect: "none",
-                      }}
-                    >
-                      Top ??%
-                    </span>
-                  </div>
-                  {/* Blurred placeholder bar */}
-                  <div
-                    style={{
-                      height: 5,
-                      borderRadius: 999,
-                      background: `linear-gradient(90deg, ${item.color}30, ${item.color}15)`,
-                      filter: "blur(3px)",
-                    }}
-                  />
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Unified value prop + CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.7, ease: EASE }}
-            style={{
-              marginTop: 18,
-              padding: 18,
-              borderRadius: 16,
-              background: "linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(255,143,86,0.04) 100%)",
-              border: "1px solid rgba(234,88,12,0.12)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: T.text,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.35,
-                marginBottom: 10,
-              }}
-            >
-              See exactly where you rank among Product Designers
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {[
-                { icon: <Trophy size={14} color={T.accent} strokeWidth={2} />, text: "Discover your percentile across communication, domain depth & role fit" },
-                { icon: <Target size={14} color="#059669" strokeWidth={2} />, text: "Unlock curated top matches tailored to your profile" },
-                { icon: <Users size={14} color="#6366F1" strokeWidth={2} />, text: "Get introduced directly to recruiters hiring for your skills" },
-              ].map((row, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <div
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      background: "rgba(255,255,255,0.7)",
-                      border: "1px solid rgba(28,25,23,0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      marginTop: 1,
-                    }}
-                  >
-                    {row.icon}
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 12.5,
-                      color: T.textSec,
-                      lineHeight: 1.5,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {row.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={onStartInterview}
-              style={{
-                width: "100%",
-                padding: "13px 14px",
-                borderRadius: 14,
-                border: "none",
-                background: T.accentGradient,
-                color: "white",
-                cursor: "pointer",
-                fontFamily: T.sans,
-                fontSize: 14,
-                fontWeight: 700,
-                letterSpacing: "-0.01em",
-                boxShadow: "0 8px 24px rgba(234,88,12,0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <Mic size={15} color="white" strokeWidth={2} />
-              Start your voice interview
-            </button>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Footer context */}
-      <div
-        style={{
-          padding: "12px 22px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-        }}
-      >
-        <Star size={11} color={T.textTer} strokeWidth={2} />
-        <span
-          style={{
-            fontSize: 10.5,
-            color: T.textTer,
-            fontWeight: 500,
-            letterSpacing: "-0.005em",
-            lineHeight: 1.4,
-          }}
-        >
-          Rankings update as you complete more profile steps. Based on resume, interview, preferences & market demand.
-        </span>
-      </div>
-    </motion.div>
-  );
-}
-
-
-// ── Skill Chip ───────────────────────────────────────────────────────────────
-
-function SkillChip({
-  name,
-  demand,
-  delay,
-}: {
-  name: string;
-  demand: "high" | "medium" | "growing";
-  delay: number;
-}) {
-  const theme = DEMAND_THEME[demand];
-
-  return (
-    <motion.span
-      initial={{ opacity: 0, scale: 0.88 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay, ease: EASE }}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "7px 14px",
-        borderRadius: 999,
-        background: theme.bg,
-        fontSize: 13,
-        fontWeight: 500,
-        color: theme.color,
-        letterSpacing: "-0.01em",
-      }}
-    >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: theme.color,
-          flexShrink: 0,
-        }}
-      />
-      {name}
-    </motion.span>
   );
 }
 
@@ -5221,6 +6556,9 @@ interface DashboardPreviewScreenProps {
   onReviewJobs: () => void;
   onViewSavedJobs: () => void;
   onViewProfile: () => void;
+  onOpenInterviewQuestionAnalysis?: () => void;
+  onOpenCareerGuidance?: () => void;
+  onOpenInterviewPrep?: () => void;
   onLogout?: () => void;
   onDeleteAccount?: () => void;
 }
@@ -5233,22 +6571,35 @@ export function DashboardPreviewScreen({
   onReviewJobs,
   onViewSavedJobs,
   onViewProfile,
+  onOpenInterviewQuestionAnalysis,
+  onOpenCareerGuidance,
+  onOpenInterviewPrep,
   onLogout,
   onDeleteAccount,
 }: DashboardPreviewScreenProps) {
   const displayName = firstName || "Alex";
   const greeting = getTimeGreeting();
-  const [activeCaseKey, setActiveCaseKey] = useState<"case-0" | "case-1" | "case-2" | "case-3" | "case-4" | "case-6" | "case-7" | "case-8">("case-1");
+  const [activeCaseKey, setActiveCaseKey] = useState<
+    "case-0" | "case-1" | "case-2" | "case-3" | "case-4" | "case-6" | "case-7" | "case-8" | "case-9"
+  >("case-1");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [case1RecapVariant, setCase1RecapVariant] = useState<Case1RecapVariant>("ready");
-  const isCase1Dashboard = activeCaseKey === "case-0";
+  const [liveGrowthVisible, setLiveGrowthVisible] = useState<boolean>(() => shouldShowLiveGrowth());
+  const handleDismissLiveGrowth = () => {
+    dismissLiveGrowthStorage();
+    setLiveGrowthVisible(false);
+  };
+  const isCase1Dashboard = activeCaseKey === "case-0" || activeCaseKey === "case-9";
   const isCase4Dashboard = activeCaseKey === "case-4";
   const isLowPerformer = activeCaseKey === "case-2" || activeCaseKey === "case-6";
   const isCase5Dashboard = activeCaseKey === "case-3";
   const isCase7Dashboard = activeCaseKey === "case-7";
   const isCase8Dashboard = activeCaseKey === "case-8";
   const effectiveHasCompletedInterview =
-    activeCaseKey === "case-0" || activeCaseKey === "case-1" || activeCaseKey === "case-4"
+    activeCaseKey === "case-0" ||
+    activeCaseKey === "case-9" ||
+    activeCaseKey === "case-1" ||
+    activeCaseKey === "case-4"
       ? true
       : activeCaseKey === "case-3" || activeCaseKey === "case-7" || activeCaseKey === "case-8"
         ? false
@@ -5312,13 +6663,10 @@ export function DashboardPreviewScreen({
           { key: "case-6", label: "Case 6", onSelect: () => setActiveCaseKey("case-6") },
           { key: "case-7", label: "Case 7", onSelect: () => setActiveCaseKey("case-7") },
           { key: "case-8", label: "Case 8", onSelect: () => setActiveCaseKey("case-8") },
+          { key: "case-9", label: "Case 9", onSelect: () => setActiveCaseKey("case-9") },
         ]}
         activeCaseKey={activeCaseKey}
         isLowPerformer={isLowPerformer}
-        currentPage="home"
-        onNavigateHome={() => {}}
-        onNavigateJobs={onReviewJobs}
-        onNavigateProfile={onViewProfile}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
@@ -5375,7 +6723,10 @@ export function DashboardPreviewScreen({
                 {case1RecapVariant === "pending" ? (
                   <MobileInterviewRecapPendingCard key="case1-pending" />
                 ) : (
-                  <InterviewAnalysisCard key="case1-ready" />
+                  <InterviewAnalysisCard
+                    key="case1-ready"
+                    onOpenQuestionAnalysis={onOpenInterviewQuestionAnalysis}
+                  />
                 )}
               </AnimatePresence>
               <InterviewRecordingCompactCard />
@@ -5387,6 +6738,16 @@ export function DashboardPreviewScreen({
               <SectionHeader title="Prepare Before You Retake" delay={0.3} />
               <RetakeCallTipsCard onStart={onStartInterview} />
             </>
+          )}
+
+          {(activeCaseKey === "case-1" || activeCaseKey === "case-4") && (
+            <div style={{ marginTop: 24 }}>
+              <AnimatePresence initial={false}>
+                {liveGrowthVisible && (
+                  <LiveGrowthPanel key="live-growth" onDismiss={handleDismissLiveGrowth} />
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
           {!isCase1Dashboard && (
@@ -5473,91 +6834,24 @@ export function DashboardPreviewScreen({
             )
           )}
 
-          {!isRetryCallDashboard && (
-            <>
-              {/* Competitive Edge */}
-              <SectionHeader
-                title="Your Competitive Edge"
-                delay={0.55}
+          {!isRetryCallDashboard && isCase1Dashboard && (
+            <div
+              style={{
+                marginTop: 32,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
+              <CareerTrajectoryCard
+                interactiveStages={false}
+                onOpenGrowthPlan={onOpenCareerGuidance}
               />
-              <CompetitiveEdgeCard
-                hasInterview={effectiveHasCompletedInterview}
-                onStartInterview={onStartInterview}
+              <InterviewPrepCard
+                onRetakeInterview={onStartInterview}
+                onOpenInterviewPrep={onOpenInterviewPrep}
               />
-
-              {/* Skills × Market */}
-              <SectionHeader
-                title="Skills &times; Market Demand"
-                delay={0.75}
-              />
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.8, ease: EASE }}
-                style={{
-                  borderRadius: 20,
-                  padding: 18,
-                  background: T.cardBg,
-                  border: `1px solid ${T.border}`,
-                  boxShadow: T.shadow,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 8,
-                    marginBottom: 14,
-                  }}
-                >
-                  {SKILLS_DATA.map((skill, i) => (
-                    <SkillChip
-                      key={skill.name}
-                      name={skill.name}
-                      demand={skill.demand}
-                      delay={0.85 + i * 0.04}
-                    />
-                  ))}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 16,
-                    paddingTop: 12,
-                    borderTop: `1px solid ${T.border}`,
-                  }}
-                >
-                  {(["high", "medium", "growing"] as const).map((level) => (
-                    <div
-                      key={level}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 5,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          background: DEMAND_THEME[level].color,
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: T.textTer,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {DEMAND_THEME[level].label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </>
+            </div>
           )}
 
           </>

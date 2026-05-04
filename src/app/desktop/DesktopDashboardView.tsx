@@ -1,10 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
   Bookmark,
-  Brain,
   Briefcase,
   Building2,
   Check,
@@ -26,17 +25,21 @@ import {
   Trophy,
   Users,
   Video,
+  X,
 } from "lucide-react";
 import type { FullProfile } from "../components/WelcomeScreen";
 import { JOB_DEPARTMENT_LABEL_BY_ID } from "../components/jobPrefDepartmentsData";
 import { cn } from "../components/ui/utils";
 import { InterviewRecordingCompactCard } from "../components/InterviewTranscriptScroll";
+import { InterviewQuestionRadar } from "../components/InterviewQuestionRadar";
+import { CareerTrajectoryCard, InterviewPrepCard } from "../components/DashboardPreviewScreen";
 import {
   ANALYSIS_TRAITS,
   INTERVIEW_RECAP_SUMMARY,
   INTERVIEW_RECAP_VERDICT,
   traitAccent,
 } from "../interviewRecapCopy";
+import { INTERVIEW_QUESTION_ANALYSIS } from "../interviewQuestionAnalysisCopy";
 import { DT, desktopHubStagger } from "./desktop-tokens";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -67,7 +70,7 @@ const RECAP_DECK_TEXTURE =
   "repeating-linear-gradient(0deg, rgba(120,53,15,0.02) 0, rgba(120,53,15,0.02) 1px, transparent 1px, transparent 52px)";
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Case taxonomy — the UI labels match the mobile "Case 1..8" menu.
+   Case taxonomy — the UI labels match the mobile "Case 1..8 + Case 9" menu.
    ──────────────────────────────────────────────────────────────────────── */
 export type DesktopDashboardCaseKey =
   | "case-0" // UI "Case 1" — interview complete, AI curating (celebratory)
@@ -77,7 +80,8 @@ export type DesktopDashboardCaseKey =
   | "case-3" // UI "Case 5" — last call interrupted, retake to unlock
   | "case-6" // UI "Case 6" — below-average (case6 copy/emphasis)
   | "case-7" // UI "Case 7" — paid retries exhausted
-  | "case-8"; // UI "Case 8" — interview not started yet
+  | "case-8" // UI "Case 8" — interview not started yet
+  | "case-9"; // UI "Case 9" — duplicate of Case 1 (same dashboard)
 
 export const DESKTOP_DASHBOARD_CASES: Array<{
   key: DesktopDashboardCaseKey;
@@ -92,6 +96,7 @@ export const DESKTOP_DASHBOARD_CASES: Array<{
   { key: "case-6", label: "Case 6", description: "Below-average · low fit" },
   { key: "case-7", label: "Case 7", description: "Retakes exhausted · paid" },
   { key: "case-8", label: "Case 8", description: "Interview not started" },
+  { key: "case-9", label: "Case 9", description: "Same as Case 1 · AI curating" },
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -674,7 +679,7 @@ export function DesktopDashboardView({
   const name = firstName || "Alex";
   const roleLabel = heroRoleFocusLabel(profile);
 
-  const isCase1 = caseMode === "case-0"; // "Case 1" — analysis/curating
+  const isCase1 = caseMode === "case-0" || caseMode === "case-9"; // Case 1 / Case 9 — analysis/curating
   const isBase = caseMode === "case-1"; // "Case 2" — base
   const isLowPerf = caseMode === "case-2" || caseMode === "case-6";
   const isCase6 = caseMode === "case-6";
@@ -771,8 +776,16 @@ export function DesktopDashboardView({
           onStartInterview={onStartInterview}
         />
 
-        {/* Case 1 — AI analysis panel (takes the place of KPI/top matches/etc.) */}
-        {isCase1 && <InterviewAnalysisPanel />}
+        {/* Case 1 / Case 9 — AI analysis panel (takes the place of KPI/top matches/etc.) */}
+        {isCase1 && (
+          <>
+            <InterviewAnalysisPanel />
+            <motion.div variants={desktopHubStagger.item} className="grid gap-4 lg:grid-cols-2">
+              <CareerTrajectoryCard interactiveStages={false} />
+              <InterviewPrepCard onRetakeInterview={onStartInterview} />
+            </motion.div>
+          </>
+        )}
 
         {/* KPI strip — hidden when interview locked/retry/case1 (nothing meaningful yet). */}
         {!isCase1 && !isRetryCall && !isCase8 && (
@@ -2249,6 +2262,7 @@ function InterviewRecapVariantToggle({
 function InterviewAnalysisPanel() {
   const [variant, setVariant] = useState<InterviewRecapVariant>("ready");
   const [showDetails, setShowDetails] = useState(false);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
   return (
     <>
@@ -2265,6 +2279,8 @@ function InterviewAnalysisPanel() {
             key="recap-ready"
             showDetails={showDetails}
             setShowDetails={setShowDetails}
+            activeQuestionId={activeQuestionId}
+            setActiveQuestionId={setActiveQuestionId}
           />
         )}
       </AnimatePresence>
@@ -2283,9 +2299,13 @@ function InterviewAnalysisPanel() {
 function InterviewRecapReadyDeck({
   showDetails,
   setShowDetails,
+  activeQuestionId,
+  setActiveQuestionId,
 }: {
   showDetails: boolean;
   setShowDetails: (updater: (prev: boolean) => boolean) => void;
+  activeQuestionId: string | null;
+  setActiveQuestionId: (id: string | null) => void;
 }) {
   return (
     <>
@@ -2422,14 +2442,13 @@ function InterviewRecapReadyDeck({
           </div>
 
           {/* Detailed analysis — on demand */}
-          <div className="flex items-center justify-end">
+          <div className="flex w-full items-center">
             <button
               type="button"
               onClick={() => setShowDetails((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-colors"
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border-0 px-3 py-2.5 text-[12.5px] font-semibold transition-opacity hover:opacity-90"
               style={{
-                borderColor: "rgba(234,88,12,0.42)",
-                background: showDetails ? "rgba(234,88,12,0.1)" : "rgba(255,255,255,0.78)",
+                background: "transparent",
                 color: DT.accent,
                 letterSpacing: "-0.01em",
               }}
@@ -2454,45 +2473,135 @@ function InterviewRecapReadyDeck({
                 transition={{ duration: 0.28, ease: EASE }}
                 className="overflow-hidden"
               >
-                <div className="grid gap-3 md:grid-cols-2">
-                  {ANALYSIS_TRAITS.map((trait) => {
-                    const accent = traitAccent(trait.level);
-                    return (
+                <div className="flex flex-col gap-4 pb-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
                       <div
-                        key={`${trait.label}-detail`}
-                        className="rounded-[14px] border p-4"
+                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[9px]"
                         style={{
-                          borderColor: "rgba(120,72,34,0.1)",
-                          background: "rgba(255,253,250,0.85)",
+                          background:
+                            "linear-gradient(135deg, rgba(234,88,12,0.14), rgba(234,88,12,0.06))",
+                          border: "1px solid rgba(234,88,12,0.18)",
                         }}
                       >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="text-[13px] font-bold"
-                            style={{ color: DT.text, letterSpacing: "-0.01em" }}
-                          >
-                            {trait.label}
-                          </span>
-                          <span
-                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase"
-                            style={{
-                              background: `${accent}14`,
-                              color: accent,
-                              letterSpacing: "0.08em",
-                            }}
-                          >
-                            {trait.level}
-                          </span>
-                        </div>
-                        <p
-                          className="mt-2 text-[12.5px] leading-[1.55]"
-                          style={{ color: "rgba(68,64,60,0.9)", letterSpacing: "-0.01em" }}
-                        >
-                          {trait.detail}
-                        </p>
+                        <Sparkles className="h-3.5 w-3.5" color={DT.accent} strokeWidth={2.2} />
                       </div>
-                    );
-                  })}
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className="text-[14px] font-bold leading-tight"
+                          style={{ color: DT.text, letterSpacing: "-0.015em" }}
+                        >
+                          Performance breakdown
+                        </div>
+                        <div
+                          className="mt-1 text-[12px] leading-snug"
+                          style={{ color: "rgba(87,83,78,0.9)", letterSpacing: "-0.005em" }}
+                        >
+                          See how each response compares to the ideal and where you can improve.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="hidden shrink-0 items-center gap-2 md:flex">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold"
+                        style={{
+                          borderColor: "rgba(234,88,12,0.18)",
+                          background: "rgba(234,88,12,0.06)",
+                          color: "rgba(120,72,34,0.82)",
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: DT.accent }} />
+                        You
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold"
+                        style={{
+                          borderColor: "rgba(28,25,23,0.12)",
+                          background: "rgba(28,25,23,0.04)",
+                          color: "rgba(87,83,78,0.86)",
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
+                        <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(28,25,23,0.35)" }} />
+                        Ideal
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {INTERVIEW_QUESTION_ANALYSIS.map((q, idx) => {
+                      const active = q.id === activeQuestionId;
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => setActiveQuestionId(q.id)}
+                          className="group relative flex w-full items-center gap-4 overflow-hidden rounded-[16px] border p-4 text-left transition-shadow"
+                          style={{
+                            borderColor: active ? "rgba(234,88,12,0.22)" : "rgba(120,72,34,0.1)",
+                            background: "rgba(255,255,255,0.75)",
+                            boxShadow: active ? "0 8px 26px rgba(234,88,12,0.10)" : "0 1px 3px rgba(28,25,23,0.06)",
+                          }}
+                          aria-label={`Open analysis for question ${idx + 1}`}
+                        >
+                          <div aria-hidden className="shrink-0">
+                            <InterviewQuestionRadar axes={q.competencies} size={92} showAxisLabels={false} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span
+                                className="text-[10.5px] font-bold uppercase"
+                                style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}
+                              >
+                                Question {idx + 1}
+                              </span>
+                              <span className="text-[10.5px] font-semibold" style={{ color: "rgba(92,86,81,0.72)" }}>
+                                You vs Ideal
+                              </span>
+                            </div>
+                            <div
+                              className="mt-1.5 line-clamp-3 text-[13px] font-bold leading-snug"
+                              style={{ color: DT.text, letterSpacing: "-0.015em" }}
+                            >
+                              {q.prompt}
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {q.competencies.slice(0, 4).map((c) => (
+                                <span
+                                  key={c.label}
+                                  className="rounded-full border px-2 py-0.5 text-[10.5px] font-semibold"
+                                  style={{
+                                    borderColor: "rgba(28,25,23,0.06)",
+                                    background: "rgba(28,25,23,0.04)",
+                                    color: "rgba(68,64,60,0.82)",
+                                    letterSpacing: "-0.01em",
+                                  }}
+                                >
+                                  {c.label}
+                                </span>
+                              ))}
+                              {q.competencies.length > 4 ? (
+                                <span className="px-1 text-[10.5px] font-semibold" style={{ color: "rgba(68,64,60,0.64)" }}>
+                                  +{q.competencies.length - 4}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <QuestionDetailPanel
+                    open={Boolean(activeQuestionId)}
+                    question={activeQuestionId ? INTERVIEW_QUESTION_ANALYSIS.find((q) => q.id === activeQuestionId) ?? null : null}
+                    questionIndex={
+                      activeQuestionId
+                        ? Math.max(0, INTERVIEW_QUESTION_ANALYSIS.findIndex((q) => q.id === activeQuestionId))
+                        : 0
+                    }
+                    onClose={() => setActiveQuestionId(null)}
+                  />
                 </div>
               </motion.div>
             )}
@@ -2506,82 +2615,7 @@ function InterviewRecapReadyDeck({
         <InterviewRecordingCompactCard />
       </motion.section>
 
-      {/* Notable moments — pull quotes */}
-      <motion.section
-        variants={desktopHubStagger.item}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.32, ease: EASE, delay: 0.04 }}
-        className="flex flex-col gap-3"
-      >
-        <div>
-          <div
-            className="text-[11px] font-bold uppercase"
-            style={{ color: DT.textSubtle, letterSpacing: "0.12em" }}
-          >
-            Moments worth replaying
-          </div>
-          <h3
-            className="mt-1 text-[20px] lg:text-[22px]"
-            style={{
-              fontFamily: DT.serif,
-              color: DT.text,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            A few answers that stood out
-          </h3>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {INTERVIEW_MOMENTS.map((m, i) => (
-            <div
-              key={m.time}
-              className="group relative flex flex-col gap-3 overflow-hidden rounded-[20px] border p-5 text-left transition-shadow"
-              style={{
-                borderColor: DT.border,
-                background: DT.surface,
-                boxShadow: DT.shadow,
-              }}
-            >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute transition-opacity group-hover:opacity-100"
-                style={{
-                  top: -40,
-                  right: -30,
-                  width: 120,
-                  height: 120,
-                  borderRadius: "50%",
-                  background:
-                    "radial-gradient(circle, rgba(234,88,12,0.12) 0%, transparent 70%)",
-                  opacity: 0.6,
-                }}
-              />
-
-              <div
-                className="relative text-[13px] font-bold"
-                style={{ color: DT.text, letterSpacing: "-0.01em" }}
-              >
-                {m.label}
-              </div>
-
-              <p
-                className="relative text-[14px] leading-[1.55]"
-                style={{
-                  color: "rgba(28,25,23,0.82)",
-                  fontFamily: DT.serif,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                &ldquo;{m.quote}&rdquo;
-              </p>
-
-            </div>
-          ))}
-        </div>
-      </motion.section>
+      {/* Notable moments — pull quotes (removed for now) */}
     </>
   );
 }
@@ -2872,26 +2906,250 @@ function InterviewRecapPendingDeck() {
               </div>
             ))}
           </div>
-
-          {/* Footnote — intelligent, reassuring, minimal. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Brain
-              className="h-3.5 w-3.5 shrink-0"
-              strokeWidth={2}
-              color="#C2410C"
-              aria-hidden
-            />
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: "rgba(68,64,60,0.82)", letterSpacing: "-0.01em" }}
-            >
-              You can listen back to the recording now — we&rsquo;ll slot the recap
-              in here the moment it&rsquo;s ready.
-            </span>
-          </div>
         </div>
       </div>
     </motion.section>
+  );
+}
+
+function TranscriptBubbleList({ lines }: { lines: Array<{ role: "ai" | "you"; at: string; text: string }> }) {
+  return (
+    <div
+      role="region"
+      aria-label="Question transcript"
+      className="flex flex-col gap-3 rounded-[16px] border p-4"
+      style={{
+        borderColor: "rgba(28,25,23,0.08)",
+        background: "rgba(255,255,255,0.78)",
+      }}
+    >
+      {lines.map((line, i) => {
+        const isYou = line.role === "you";
+        return (
+          <div key={`${line.at}-${i}`} className={cn("flex w-full", isYou ? "justify-end" : "justify-start")}>
+            <div
+              className="max-w-[min(100%,62ch)] rounded-[14px] border px-3.5 py-2.5"
+              style={{
+                borderColor: isYou ? "rgba(234,88,12,0.16)" : "rgba(234,88,12,0.22)",
+                background: isYou
+                  ? "rgba(255,255,255,0.95)"
+                  : "linear-gradient(160deg, rgba(255,252,247,0.98) 0%, rgba(255,243,230,0.92) 100%)",
+                boxShadow: isYou ? "0 1px 2px rgba(234,88,12,0.04)" : "0 1px 3px rgba(234,88,12,0.06)",
+              }}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <span
+                  className="text-[10px] font-bold uppercase"
+                  style={{
+                    color: isYou ? DT.accent : "#C2410C",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  {isYou ? "You" : "ZappyFind"}
+                </span>
+                <span
+                  className="font-mono text-[10px] font-semibold tabular-nums"
+                  style={{ color: DT.textMuted, letterSpacing: "-0.02em" }}
+                >
+                  {line.at}
+                </span>
+              </div>
+              <div className="text-[13px] leading-[1.5]" style={{ color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+                {line.text}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function IdealAnswerBlock({ text }: { text: string }) {
+  return (
+    <div
+      className="rounded-[16px] border p-4"
+      style={{
+        borderColor: "rgba(234,88,12,0.16)",
+        background:
+          "linear-gradient(180deg, rgba(255,252,247,0.92) 0%, rgba(255,245,238,0.78) 100%)",
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px]"
+          style={{
+            background: "rgba(234,88,12,0.1)",
+            border: "1px solid rgba(234,88,12,0.16)",
+          }}
+        >
+          <Sparkles className="h-3.5 w-3.5" color={DT.accent} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0">
+          <div
+            className="text-[10px] font-bold uppercase"
+            style={{
+              color: "rgba(120,72,34,0.75)",
+              letterSpacing: "0.1em",
+            }}
+          >
+            Ideal answer
+          </div>
+          <div className="mt-1 text-[12px] font-semibold" style={{ color: "rgba(68,64,60,0.86)", letterSpacing: "-0.01em" }}>
+            A clean reference you can borrow structure from.
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 text-[13px] leading-[1.55]" style={{ color: "rgba(28,25,23,0.9)", letterSpacing: "-0.01em" }}>
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function QuestionDetailPanel({
+  open,
+  question,
+  questionIndex,
+  onClose,
+}: {
+  open: boolean;
+  question: (typeof INTERVIEW_QUESTION_ANALYSIS)[number] | null;
+  questionIndex: number;
+  onClose: () => void;
+}) {
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (open) closeBtnRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  return (
+    <AnimatePresence>
+      {open && question ? (
+        <>
+          <motion.div
+            key="qpanel-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: EASE }}
+            onClick={onClose}
+            className="fixed inset-0 z-[70]"
+            style={{ background: "rgba(28,25,23,0.45)" }}
+            aria-hidden
+          />
+          <motion.aside
+            key="qpanel"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Question ${questionIndex + 1} analysis`}
+            initial={{ x: 22, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 22, opacity: 0 }}
+            transition={{ duration: 0.24, ease: EASE }}
+            onClick={(e) => e.stopPropagation()}
+            className="fixed right-0 top-0 z-[71] h-[100dvh] w-[min(520px,92vw)] overflow-auto border-l"
+            style={{
+              borderColor: "rgba(255,255,255,0.4)",
+              background:
+                "linear-gradient(180deg, rgba(253,251,248,0.98) 0%, rgba(255,255,255,0.98) 55%, rgba(253,251,248,0.98) 100%)",
+              boxShadow: "-18px 0 50px rgba(28,25,23,0.18)",
+            }}
+          >
+            <div className="sticky top-0 z-10 border-b px-6 pt-5 pb-4" style={{ borderColor: "rgba(28,25,23,0.06)", background: "rgba(253,251,248,0.92)", backdropFilter: "blur(14px)" }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="text-[10.5px] font-bold uppercase" style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}>
+                    Question {questionIndex + 1}
+                  </div>
+                  <div className="mt-2 text-[16px] font-bold leading-snug" style={{ color: DT.text, letterSpacing: "-0.02em" }}>
+                    {question.prompt}
+                  </div>
+                </div>
+                <button
+                  ref={closeBtnRef}
+                  type="button"
+                  onClick={onClose}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
+                  style={{
+                    borderColor: "rgba(28,25,23,0.12)",
+                    background: "rgba(255,255,255,0.9)",
+                    color: "rgba(87,83,78,0.95)",
+                  }}
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" strokeWidth={2.6} aria-hidden />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-5 px-6 py-5">
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="shrink-0">
+                  <InterviewQuestionRadar axes={question.competencies} size={220} showAxisLabels />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: DT.accent }} />
+                      <span className="text-[12px] font-bold" style={{ color: "rgba(68,64,60,0.9)", letterSpacing: "-0.01em" }}>
+                        You
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: "rgba(28,25,23,0.35)" }} />
+                      <span className="text-[12px] font-bold" style={{ color: "rgba(68,64,60,0.86)", letterSpacing: "-0.01em" }}>
+                        Ideal
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-2">
+                    {question.competencies.map((c) => (
+                      <div key={c.label} className="flex items-center justify-between gap-4">
+                        <span className="text-[12px] font-semibold" style={{ color: "rgba(68,64,60,0.86)", letterSpacing: "-0.01em" }}>
+                          {c.label}
+                        </span>
+                        <div className="flex items-center gap-2" aria-hidden>
+                          <span className="h-2 w-2 rounded-full" style={{ background: DT.accent }} />
+                          <span className="h-2 w-2 rounded-full" style={{ background: "rgba(28,25,23,0.35)" }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10.5px] font-bold uppercase" style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}>
+                  Transcript
+                </div>
+                <div className="mt-2">
+                  <TranscriptBubbleList lines={question.transcript} />
+                </div>
+              </div>
+
+              <IdealAnswerBlock text={question.idealAnswer} />
+            </div>
+          </motion.aside>
+        </>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

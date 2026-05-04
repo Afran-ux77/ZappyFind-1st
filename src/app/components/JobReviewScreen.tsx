@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef, useId } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "motion/react";
 import {
   Bookmark,
@@ -14,6 +14,7 @@ import {
   ArrowUpDown,
   X,
   MapPin,
+  ListChecks,
   Sparkles,
   CalendarClock,
   Send,
@@ -38,6 +39,8 @@ export type Job = {
   experienceYearsMax: number;
   headlines: string;
   whyFit: string;
+  /** One tight line for the swipe card; full `whyFit` stays for detail sheets / desktop. */
+  whyFitCard?: string;
   watchOut: string;
   jobDescription: string;
   externalUrl?: string;
@@ -61,6 +64,8 @@ export const JOBS: Job[] = [
       "Arctic Wolf protects organizations with its Aurora Platform. You'd be a Senior UX Designer on the XDR team.",
     whyFit:
       "Your ~3 years in B2B SaaS product design and AI UX align well with this Senior UX Designer role.",
+    whyFitCard:
+      "You bring B2B SaaS and AI UX practice—the hands-on, security-minded product work this role centers on.",
     watchOut:
       "Compensation and specific team growth opportunities need to be clarified.",
     jobDescription:
@@ -84,6 +89,7 @@ export const JOBS: Job[] = [
       "Northwind Tech builds fintech tools for emerging markets. You'd join as a Product Designer focusing on growth funnels and activation.",
     whyFit:
       "Your experience with experimentation, A/B testing frameworks, and funnel optimization makes you a strong match for this growth-focused role.",
+    whyFitCard: "You run strong experiments and own funnels—what a growth product design role like this needs.",
     watchOut:
       "The role requires comfort with high-velocity shipping cycles and frequent context switching across squads.",
     jobDescription:
@@ -106,6 +112,8 @@ export const JOBS: Job[] = [
       "Signalpath builds decision-support tools for enterprise teams. You'd design calm, assistive AI workflows for complex data environments.",
     whyFit:
       "Your background in information architecture and complex systems design aligns well with designing AI-assisted enterprise workflows.",
+    whyFitCard:
+      "Your IA and complex-systems craft matches designing calm, assistive workflows for heavy enterprise use.",
     watchOut:
       "The onsite requirement in Mumbai and a fast-scaling team may mean evolving responsibilities and less process stability initially.",
     jobDescription:
@@ -129,6 +137,8 @@ export const JOBS: Job[] = [
       "Canopy powers internal tools for fast-growing teams. You'd lead platform design and mentor a small, senior design team.",
     whyFit:
       "Your design systems experience and leadership background make you a natural fit for scaling Canopy's internal tooling design practice.",
+    whyFitCard:
+      "You pair systems thinking with design leadership—right for scaling internal tools and a design team.",
     watchOut:
       "As a platform role, direct user contact may be limited — most stakeholders are internal engineering teams.",
     jobDescription:
@@ -151,6 +161,8 @@ export const JOBS: Job[] = [
       "Tessera builds workflow automation for mid-market B2B teams. You'd drive mixed-methods research across their core product.",
     whyFit:
       "Your quant and qual research skills combined with B2B experience align well with Tessera's need for actionable, cross-functional insights.",
+    whyFitCard:
+      "You run mixed-methods research in B2B settings. Senior roles like this need that blend.",
     watchOut:
       "The research function is still maturing — you'd need to build processes and evangelise research within the org.",
     jobDescription:
@@ -173,6 +185,8 @@ export const JOBS: Job[] = [
       "Meridian is redefining enterprise collaboration. You'd be a Staff Designer owning the core workspace experience.",
     whyFit:
       "Your depth in complex product design and systems thinking aligns with Meridian's need for a staff-level design owner.",
+    whyFitCard:
+      "You have staff-level systems depth and can own a large, complex core product surface end to end.",
     watchOut:
       "The role is hybrid in Chennai with occasional travel to US and EU offices.",
     jobDescription:
@@ -196,6 +210,8 @@ export const JOBS: Job[] = [
       "Lumina builds consumer-facing mobile apps for health and wellness. You'd own end-to-end mobile UX and visual design.",
     whyFit:
       "Your mobile-first portfolio and experience with iOS/Android patterns make you a strong fit for this role.",
+    whyFitCard:
+      "You ship native-feeling mobile work with strong craft—what a flagship consumer app team looks for.",
     watchOut:
       "The team is small; you'd wear multiple hats including some visual and motion design.",
     jobDescription:
@@ -218,6 +234,8 @@ export const JOBS: Job[] = [
       "Bazaar powers checkout and payments for D2C brands. You'd design flows that convert and scale across regions.",
     whyFit:
       "Your e‑commerce or payments experience and focus on conversion align well with Bazaar's mission.",
+    whyFitCard:
+      "You think in commerce and conversion—the mindset this checkout and payments UX role is built around.",
     watchOut:
       "Fast-paced; you'll need to balance speed with quality and work across multiple product squads.",
     jobDescription:
@@ -241,6 +259,8 @@ export const JOBS: Job[] = [
       "Atlas provides a design system used by 50+ product teams. You'd lead the system roadmap and component library.",
     whyFit:
       "Your design systems and component architecture experience make you a natural fit to lead Atlas's system.",
+    whyFitCard:
+      "You have deep systems architecture chops—the level expected when you own a company-wide design system.",
     watchOut:
       "Heavy collaboration with engineers and consuming teams; less direct user-facing feature work.",
     jobDescription:
@@ -263,6 +283,7 @@ export const JOBS: Job[] = [
       "DevFlow builds tools for developers. You'd design dashboards, CLIs, and docs that developers love.",
     whyFit:
       "Your interest in developer tools and technical empathy align well with designing for a technical audience.",
+    whyFitCard: "You design for technical users with real empathy—core to a developer-experience product role.",
     watchOut:
       "You'll need to learn technical concepts and work closely with engineers; less focus on broad consumer UX.",
     jobDescription:
@@ -285,6 +306,8 @@ export const JOBS: Job[] = [
       "Guardian helps platforms manage trust and safety. You'd design moderation tools and policy surfaces.",
     whyFit:
       "Your experience with complex, sensitive workflows and edge cases aligns with trust and safety design challenges.",
+    whyFitCard:
+      "You stay sharp on edge cases and sensitive flows—how strong designers show up in trust and safety work.",
     watchOut:
       "The domain can be intense; you'll work with sensitive content and policy constraints.",
     jobDescription:
@@ -307,6 +330,8 @@ export const JOBS: Job[] = [
       "Launchpad helps SaaS products activate users faster. You'd own onboarding and activation experiences.",
     whyFit:
       "Your focus on activation, onboarding, and experimentation fits Launchpad's product-led growth focus.",
+    whyFitCard:
+      "You focus on activation and onboarding—exactly the PLG skill set this product team is hiring for.",
     watchOut:
       "Early-stage team; you'd help define processes and design culture.",
     jobDescription:
@@ -329,6 +354,8 @@ export const JOBS: Job[] = [
       "Chartwise builds analytics and reporting for enterprises. You'd design data-heavy dashboards and visualizations.",
     whyFit:
       "Your experience with data viz, dashboards, and complex information display aligns well with this role.",
+    whyFitCard:
+      "You're strong on dense UIs and data visualization—the craft this analytics and reporting role rewards.",
     watchOut:
       "You'll need to balance clarity with flexibility for power users and many data types.",
     jobDescription:
@@ -351,6 +378,8 @@ export const JOBS: Job[] = [
       "Bazaar's marketplace connects buyers and sellers. You'd design discovery, search, and transaction flows.",
     whyFit:
       "Your marketplace or two-sided platform experience fits our focus on discovery and transactions.",
+    whyFitCard:
+      "You understand marketplace loops and two-sided products—right for discovery and transaction design.",
     watchOut:
       "You'll work across buyer and seller experiences; context switching between user types is common.",
     jobDescription:
@@ -374,6 +403,8 @@ export const JOBS: Job[] = [
       "Narrative is a content platform for teams. You'd lead design across brand, marketing, and product.",
     whyFit:
       "Your combination of brand and product design and leadership experience fits this cross-functional lead role.",
+    whyFitCard:
+      "You lead across brand and product—the breadth this cross-functional lead designer role requires.",
     watchOut:
       "Scope is broad; you'll need to prioritise and delegate as the team grows.",
     jobDescription:
@@ -789,8 +820,8 @@ const SEARCH_SUGGESTIONS = [
 
 const STACK_VISIBLE = 3;
 const SWIPE_THRESHOLD = 100;
-const CARD_OFFSET_Y = 7;
-const CARD_SCALE_STEP = 0.06;
+const CARD_OFFSET_Y = 14;
+const CARD_SCALE_STEP = 0.045;
 
 type ApplicationStatus =
   | "submitted"
@@ -819,8 +850,325 @@ const SKIP_REASON_OPTIONS = [
   "Already applied or interviewing here",
 ] as const;
 
+/** Mock launch-week stats for the “all recommended applied” info card. */
+const LAUNCH_WEEK_SNAPSHOT = {
+  ageDays: 7,
+  newRolesThisWeek: 28,
+  newCompanies: 4,
+} as const;
+
+/**
+ * Wide launch strip: overlapping “new role” cards flowing into the catalog,
+ * a soft growth curve, and a live pulse — reads as momentum, not decoration.
+ */
+function RecommendedLaunchWideIllustration() {
+  const uid = useId().replace(/:/g, "");
+  const gHero = `launch-hero-${uid}`;
+  const gTrack = `launch-track-${uid}`;
+  const gGlow = `launch-glow-${uid}`;
+
+  /** Abstract job tile: rounded panel + title + two lines. */
+  const JobTile = ({
+    x,
+    y,
+    w,
+    h,
+    rx,
+    rotate,
+    opacity,
+    fill,
+    stroke,
+  }: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    rx: number;
+    rotate: number;
+    opacity: number;
+    fill: string;
+    stroke: string;
+  }) => (
+    <g transform={`translate(${x} ${y}) rotate(${rotate} ${w / 2} ${h / 2})`} opacity={opacity}>
+      <rect width={w} height={h} rx={rx} fill={fill} stroke={stroke} strokeWidth={0.75} />
+      <rect x={w * 0.12} y={h * 0.22} width={w * 0.35} height={h * 0.12} rx={h * 0.04} fill="white" fillOpacity={0.92} />
+      <rect x={w * 0.12} y={h * 0.45} width={w * 0.78} height={h * 0.1} rx={h * 0.035} fill="white" fillOpacity={0.45} />
+      <rect x={w * 0.12} y={h * 0.62} width={w * 0.55} height={h * 0.09} rx={h * 0.032} fill="white" fillOpacity={0.32} />
+    </g>
+  );
+
+  return (
+    <svg
+      viewBox="0 0 400 88"
+      fill="none"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      style={{ width: "100%", height: "auto", maxHeight: 92, display: "block" }}
+    >
+      <defs>
+        <linearGradient id={gHero} x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#EEF2FF" />
+          <stop offset="0.45" stopColor="#C7D2FE" />
+          <stop offset="1" stopColor="#6366F1" />
+        </linearGradient>
+        <linearGradient id={gTrack} x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#A5B4FC" stopOpacity="0" />
+          <stop offset="0.25" stopColor="#818CF8" stopOpacity="0.45" />
+          <stop offset="0.72" stopColor="#6366F1" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#EA580C" stopOpacity="0.35" />
+        </linearGradient>
+        <radialGradient id={gGlow} cx="352" cy="40" r="56" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#6366F1" stopOpacity="0.2" />
+          <stop offset="1" stopColor="#6366F1" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      <ellipse cx="352" cy="40" rx="56" ry="34" fill={`url(#${gGlow})`} />
+
+      <path
+        d="M12 72 C 72 58, 140 52, 210 48 S 330 38, 378 32"
+        stroke={`url(#${gTrack})`}
+        strokeWidth="2.25"
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.85}
+      />
+
+      <JobTile
+        x={4}
+        y={34}
+        w={46}
+        h={34}
+        rx={6}
+        rotate={-7}
+        opacity={0.32}
+        fill="#EEF2FF"
+        stroke="#C7D2FE"
+      />
+      <JobTile
+        x={36}
+        y={28}
+        w={52}
+        h={38}
+        rx={7}
+        rotate={-4}
+        opacity={0.48}
+        fill="#E0E7FF"
+        stroke="#A5B4FC"
+      />
+      <JobTile
+        x={78}
+        y={22}
+        w={58}
+        h={42}
+        rx={8}
+        rotate={-2}
+        opacity={0.68}
+        fill="#EEF2FF"
+        stroke="#818CF8"
+      />
+      <JobTile
+        x={128}
+        y={16}
+        w={64}
+        h={46}
+        rx={9}
+        rotate={0}
+        opacity={0.88}
+        fill="#F5F7FF"
+        stroke="#6366F1"
+      />
+
+      <g transform="translate(206 8)">
+        <rect width={112} height={56} rx={12} fill={`url(#${gHero})`} stroke="#4F46E5" strokeOpacity={0.35} strokeWidth={1} />
+        <rect x={14} y={14} width={36} height={8} rx={3} fill="white" fillOpacity={0.95} />
+        <rect x={14} y={28} width={84} height={6} rx={2} fill="white" fillOpacity={0.55} />
+        <rect x={14} y={38} width={64} height={5} rx={2} fill="white" fillOpacity={0.38} />
+        <g transform="translate(78 10)">
+          <circle r={14} fill="#EA580C" fillOpacity={0.95} />
+          <path
+            d="M0 4V-4M-3.5 0.5L0 4L3.5 0.5"
+            stroke="white"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            transform="translate(0 -1)"
+          />
+        </g>
+      </g>
+
+      <circle cx="378" cy="30" r={5} fill="#EA580C" opacity={0.9} />
+      <circle cx="378" cy="30" r={9} stroke="#EA580C" strokeOpacity={0.35} strokeWidth={1.5} fill="none" />
+    </svg>
+  );
+}
+
+function RecommendedAllAppliedInfoCard({ onNavigateHome }: { onNavigateHome: () => void }) {
+  const { ageDays, newRolesThisWeek, newCompanies } = LAUNCH_WEEK_SNAPSHOT;
+
+  return (
+    <motion.div
+      role="article"
+      aria-label="Recommended list complete. ZappyFind launch update."
+      aria-live="polite"
+      initial={{ opacity: 0, y: 14, scale: 0.99 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        width: "100%",
+        minHeight: 404,
+        borderRadius: 20,
+        padding: 24,
+        background: "#FFFFFF",
+        border: "1px solid rgba(0,0,0,0.06)",
+        boxShadow: "0 20px 50px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03)",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(120% 70% at 0% 0%, rgba(99,102,241,0.07) 0%, transparent 52%), radial-gradient(90% 60% at 100% 100%, rgba(234,88,12,0.05) 0%, transparent 48%)",
+        }}
+      />
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+            justifyContent: "center",
+            width: "100%",
+            paddingLeft: 10,
+            paddingRight: 10,
+            paddingTop: 10,
+            paddingBottom: 10,
+            gap: 10,
+          }}
+        >
+          <RecommendedLaunchWideIllustration />
+          <div
+            style={{
+              position: "relative",
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              textAlign: "left",
+              gap: 0,
+              paddingTop: 0,
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                marginBottom: 6,
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: "0.11em",
+                textTransform: "uppercase",
+                color: "#4F46E5",
+              }}
+            >
+              {ageDays} days live
+            </span>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 15,
+                lineHeight: 1.24,
+                letterSpacing: "-0.024em",
+                color: "#1A1613",
+                fontWeight: 700,
+              }}
+            >
+              ZappyFind is brand new. We just launched.
+            </p>
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontSize: 12.5,
+                lineHeight: 1.36,
+                letterSpacing: "-0.016em",
+                color: "#3F3A36",
+                fontWeight: 600,
+              }}
+            >
+              We&rsquo;re actively adding jobs to ZappyFind.
+            </p>
+            <div
+              aria-hidden
+              style={{
+                width: "100%",
+                height: 1,
+                margin: "10px 0 8px",
+                borderRadius: 1,
+                background:
+                  "linear-gradient(90deg, rgba(99,102,241,0.35), rgba(234,88,12,0.2), transparent)",
+                opacity: 0.85,
+              }}
+            />
+            <p
+              style={{
+                margin: 0,
+                fontSize: 11.5,
+                lineHeight: 1.4,
+                letterSpacing: "-0.011em",
+                color: "rgba(107, 101, 96, 1)",
+                fontWeight: 500,
+              }}
+            >
+              <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#4F46E5" }}>
+                +{newRolesThisWeek}
+              </span>{" "}
+              roles ·{" "}
+              <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: "#4F46E5" }}>
+                +{newCompanies}
+              </span>{" "}
+              companies · {ageDays}d · We&rsquo;ll WhatsApp or email you when more jobs are added to
+              ZappyFind.
+            </p>
+          </div>
+      </div>
+      <button
+        type="button"
+        onClick={onNavigateHome}
+        style={{
+          position: "relative",
+          marginTop: 22,
+          width: "100%",
+          padding: "14px 20px",
+          borderRadius: 14,
+          border: "none",
+          background: "linear-gradient(135deg, #EA580C 0%, #EA580C 100%)",
+          color: "#FFFFFF",
+          fontSize: 14,
+          fontWeight: 600,
+          letterSpacing: "-0.01em",
+          cursor: "pointer",
+          boxShadow: "0 10px 32px rgba(234,88,12,0.38)",
+        }}
+      >
+        Back to dashboard
+      </button>
+    </motion.div>
+  );
+}
+
 interface JobReviewScreenProps {
   firstName: string;
+  profileSkills?: string[];
   initialTab?: "new" | "saved" | "applied";
   onNavigateHome: () => void;
   onNavigateJobs: () => void;
@@ -829,6 +1177,7 @@ interface JobReviewScreenProps {
 
 export function JobReviewScreen({
   firstName,
+  profileSkills,
   initialTab = "new",
   onNavigateHome,
   onNavigateJobs,
@@ -885,6 +1234,14 @@ export function JobReviewScreen({
   const appliedJobs = useMemo(
     () => sortedJobs.filter((job) => appliedIds.has(job.id)),
     [appliedIds, sortedJobs],
+  );
+
+  const allRecommendedApplied = useMemo(
+    () =>
+      activeTab === "new" &&
+      sortedJobs.length > 0 &&
+      sortedJobs.every((job) => appliedIds.has(job.id)),
+    [activeTab, sortedJobs, appliedIds],
   );
 
   const filteredSearchJobs = useMemo(() => {
@@ -1078,31 +1435,45 @@ export function JobReviewScreen({
           <div ref={switcherRef} style={{ position: "relative" }}>
             <button
               type="button"
+              aria-expanded={switcherOpen}
+              aria-haspopup="menu"
               onClick={() => setSwitcherOpen((v) => !v)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 8,
-                border: "none",
-                background: "transparent",
+                gap: 5,
+                border: switcherOpen
+                  ? "1px solid rgba(28,25,23,0.12)"
+                  : "1px solid rgba(28,25,23,0.07)",
+                borderRadius: 999,
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(250,250,249,0.78) 100%)",
+                boxShadow:
+                  "0 1px 2px rgba(28,25,23,0.05), inset 0 1px 0 rgba(255,255,255,0.95)",
                 cursor: "pointer",
-                padding: 0,
+                padding: "6px 14px 6px 16px",
+                boxSizing: "border-box",
                 fontFamily: "'DM Serif Display', Georgia, serif",
                 fontSize: 22,
                 fontWeight: 400,
+                lineHeight: 1.05,
                 color: "#1A1613",
                 letterSpacing: "-0.02em",
+                WebkitTapHighlightColor: "transparent",
+                transition: "border-color 0.15s ease, box-shadow 0.15s ease",
               }}
             >
               Jobs
               <ChevronDown
-                size={18}
-                color="rgba(107,101,96,1)"
-                strokeWidth={2}
+                size={17}
+                color="rgba(87,83,78,0.75)"
+                strokeWidth={2.1}
                 style={{
+                  flexShrink: 0,
                   transform: switcherOpen ? "rotate(180deg)" : "none",
-                  transition: "transform 0.18s ease",
+                  transition: "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)",
                 }}
+                aria-hidden
               />
             </button>
 
@@ -1111,7 +1482,7 @@ export function JobReviewScreen({
                 role="menu"
                 style={{
                   position: "absolute",
-                  top: 40,
+                  top: "calc(100% + 6px)",
                   left: 0,
                   minWidth: 180,
                   borderRadius: 14,
@@ -1194,37 +1565,7 @@ export function JobReviewScreen({
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            type="button"
-            style={{
-              position: "relative",
-              width: 34,
-              height: 34,
-              borderRadius: 999,
-              background: "rgba(28,25,23,0.04)",
-              border: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <Bell size={16} color="rgba(107,101,96,1)" strokeWidth={1.8} />
-            <span
-              style={{
-                position: "absolute",
-                top: 7,
-                right: 8,
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "#EA580C",
-                border: "2px solid #FAFAF9",
-              }}
-            />
-          </button>
-
+        <div style={{ display: "flex", alignItems: "center" }}>
           <div
             style={{
               width: 34,
@@ -1520,7 +1861,7 @@ export function JobReviewScreen({
               width: "100%",
               maxWidth: 380,
               flex: 1,
-              minHeight: 620,
+              minHeight: 760,
               paddingTop: 4,
             }}
           >
@@ -1585,7 +1926,7 @@ export function JobReviewScreen({
               width: "100%",
               maxWidth: 380,
               flex: 1,
-              minHeight: 620,
+              height: 652,
               paddingTop: 4,
             }}
           >
@@ -1606,8 +1947,15 @@ export function JobReviewScreen({
                           top: 0,
                           left: 0,
                           width: "100%",
+                          ...(isTop
+                            ? {
+                                height: "100%",
+                                minHeight: 0,
+                                x,
+                                rotate,
+                              }
+                            : {}),
                           zIndex: STACK_VISIBLE - stackIndex,
-                          ...(isTop ? { x, rotate } : {}),
                           touchAction: "pan-y",
                           cursor: isTop ? "grab" : "default",
                           pointerEvents: isTop ? "auto" : "none",
@@ -1671,108 +2019,115 @@ export function JobReviewScreen({
                           </>
                         )}
 
-                        <JobCard job={job} isTop={isTop} />
+                        <JobCard job={job} isTop={isTop} profileSkills={profileSkills} />
                       </motion.div>
                     );
                   })
                   .reverse()}
             </AnimatePresence>
 
-            {!hasMoreJobs && (
-              <motion.div
-                initial={{ opacity: 0, y: 16, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                style={{
-                  width: "100%",
-                  borderRadius: 20,
-                  padding: 28,
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(0,0,0,0.06)",
-                  boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
-                  textAlign: "center",
-                }}
-              >
-                <div
+            {!hasMoreJobs &&
+              (allRecommendedApplied ? (
+                <RecommendedAllAppliedInfoCard onNavigateHome={onNavigateHome} />
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 999,
-                    background: "linear-gradient(135deg, #ECFDF5 0%, #DCFCE7 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                    fontSize: 22,
+                    width: "100%",
+                    borderRadius: 20,
+                    padding: 28,
+                    background: "#FFFFFF",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+                    textAlign: "center",
                   }}
                 >
-                  ✓
-                </div>
-                <div
-                  style={{
-                    fontSize: 17,
-                    fontWeight: 600,
-                    color: "#111827",
-                    letterSpacing: "-0.02em",
-                    marginBottom: 6,
-                  }}
-                >
-                  You're all caught up, {firstName}
-                </div>
-                <p
-                  style={{
-                    fontSize: 13,
-                    lineHeight: "20px",
-                    color: "#6B7280",
-                    margin: 0,
-                  }}
-                >
-                  {savedCount > 0
-                    ? `You saved ${savedCount} role${savedCount > 1 ? "s" : ""}. They'll appear in your Saved Jobs on the dashboard.`
-                    : "No roles saved this time. New matches will appear as Zappy finds them."}
-                </p>
-                <button
-                  type="button"
-                  onClick={onNavigateHome}
-                  style={{
-                    marginTop: 20,
-                    padding: "10px 20px",
-                    borderRadius: 999,
-                    border: "none",
-                    background:
-                      "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
-                    color: "#FFFFFF",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    boxShadow: "0 10px 30px rgba(234,88,12,0.4)",
-                  }}
-                >
-                  Back to dashboard
-                </button>
-              </motion.div>
-            )}
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 999,
+                      background: "linear-gradient(135deg, #ECFDF5 0%, #DCFCE7 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 16px",
+                      fontSize: 22,
+                    }}
+                  >
+                    ✓
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 600,
+                      color: "#111827",
+                      letterSpacing: "-0.02em",
+                      marginBottom: 6,
+                    }}
+                  >
+                    You&rsquo;re all caught up, {firstName}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      lineHeight: "20px",
+                      color: "#6B7280",
+                      margin: 0,
+                    }}
+                  >
+                    {savedCount > 0
+                      ? `You saved ${savedCount} role${savedCount > 1 ? "s" : ""}. They'll appear in your Saved Jobs on the dashboard.`
+                      : "No roles saved this time. New matches will appear as Zappy finds them."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onNavigateHome}
+                    style={{
+                      marginTop: 20,
+                      padding: "10px 20px",
+                      borderRadius: 999,
+                      border: "none",
+                      background:
+                        "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
+                      color: "#FFFFFF",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      boxShadow: "0 10px 30px rgba(234,88,12,0.4)",
+                    }}
+                  >
+                    Back to dashboard
+                  </button>
+                </motion.div>
+              ))}
           </div>
         )}
 
-        {/* Action buttons */}
-        {hasMoreJobs && activeTab !== "applied" && (
-          <div
-            style={{
-              position: "sticky",
-              bottom: 0,
-              zIndex: 12,
-              paddingTop: 14,
-              paddingBottom: "calc(10px + env(safe-area-inset-bottom))",
-              width: "100%",
-              maxWidth: 380,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              background:
-                "linear-gradient(to top, rgba(250,250,249,0.98) 62%, rgba(250,250,249,0.84) 84%, rgba(250,250,249,0))",
-            }}
-          >
+        {/* Action buttons — hide with exit when deck is empty (info card replaces job card) */}
+        <AnimatePresence initial={false}>
+          {hasMoreJobs && activeTab !== "applied" && (
+            <motion.div
+              key="job-review-sticky-actions"
+              exit={{ opacity: 0, y: 14 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                position: "sticky",
+                bottom: 0,
+                zIndex: 12,
+                paddingTop: 14,
+                paddingBottom: "calc(10px + env(safe-area-inset-bottom))",
+                width: "100%",
+                maxWidth: 380,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                background:
+                  "linear-gradient(to top, rgba(250,250,249,0.98) 62%, rgba(250,250,249,0.84) 84%, rgba(250,250,249,0))",
+              }}
+            >
             {/* Skip – icon-only tertiary */}
             <motion.button
               type="button"
@@ -1852,7 +2207,7 @@ export function JobReviewScreen({
                 borderRadius: 16,
                 border: "none",
                 background:
-                  "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
+                  "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
                 color: "#FFFFFF",
                 fontSize: 14,
                 fontWeight: 600,
@@ -1874,8 +2229,9 @@ export function JobReviewScreen({
                 <>Quick Apply →</>
               )}
             </motion.button>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
         </>
         )}
       </main>
@@ -2374,7 +2730,7 @@ function AppliedJobDetailSheet({
               {appliedSheetHint}
             </p>
           </div>
-          <JobCard job={job} isTop={false} variant="embedded" />
+          <JobCard job={job} isTop={false} variant="embedded" profileSkills={profileSkills} />
         </div>
 
         <div
@@ -2665,6 +3021,15 @@ export function formatJobExperienceRange(min: number, max: number): string {
   return `${min}\u2013${max} yrs required`;
 }
 
+/** Turns compact mock copy like "est. 16 LPA – 22 LPA" into plain English. Other formats pass through. */
+function formatSalaryForDisplay(salary: string): string {
+  const s = salary.trim();
+  if (/^est\.\s*/i.test(s)) {
+    return `Estimated: ${s.replace(/^est\.\s*/i, "")}`;
+  }
+  return s;
+}
+
 export function inferDepartmentFromTitle(title: string): string {
   const t = title.toLowerCase();
   if (
@@ -2691,22 +3056,30 @@ function JobCard({
   job,
   isTop,
   variant = "card",
+  profileSkills,
 }: {
   job: Job;
   isTop: boolean;
   variant?: "card" | "embedded";
+  profileSkills?: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showAllSkills, setShowAllSkills] = useState(false);
+  const [showAllGaps, setShowAllGaps] = useState(false);
   const requiredSkills = REQUIRED_SKILLS_BY_JOB[job.id] ?? ["Product Design", "User Research", "Visual Design", "Prototyping"];
   const visibleSkills = showAllSkills ? requiredSkills : requiredSkills.slice(0, 4);
   const hiddenSkillsCount = Math.max(requiredSkills.length - visibleSkills.length, 0);
   const experienceMatches = (job.matchScore ?? 0) >= 85;
   const embedded = variant === "embedded";
   const department = inferDepartmentFromTitle(job.title);
+  const normalizedProfileSkills = useMemo(() => {
+    const norm = (s: string) => s.trim().toLowerCase();
+    return new Set((profileSkills ?? []).map(norm).filter(Boolean));
+  }, [profileSkills]);
 
   return (
     <div
+      className={!embedded && isTop ? "zf-jobcard-scroll" : undefined}
       style={{
         borderRadius: embedded ? 0 : 20,
         padding: embedded ? 0 : 20,
@@ -2718,7 +3091,22 @@ function JobCard({
             ? "0 20px 50px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03)"
             : "0 8px 24px rgba(0,0,0,0.06)",
         position: "relative",
-        overflow: embedded ? "visible" : "hidden",
+        ...(embedded
+          ? { overflow: "visible" }
+          : isTop
+            ? {
+                height: "100%",
+                minHeight: 0,
+                maxHeight: "100%",
+                boxSizing: "border-box",
+                overflowY: "auto",
+                overflowX: "hidden",
+                WebkitOverflowScrolling: "touch",
+                overscrollBehavior: "auto",
+                paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+                scrollPaddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+              }
+            : { overflow: "hidden" }),
       }}
     >
       {/* Header: Logo + Title + Company */}
@@ -2784,7 +3172,7 @@ function JobCard({
       </div>
 
       {/* Location chip */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
         <span
           style={{
             display: "inline-flex",
@@ -2847,6 +3235,7 @@ function JobCard({
 
         {/* Salary chip */}
         <span
+          title="Estimated range based on market data — not a salary quote from the employer."
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -2861,110 +3250,266 @@ function JobCard({
           }}
         >
           <span style={{ fontSize: 11 }}>💰</span>
-          {job.salary}
+          {formatSalaryForDisplay(job.salary)}
         </span>
       </div>
 
-      {/* The Headlines */}
-      <SectionBlock
-        barColor="#78909C"
-        title="The Headlines"
-        body={job.headlines}
-      />
-
-      {/* Why is this a fit */}
-      <SectionBlock
-        barColor="#66A36E"
-        title="Why is this a fit"
-        body={job.whyFit}
-      />
-
-      {/* Required Skills */}
-      <div style={{ marginBottom: 14 }}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#111827",
-            marginBottom: 7,
-          }}
-        >
-          Required skills
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {visibleSkills.map((skill) => (
-            <span
-              key={skill}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "5px 10px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#4B5563",
-                background: "#F8FAFC",
-                border: "1px solid rgba(148,163,184,0.3)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {skill}
-            </span>
-          ))}
-          {hiddenSkillsCount > 0 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAllSkills(true);
-              }}
-              style={{
-                border: "none",
-                background: "rgba(234,88,12,0.10)",
-                color: DT.accent,
-                padding: "5px 10px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              +{hiddenSkillsCount} more
-            </button>
-          )}
-          {showAllSkills && requiredSkills.length > 4 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAllSkills(false);
-              }}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "#EA580C",
-                padding: "5px 4px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Show less
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Divider */}
+      {/* Divider between top badges and insights */}
       <div
+        aria-hidden
         style={{
           height: 1,
-          backgroundColor: "rgba(0,0,0,0.05)",
-          margin: "6px 0 14px",
+          margin: "0 -4px 14px",
+          background:
+            "linear-gradient(90deg, rgba(28,25,23,0) 0%, rgba(28,25,23,0.10) 14%, rgba(28,25,23,0.10) 86%, rgba(28,25,23,0) 100%)",
         }}
       />
+
+      {/* Fit + skills + gaps — visually chunked */}
+      <div style={{ marginBottom: 14 }}>
+        {/* Why this fits */}
+        <section style={{ padding: "2px 0 16px" }} aria-label="Why this fits">
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span
+              aria-hidden
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 7,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#ECFDF5",
+                border: "1px solid rgba(22,163,74,0.18)",
+                color: "#15803D",
+                flexShrink: 0,
+              }}
+            >
+              <Check size={11} strokeWidth={2.8} />
+            </span>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "rgba(87,83,78,0.86)",
+              }}
+            >
+              Why this fits
+            </span>
+          </div>
+          <BulletList tone="good" lineClamp={false} items={deriveFitBullets(job, experienceMatches)} />
+        </section>
+
+        {/* Required skills */}
+        <section
+          style={{
+            padding: "12px 20px 12px",
+            margin: "0 -20px 12px",
+            background: "rgba(28,25,23,0.03)",
+            borderTop: "1px solid rgba(28,25,23,0.03)",
+            borderBottom: "1px solid rgba(28,25,23,0.03)",
+          }}
+          aria-label="Required skills"
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}
+            >
+              <span
+              aria-hidden
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 7,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(28,25,23,0.04)",
+                border: "1px solid rgba(28,25,23,0.08)",
+                color: "rgba(28,25,23,0.70)",
+                flexShrink: 0,
+              }}
+            >
+              <ListChecks size={11} strokeWidth={2.4} />
+            </span>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "rgba(87,83,78,0.86)",
+              }}
+            >
+              Required skills
+            </span>
+            </span>
+
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(21,128,61,0.95)" }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 6,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(22,163,74,0.10)",
+                    border: "1px solid rgba(22,163,74,0.18)",
+                  }}
+                >
+                  <Check size={11} strokeWidth={2.8} />
+                </span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "-0.01em", color: "rgba(87,83,78,0.75)" }}>
+                  Matched
+                </span>
+              </span>
+
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span
+                  aria-hidden
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 6,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(148,163,184,0.10)",
+                    border: "1px dashed rgba(148,163,184,0.45)",
+                  }}
+                >
+                  <span style={{ width: 5, height: 5, borderRadius: 999, background: "rgba(148,163,184,0.85)" }} />
+                </span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "-0.01em", color: "rgba(87,83,78,0.75)" }}>
+                  Missing
+                </span>
+              </span>
+            </span>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {visibleSkills.map((skill) => (
+              <span
+                key={skill}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: normalizedProfileSkills.has(skill.trim().toLowerCase()) ? "#166534" : "#4B5563",
+                  background: normalizedProfileSkills.has(skill.trim().toLowerCase())
+                    ? "rgba(236,253,245,0.85)"
+                    : "#F8FAFC",
+                  border: normalizedProfileSkills.has(skill.trim().toLowerCase())
+                    ? "1px solid rgba(22,163,74,0.18)"
+                    : "1px dashed rgba(148,163,184,0.5)",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {normalizedProfileSkills.has(skill.trim().toLowerCase()) ? (
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 6,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(22,163,74,0.10)",
+                      border: "1px solid rgba(22,163,74,0.18)",
+                      color: "#15803D",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Check size={11} strokeWidth={2.8} />
+                  </span>
+                ) : (
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 6,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(148,163,184,0.10)",
+                      border: "1px dashed rgba(148,163,184,0.45)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ width: 5, height: 5, borderRadius: 999, background: "rgba(148,163,184,0.85)" }} />
+                  </span>
+                )}
+                {skill}
+              </span>
+            ))}
+            {hiddenSkillsCount > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllSkills(true);
+                }}
+                style={{
+                  border: "none",
+                  background: "rgba(234,88,12,0.10)",
+                  color: DT.accent,
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                +{hiddenSkillsCount} more
+              </button>
+            )}
+            {showAllSkills && requiredSkills.length > 4 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllSkills(false);
+                }}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#EA580C",
+                  padding: "5px 4px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Show less
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* What's missing */}
+        <section style={{ padding: 0 }} aria-label="What's missing">
+          <WhatsMissing
+            job={job}
+            experienceMatches={experienceMatches}
+            requiredSkills={requiredSkills}
+            showAll={showAllGaps}
+            onToggleShowAll={() => setShowAllGaps((v) => !v)}
+          />
+        </section>
+      </div>
 
       {/* Job Description */}
       <div style={{ marginBottom: 4 }}>
@@ -3042,6 +3587,433 @@ function JobCard({
         )}
       </div>
     </div>
+  );
+}
+
+function trimFitCopy(text: string, maxChars: number): string {
+  const t = text.trim().replace(/\s+/g, " ");
+  if (t.length <= maxChars) return t;
+  const cut = t.slice(0, maxChars);
+  const sp = cut.lastIndexOf(" ");
+  const base = (sp > Math.min(24, maxChars * 0.45) ? cut.slice(0, sp) : cut).trim();
+  return `${base}…`;
+}
+
+/** First headline sentence only — company / product hook. */
+function summarizeHeadlinesForCandidate(headlines: string): string {
+  const parts = headlines
+    .split(/\.\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const first = (parts[0] ?? headlines.trim()).replace(/\.*$/, "");
+  const withStop = /[.!?]$/.test(first) ? first : `${first}.`;
+  return trimFitCopy(withStop, 92);
+}
+
+/** First whyFit sentence only — your match angle (cap only for unusually long lines). */
+function summarizeWhyFitForCandidate(whyFit: string): string {
+  const parts = whyFit.split(/\.\s+/).map((p) => p.trim()).filter(Boolean);
+  const first = parts[0] ?? whyFit.trim();
+  const withStop = /[.!?]$/.test(first) ? first : `${first}.`;
+  /* ~3 lines at ~13px in a ~325px card; avoids ellipsis on normal single-sentence whyFit copy */
+  return trimFitCopy(withStop, 220);
+}
+
+type MissingSignal = { title: string; detail: string; tone: "warn" | "neutral" };
+
+/** Short proof line—no `trimFitCopy` ellipsis; optional fallback if skill names are very long. */
+function missingProofLine(topSkill: string, secondSkill?: string): string {
+  const line = secondSkill
+    ? `CV: show ${topSkill} and ${secondSkill}, each with one clear win.`
+    : `CV: show ${topSkill} with one clear win.`;
+  if (line.length <= 130) return line;
+  return secondSkill
+    ? "CV: add one bullet per required skill—what you did and the win."
+    : "CV: add one bullet for the skill above—what you did and the win.";
+}
+
+function deriveMissingSignals(
+  job: Job,
+  experienceMatches: boolean,
+  requiredSkills: string[],
+): MissingSignal[] {
+  const score = job.matchScore ?? 0;
+  const yrsBand =
+    job.experienceYearsMax <= job.experienceYearsMin
+      ? `${job.experienceYearsMin}+ yrs`
+      : `${job.experienceYearsMin}–${job.experienceYearsMax} yrs`;
+
+  const topSkill = requiredSkills[0];
+  const secondSkill = requiredSkills[1];
+
+  const signals: MissingSignal[] = [];
+
+  if (!experienceMatches) {
+    signals.push({
+      tone: "warn",
+      title: "Tenure",
+      detail: `They want ${yrsBand}. Start with your strongest, relevant project.`,
+    });
+  }
+
+  if (topSkill) {
+    signals.push({
+      tone: score >= 86 ? "neutral" : "warn",
+      title: "Proof",
+      detail: missingProofLine(topSkill, secondSkill),
+    });
+  }
+
+  if (signals.length < 2) {
+    signals.push({
+      tone: score >= 88 ? "neutral" : "warn",
+      title: "Impact",
+      detail: "Add one number from past work—time saved, revenue, or adoption.",
+    });
+  }
+
+  if (signals.length < 3) {
+    signals.push({
+      tone: "warn",
+      title: "Language",
+      detail: "Reuse key phrases from this job post in your summary.",
+    });
+  }
+
+  return signals.slice(0, 3);
+}
+
+function WhatsMissing({
+  job,
+  experienceMatches,
+  requiredSkills,
+}: {
+  job: Job;
+  experienceMatches: boolean;
+  requiredSkills: string[];
+}) {
+  const signals = deriveMissingSignals(job, experienceMatches, requiredSkills);
+  if (signals.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span
+          aria-hidden
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 6,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(217,119,6,0.08)",
+            border: "1px solid rgba(217,119,6,0.14)",
+            color: "#B45309",
+            flexShrink: 0,
+          }}
+        >
+          <X size={11} strokeWidth={2.6} />
+        </span>
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: "#111827",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          What's missing
+        </span>
+      </div>
+
+      <BulletList tone="warn" items={signals.map((s) => s.detail)} />
+    </div>
+  );
+}
+
+type SignalTone = "good" | "warn" | "neutral";
+
+function SignalStack({
+  tone,
+  items,
+}: {
+  tone: Exclude<SignalTone, "neutral">;
+  items: Array<{ tone?: SignalTone; title: string; detail: string; emphasis?: string }>;
+}) {
+  const colors = {
+    good: {
+      chipBg: "rgba(22,163,74,0.06)",
+      chipBorder: "1px solid rgba(22,163,74,0.12)",
+      rail: "rgba(22,163,74,0.12)",
+      cardBgTop: "rgba(236,253,245,0.32)",
+      cardBgBottom: "rgba(240,253,250,0.18)",
+      cardBorder: "1px solid rgba(22,163,74,0.12)",
+      label: "rgba(21,128,61,0.92)",
+      body: "#374151",
+    },
+    warn: {
+      chipBg: "rgba(217,119,6,0.06)",
+      chipBorder: "1px solid rgba(217,119,6,0.12)",
+      rail: "rgba(217,119,6,0.12)",
+      cardBgTop: "rgba(255,247,237,0.34)",
+      cardBgBottom: "rgba(254,252,232,0.18)",
+      cardBorder: "1px solid rgba(217,119,6,0.13)",
+      label: "rgba(180,83,9,0.95)",
+      body: "#57534E",
+    },
+  } as const;
+
+  const c = colors[tone];
+
+  const perItem = (t?: SignalTone) => {
+    if (!t || t === tone) return c;
+    if (t === "neutral") {
+      return {
+        ...c,
+        cardBgTop: "rgba(248,250,252,0.32)",
+        cardBgBottom: "rgba(241,245,249,0.18)",
+        cardBorder: "1px solid rgba(148,163,184,0.18)",
+        label: "rgba(100,116,139,0.9)",
+        body: "#57534E",
+      };
+    }
+    return c;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {items.map((item, i) => {
+        const ci = perItem(item.tone);
+
+        return (
+          <div key={`${item.title}-${i}`}>
+            <div
+              style={{
+                padding: "9px 10px",
+                borderRadius: 14,
+                background: `linear-gradient(180deg, ${ci.cardBgTop}, ${ci.cardBgBottom})`,
+                border: ci.cardBorder,
+                boxShadow: "0 1px 0 rgba(0,0,0,0.02)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 850,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: ci.label,
+                      lineHeight: 1.2,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {item.title}
+                  </span>
+                </span>
+                {item.emphasis && (
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 750,
+                      letterSpacing: "-0.01em",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: ci.chipBg,
+                      border: ci.chipBorder,
+                      color: "rgba(87,83,78,0.78)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.emphasis}
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 12.6,
+                  color: ci.body,
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1.45,
+                }}
+              >
+                {item.detail}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function deriveFitSignals(
+  job: Job,
+  experienceMatches: boolean,
+  _department: string,
+): { title: string; detail: string; emphasis?: string }[] {
+  const score = job.matchScore ?? 0;
+  const remote =
+    /remote/i.test(job.locationType) || /remote/i.test(job.location);
+  const yrsBand =
+    job.experienceYearsMax <= job.experienceYearsMin
+      ? `${job.experienceYearsMin}+ yrs`
+      : `${job.experienceYearsMin}–${job.experienceYearsMax} yrs`;
+  const workSetup = remote
+    ? `Remote (${job.locationType})`
+    : `${job.location} · ${job.locationType}`;
+
+  const companyStory = summarizeHeadlinesForCandidate(job.headlines);
+  const cardFit = job.whyFitCard?.trim();
+  const yourStory = cardFit
+    ? trimFitCopy(/[.!?]$/.test(cardFit) ? cardFit : `${cardFit}.`, 180)
+    : summarizeWhyFitForCandidate(job.whyFit);
+
+  const logistics = experienceMatches
+    ? `${workSetup} · In range for their ${yrsBand} ask`
+    : `${workSetup} · Stretch vs ${yrsBand} — profile still lines up`;
+
+  return [
+    { title: "Company", detail: companyStory },
+    { title: "You", detail: yourStory },
+    { title: "Logistics", detail: trimFitCopy(logistics, 118), emphasis: `${score}% match` },
+  ];
+}
+
+/** "Why this fits" — no company story; three bullets (you · score · setup). No line-clamp on the list (see `BulletList lineClamp={false}`). */
+function deriveFitBullets(job: Job, experienceMatches: boolean): string[] {
+  const score = job.matchScore ?? 0;
+  const remote =
+    /remote/i.test(job.locationType) || /remote/i.test(job.location);
+  const yrsBand =
+    job.experienceYearsMax <= job.experienceYearsMin
+      ? `${job.experienceYearsMin}+ years`
+      : `${job.experienceYearsMin}–${job.experienceYearsMax} years`;
+
+  const whyYou = (() => {
+    const cardFit = job.whyFitCard?.trim();
+    if (cardFit) {
+      return /[.!?]$/.test(cardFit) ? cardFit : `${cardFit}.`;
+    }
+    return summarizeWhyFitForCandidate(job.whyFit);
+  })();
+
+  const whyScore = `${score}% fit: your skills and level match this posting.`;
+
+  const workSetup = (() => {
+    if (remote) {
+      return experienceMatches
+        ? `Remote (${job.locationType}). You're in their ${yrsBand} range.`
+        : `Remote (${job.locationType}). They want ${yrsBand}; show depth at that level.`;
+    }
+    return experienceMatches
+      ? `${job.location} (${job.locationType}). Your background fits their ${yrsBand} ask.`
+      : `${job.location} (${job.locationType}). They want ${yrsBand}; show depth in this role.`;
+  })();
+
+  return [whyYou, whyScore, workSetup];
+}
+
+/** Renders a simple, label-free bullet list with tone-tinted markers. */
+function BulletList({
+  tone,
+  items,
+  lineClamp = 2,
+}: {
+  tone: "good" | "warn";
+  items: string[];
+  /** `false` = no clamp (use for "Why this fits" so copy is never cut off with …). */
+  lineClamp?: 2 | 3 | false;
+}) {
+  if (items.length === 0) return null;
+
+  const palette =
+    tone === "good"
+      ? {
+          markerBg: "rgba(22,163,74,0.12)",
+          markerBorder: "1px solid rgba(22,163,74,0.22)",
+          markerColor: "#15803D",
+          text: "#1F2937",
+        }
+      : {
+          markerBg: "rgba(217,119,6,0.10)",
+          markerBorder: "1px solid rgba(217,119,6,0.20)",
+          markerColor: "#B45309",
+          text: "#374151",
+        };
+
+  return (
+    <ul
+      style={{
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      {items.map((text, i) => (
+        <li
+          key={`${tone}-${i}`}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 10,
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              marginTop: 2,
+              width: 16,
+              height: 16,
+              borderRadius: 999,
+              background: palette.markerBg,
+              border: palette.markerBorder,
+              color: palette.markerColor,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                background: palette.markerColor,
+              }}
+            />
+          </span>
+          <span
+            style={{
+              fontSize: 13,
+              lineHeight: 1.5,
+              letterSpacing: "-0.01em",
+              color: palette.text,
+              fontWeight: 500,
+              ...(lineClamp === false
+                ? {}
+                : {
+                    display: "-webkit-box",
+                    WebkitLineClamp: lineClamp,
+                    WebkitBoxOrient: "vertical" as const,
+                    overflow: "hidden",
+                  }),
+            }}
+          >
+            {text}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -3474,13 +4446,14 @@ function SearchResultCard({
             )}
             {dividerDot}
             <span
+              title="Estimated range based on market data — not a salary quote from the employer."
               style={{
                 ...metaChipStyle,
                 color: "#111827",
                 fontWeight: 600,
               }}
             >
-              {job.salary}
+              {formatSalaryForDisplay(job.salary)}
             </span>
           </div>
         </div>
@@ -3664,7 +4637,7 @@ function SearchResultCard({
                     borderRadius: 12,
                     border: "none",
                     background:
-                      "linear-gradient(135deg, #EA580C 0%, #EA580C 45%, #EA580C 100%)",
+                      "linear-gradient(135deg, #FF8F56 0%, #EA580C 100%)",
                     color: "#FFFFFF",
                     fontSize: 12.5,
                     fontWeight: 600,
