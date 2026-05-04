@@ -3007,7 +3007,7 @@ function InterviewAnalysisCard({
 
 // ── Career Trajectory Card ──────────────────────────────────────────────────
 
-type TrajectoryStage = {
+export type TrajectoryStage = {
   id: "now" | "next" | "future";
   stage: string;
   timeframe: string;
@@ -3022,7 +3022,7 @@ type TrajectoryStage = {
   skills: string[];
 };
 
-const CAREER_TRAJECTORY: TrajectoryStage[] = [
+export const CAREER_TRAJECTORY: TrajectoryStage[] = [
   {
     id: "now",
     stage: "Now",
@@ -3116,6 +3116,7 @@ export function CareerTrajectoryCard({
         display: "flex",
         flexDirection: "column",
         gap: 18,
+        minHeight: variant === "card" ? "100%" : undefined,
       }}
     >
         <div>
@@ -3193,7 +3194,7 @@ export function CareerTrajectoryCard({
             onClick={onOpenGrowthPlan}
             style={{
               alignSelf: "stretch",
-              marginTop: 2,
+              marginTop: "auto",
               borderRadius: 14,
               border: "1px solid rgba(120, 100, 78, 0.22)",
               background: "rgba(255,252,248,0.92)",
@@ -3789,7 +3790,7 @@ function TrajectoryGroup({
 
 // ── Interview Prep Card ─────────────────────────────────────────────────────
 
-type PrepCompetency = {
+export type PrepCompetency = {
   id: string;
   name: string;
   score: number; // 0–5
@@ -3797,7 +3798,7 @@ type PrepCompetency = {
   hints: string[];
 };
 
-const INTERVIEW_PREP_COMPETENCIES: PrepCompetency[] = [
+export const INTERVIEW_PREP_COMPETENCIES: PrepCompetency[] = [
   {
     id: "storytelling",
     name: "Storytelling",
@@ -3837,9 +3838,9 @@ const INTERVIEW_PREP_COMPETENCIES: PrepCompetency[] = [
   },
 ];
 
-type PrepChecklistItem = { id: string; label: string; hint: string };
+export type PrepChecklistItem = { id: string; label: string; hint: string };
 
-const INTERVIEW_PREP_CHECKLIST: PrepChecklistItem[] = [
+export const INTERVIEW_PREP_CHECKLIST: PrepChecklistItem[] = [
   {
     id: "story",
     label: "Refresh your “tell me about yourself” story",
@@ -3862,7 +3863,7 @@ const INTERVIEW_PREP_CHECKLIST: PrepChecklistItem[] = [
   },
 ];
 
-type PrepQuestionPack = {
+export type PrepQuestionPack = {
   id: "behavioral" | "craft" | "system";
   label: string;
   blurb: string;
@@ -3873,7 +3874,7 @@ type PrepQuestionPack = {
   questions: string[];
 };
 
-const INTERVIEW_PREP_QUESTIONS: PrepQuestionPack[] = [
+export const INTERVIEW_PREP_QUESTIONS: PrepQuestionPack[] = [
   {
     id: "behavioral",
     label: "Behavioral",
@@ -6557,7 +6558,8 @@ export type DashboardPreviewCaseKey =
   | "case-6"
   | "case-7"
   | "case-8"
-  | "case-9";
+  | "case-9"
+  | "case-10";
 
 interface DashboardPreviewScreenProps {
   firstName: string;
@@ -6602,7 +6604,9 @@ export function DashboardPreviewScreen({
     dismissLiveGrowthStorage();
     setLiveGrowthVisible(false);
   };
-  const isCase1Dashboard = activeCaseKey === "case-0" || activeCaseKey === "case-9";
+  const isCase10Dashboard = activeCaseKey === "case-10";
+  const isCase1Dashboard =
+    activeCaseKey === "case-0" || activeCaseKey === "case-9" || activeCaseKey === "case-10";
   const isCase4Dashboard = activeCaseKey === "case-4";
   const isLowPerformer = activeCaseKey === "case-2" || activeCaseKey === "case-6";
   const isCase5Dashboard = activeCaseKey === "case-3";
@@ -6611,6 +6615,7 @@ export function DashboardPreviewScreen({
   const effectiveHasCompletedInterview =
     activeCaseKey === "case-0" ||
     activeCaseKey === "case-9" ||
+    activeCaseKey === "case-10" ||
     activeCaseKey === "case-1" ||
     activeCaseKey === "case-4"
       ? true
@@ -6677,6 +6682,7 @@ export function DashboardPreviewScreen({
           { key: "case-7", label: "Case 7", onSelect: () => onActiveCaseKeyChange("case-7") },
           { key: "case-8", label: "Case 8", onSelect: () => onActiveCaseKeyChange("case-8") },
           { key: "case-9", label: "Case 9", onSelect: () => onActiveCaseKeyChange("case-9") },
+          { key: "case-10", label: "Case 10", onSelect: () => onActiveCaseKeyChange("case-10") },
         ]}
         activeCaseKey={activeCaseKey}
         isLowPerformer={isLowPerformer}
@@ -6716,13 +6722,13 @@ export function DashboardPreviewScreen({
             hasCompletedInterview={effectiveHasCompletedInterview}
             retryMode={isRetryCallDashboard}
             paidRetryMode={isCase7Dashboard}
-            analysisMode={isCase1Dashboard}
+            analysisMode={isCase1Dashboard && !isCase10Dashboard}
             internetFallbackMode={isCase4Dashboard}
             onStartInterview={onStartInterview}
             onViewSaved={onViewSavedJobs}
           />
 
-          {isCase1Dashboard && (
+          {isCase1Dashboard && !isCase10Dashboard && (
             <div
               style={{
                 marginTop: 24,
@@ -6731,7 +6737,9 @@ export function DashboardPreviewScreen({
                 gap: 14,
               }}
             >
-              <Case1RecapVariantToggle variant={case1RecapVariant} onChange={setCase1RecapVariant} />
+              {activeCaseKey !== "case-10" && (
+                <Case1RecapVariantToggle variant={case1RecapVariant} onChange={setCase1RecapVariant} />
+              )}
               <AnimatePresence mode="wait" initial={false}>
                 {case1RecapVariant === "pending" ? (
                   <MobileInterviewRecapPendingCard key="case1-pending" />
@@ -6753,7 +6761,7 @@ export function DashboardPreviewScreen({
             </>
           )}
 
-          {(activeCaseKey === "case-1" || activeCaseKey === "case-4") && (
+          {(activeCaseKey === "case-1" || activeCaseKey === "case-4" || activeCaseKey === "case-10") && (
             <div style={{ marginTop: 24 }}>
               <AnimatePresence initial={false}>
                 {liveGrowthVisible && (
@@ -6763,7 +6771,7 @@ export function DashboardPreviewScreen({
             </div>
           )}
 
-          {!isCase1Dashboard && (
+          {(!isCase1Dashboard || isCase10Dashboard) && (
             <>
               {/* Your Top Matches */}
               <SectionHeader
@@ -6805,10 +6813,10 @@ export function DashboardPreviewScreen({
             </div>
             </>
           )}
-          {!isLockedInterviewDashboard && !isCase1Dashboard ? (
+          {!isLockedInterviewDashboard && (!isCase1Dashboard || isCase10Dashboard) ? (
             <ReviewAllButton count={isCase4Dashboard ? MOCK_JOBS.length : 42} onClick={onReviewJobs} />
           ) : (
-            !isCase1Dashboard && (
+            (!isCase1Dashboard || isCase10Dashboard) && (
             isCase7Dashboard ? null : (
               <motion.button
                 initial={{ opacity: 0, y: 14 }}
@@ -6845,6 +6853,30 @@ export function DashboardPreviewScreen({
               </motion.button>
             )
             )
+          )}
+
+          {/* Case 10 keeps Case 9 summary content, but below top matches. */}
+          {isCase10Dashboard && !isRetryCallDashboard && (
+            <div
+              style={{
+                marginTop: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {case1RecapVariant === "pending" ? (
+                  <MobileInterviewRecapPendingCard key="case10-pending" />
+                ) : (
+                  <InterviewAnalysisCard
+                    key="case10-ready"
+                    onOpenQuestionAnalysis={onOpenInterviewQuestionAnalysis}
+                  />
+                )}
+              </AnimatePresence>
+              <InterviewRecordingCompactCard />
+            </div>
           )}
 
           {!isRetryCallDashboard && isCase1Dashboard && (

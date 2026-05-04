@@ -2,14 +2,16 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Briefcase,
   ChevronDown,
+  Compass,
   Home,
+  Mic,
   Search,
   User,
   Bell,
 } from "lucide-react";
 import { DT } from "./desktop-tokens";
 
-export type DesktopNavId = "home" | "jobs" | "profile";
+export type DesktopNavId = "home" | "jobs" | "career" | "interview" | "profile";
 
 export type DesktopCaseOption<K extends string = string> = {
   key: K;
@@ -49,6 +51,8 @@ export function DesktopAppShell<K extends string = string>({
   const nav = [
     { id: "home" as const, label: "Home", icon: Home },
     { id: "jobs" as const, label: "Jobs", icon: Briefcase },
+    { id: "career" as const, label: "Career", icon: Compass },
+    { id: "interview" as const, label: "Interview", icon: Mic },
     { id: "profile" as const, label: "Profile", icon: User },
   ];
 

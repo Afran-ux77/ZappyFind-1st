@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -31,7 +31,6 @@ import type { FullProfile } from "../components/WelcomeScreen";
 import { JOB_DEPARTMENT_LABEL_BY_ID } from "../components/jobPrefDepartmentsData";
 import { cn } from "../components/ui/utils";
 import { InterviewRecordingCompactCard } from "../components/InterviewTranscriptScroll";
-import { InterviewQuestionRadar } from "../components/InterviewQuestionRadar";
 import { CareerTrajectoryCard, InterviewPrepCard } from "../components/DashboardPreviewScreen";
 import {
   ANALYSIS_TRAITS,
@@ -40,7 +39,6 @@ import {
   traitAccent,
 } from "../interviewRecapCopy";
 import {
-  aggregateCompetencyAxesForInterview,
   formatCompetencyScore,
   getPrimaryCompetencyForQuestion,
   INTERVIEW_QUESTION_ANALYSIS,
@@ -76,7 +74,7 @@ const RECAP_DECK_TEXTURE =
   "repeating-linear-gradient(0deg, rgba(120,53,15,0.02) 0, rgba(120,53,15,0.02) 1px, transparent 1px, transparent 52px)";
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Case taxonomy — the UI labels match the mobile "Case 1..8 + Case 9" menu.
+   Case taxonomy — the desktop menu supports "Case 1..8 + Case 9 + Case 10".
    ──────────────────────────────────────────────────────────────────────── */
 export type DesktopDashboardCaseKey =
   | "case-0" // UI "Case 1" — interview complete, AI curating (celebratory)
@@ -87,7 +85,8 @@ export type DesktopDashboardCaseKey =
   | "case-6" // UI "Case 6" — below-average (case6 copy/emphasis)
   | "case-7" // UI "Case 7" — paid retries exhausted
   | "case-8" // UI "Case 8" — interview not started yet
-  | "case-9"; // UI "Case 9" — duplicate of Case 1 (same dashboard)
+  | "case-9" // UI "Case 9" — duplicate of Case 1 (same dashboard)
+  | "case-10"; // UI "Case 10" — duplicate of Case 9 (same dashboard)
 
 export const DESKTOP_DASHBOARD_CASES: Array<{
   key: DesktopDashboardCaseKey;
@@ -103,6 +102,7 @@ export const DESKTOP_DASHBOARD_CASES: Array<{
   { key: "case-7", label: "Case 7", description: "Retakes exhausted · paid" },
   { key: "case-8", label: "Case 8", description: "Interview not started" },
   { key: "case-9", label: "Case 9", description: "Same as Case 1 · AI curating" },
+  { key: "case-10", label: "Case 10", description: "Job found" },
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -671,6 +671,8 @@ type DesktopDashboardViewProps = {
   onStartInterview: () => void;
   onReviewJobs: () => void;
   onViewSavedJobs: () => void;
+  onOpenCareerGuidance?: () => void;
+  onOpenInterviewPrep?: () => void;
 };
 
 export function DesktopDashboardView({
@@ -681,11 +683,14 @@ export function DesktopDashboardView({
   onStartInterview,
   onReviewJobs,
   onViewSavedJobs,
+  onOpenCareerGuidance,
+  onOpenInterviewPrep,
 }: DesktopDashboardViewProps) {
   const name = firstName || "Alex";
   const roleLabel = heroRoleFocusLabel(profile);
 
-  const isCase1 = caseMode === "case-0" || caseMode === "case-9"; // Case 1 / Case 9 — analysis/curating
+  const isCase10 = caseMode === "case-10";
+  const isCase1 = caseMode === "case-0" || caseMode === "case-9" || isCase10; // Case 1 / Case 9 / Case 10 — analysis/curating
   const isBase = caseMode === "case-1"; // "Case 2" — base
   const isLowPerf = caseMode === "case-2" || caseMode === "case-6";
   const isCase6 = caseMode === "case-6";
@@ -730,7 +735,9 @@ export function DesktopDashboardView({
     );
   }
 
-  const heroMode: HeroMode = isCase1
+  const heroMode: HeroMode = isCase10
+    ? "complete"
+    : isCase1
     ? "analysis"
     : isCase4
       ? "internet"
@@ -744,14 +751,14 @@ export function DesktopDashboardView({
 
   const jobs = isCase4 ? INTERNET_JOBS : ROW_JOBS;
   const jobsToShow = isLocked ? 3 : isCase4 ? Math.min(CASE4_DASHBOARD_JOB_LIMIT, jobs.length) : jobs.length;
-  const topMatchesTitle = isCase1
+  const topMatchesTitle = isCase1 && !isCase10
     ? null
     : isCase4
       ? "Curated internet roles"
       : isLocked
         ? "Potential matches"
         : "Your top matches";
-  const topMatchesSubtitle = isCase1
+  const topMatchesSubtitle = isCase1 && !isCase10
     ? null
     : isCase4
       ? "No ZappyFind matches yet. Apply these curated internet roles while we onboard companies for your preferences."
@@ -763,7 +770,7 @@ export function DesktopDashboardView({
             ? "Preview is locked until you retake the ZappyFind call."
             : `Sorted by fit score · ${roleLabel}`;
 
-  const topMatchesSeeAll = !isCase1 && !isLocked;
+  const topMatchesSeeAll = (!isCase1 || isCase10) && !isLocked;
 
   return (
     <div className="p-6 lg:p-8" style={{ fontFamily: DT.sans }}>
@@ -782,19 +789,27 @@ export function DesktopDashboardView({
           onStartInterview={onStartInterview}
         />
 
-        {/* Case 1 / Case 9 — AI analysis panel (takes the place of KPI/top matches/etc.) */}
+        {/* Case 1 / Case 9 / Case 10 — AI analysis panel */}
         {isCase1 && (
           <>
-            <InterviewAnalysisPanel />
-            <motion.div variants={desktopHubStagger.item} className="grid gap-4 lg:grid-cols-2">
-              <CareerTrajectoryCard interactiveStages={false} />
-              <InterviewPrepCard onRetakeInterview={onStartInterview} />
-            </motion.div>
+            {!isCase10 && <InterviewAnalysisPanel showVariantToggle />}
+            {!isCase10 && (
+              <motion.div variants={desktopHubStagger.item} className="grid gap-4 lg:grid-cols-2">
+                <CareerTrajectoryCard
+                  interactiveStages={false}
+                  onOpenGrowthPlan={onOpenCareerGuidance}
+                />
+                <InterviewPrepCard
+                  onRetakeInterview={onStartInterview}
+                  onOpenInterviewPrep={onOpenInterviewPrep}
+                />
+              </motion.div>
+            )}
           </>
         )}
 
-        {/* KPI strip — hidden when interview locked/retry/case1 (nothing meaningful yet). */}
-        {!isCase1 && !isRetryCall && !isCase8 && (
+        {/* KPI strip — shown for standard dashboards and Case 10, hidden for Case 1/9 analysis-only. */}
+        {(!isCase1 || isCase10) && !isRetryCall && !isCase8 && (
           <KpiStrip
             totalJobs={isCase4 ? INTERNET_JOBS.length : totalJobs}
             activeCompanies={isCase4 ? INTERNET_JOBS.length : activeCompanies}
@@ -805,7 +820,7 @@ export function DesktopDashboardView({
         )}
 
         {/* Row — Top matches grid */}
-        {!isCase1 && (
+        {(!isCase1 || isCase10) && (
           <motion.section variants={desktopHubStagger.item}>
             <div className="mb-4 flex flex-col gap-2">
               <div className="flex flex-wrap items-end justify-between gap-3">
@@ -875,6 +890,23 @@ export function DesktopDashboardView({
           </motion.section>
         )}
 
+        {/* Case 10 keeps AI summary, but after KPI/top matches. */}
+        {isCase10 && (
+          <>
+            <InterviewAnalysisPanel showVariantToggle={false} />
+            <motion.div variants={desktopHubStagger.item} className="grid gap-4 lg:grid-cols-2">
+              <CareerTrajectoryCard
+                interactiveStages={false}
+                onOpenGrowthPlan={onOpenCareerGuidance}
+              />
+              <InterviewPrepCard
+                onRetakeInterview={onStartInterview}
+                onOpenInterviewPrep={onOpenInterviewPrep}
+              />
+            </motion.div>
+          </>
+        )}
+
         {/* Case 5/7 — Prep tips for retake */}
         {isRetryCall && <RetakeTipsPanel onStartInterview={onStartInterview} paid={isCase7} />}
 
@@ -883,7 +915,7 @@ export function DesktopDashboardView({
 
         {/* Row — Recruiter activity + Saved shortlist (base + internet + case 8 show recruiter/saved;
              hide on retake flows and on case 1 which replaces with analysis panel) */}
-        {!isCase1 && !isRetryCall && !isCase8 && (
+        {(!isCase1 || isCase10) && !isCase10 && !isRetryCall && !isCase8 && (
           <motion.div
             variants={desktopHubStagger.item}
             className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]"
@@ -2265,17 +2297,19 @@ function InterviewRecapVariantToggle({
   );
 }
 
-function InterviewAnalysisPanel() {
+function InterviewAnalysisPanel({ showVariantToggle = true }: { showVariantToggle?: boolean }) {
   const [variant, setVariant] = useState<InterviewRecapVariant>("ready");
   const [showDetails, setShowDetails] = useState(false);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
 
   return (
     <>
-      {/* Variant toggle — lets us preview the pending/empty state. */}
-      <motion.div variants={desktopHubStagger.item} className="flex justify-end">
-        <InterviewRecapVariantToggle variant={variant} onChange={setVariant} />
-      </motion.div>
+      {/* Variant toggle — hidden for Case 10 per dashboard requirements. */}
+      {showVariantToggle && (
+        <motion.div variants={desktopHubStagger.item} className="flex justify-end">
+          <InterviewRecapVariantToggle variant={variant} onChange={setVariant} />
+        </motion.div>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
         {variant === "pending" ? (
@@ -2313,11 +2347,6 @@ function InterviewRecapReadyDeck({
   activeQuestionId: string | null;
   setActiveQuestionId: (id: string | null) => void;
 }) {
-  const sessionRadarAxes = useMemo(
-    () => aggregateCompetencyAxesForInterview(INTERVIEW_QUESTION_ANALYSIS),
-    [],
-  );
-
   return (
     <>
       {/* ── 1. Interview intelligence deck (secondary to warm hero) ───── */}
@@ -2452,37 +2481,6 @@ function InterviewRecapReadyDeck({
             })}
           </div>
 
-          <div
-            className="rounded-[18px] border px-3 py-4 sm:px-4"
-            style={{
-              borderColor: "rgba(28,25,23,0.06)",
-              background: "rgba(255,255,255,0.82)",
-              boxShadow: "0 1px 2px rgba(28,25,23,0.04), 0 8px 22px rgba(28,25,23,0.05)",
-            }}
-          >
-            <div className="flex justify-center">
-              <InterviewQuestionRadar
-                axes={sessionRadarAxes}
-                size={220}
-                showAxisLabels
-                ariaLabel="Your performance across evaluated competencies"
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <span
-                aria-hidden
-                className="h-2.5 w-4 rounded-full border-2"
-                style={{ borderColor: DT.accent, background: "rgba(234,88,12,0.18)" }}
-              />
-              <span
-                className="text-[12px] font-bold"
-                style={{ letterSpacing: "-0.01em", color: "rgba(68,64,60,0.9)" }}
-              >
-                Your performance
-              </span>
-            </div>
-          </div>
-
           {/* Detailed analysis — on demand */}
           <div className="flex w-full items-center">
             <button
@@ -2542,20 +2540,6 @@ function InterviewRecapReadyDeck({
                           One competency was scored per question — open any to see the full transcript and ideal answer.
                         </div>
                       </div>
-                    </div>
-                    <div className="hidden shrink-0 items-center gap-2 md:flex">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold"
-                        style={{
-                          borderColor: "rgba(234,88,12,0.18)",
-                          background: "rgba(234,88,12,0.06)",
-                          color: "rgba(120,72,34,0.82)",
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: DT.accent }} />
-                        Your performance
-                      </span>
                     </div>
                   </div>
 

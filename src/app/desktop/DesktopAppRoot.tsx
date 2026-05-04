@@ -20,6 +20,8 @@ import {
   type DesktopDashboardCaseKey,
 } from "./DesktopDashboardView";
 import { DesktopJobReviewView, type JobWorkspaceTab } from "./DesktopJobReviewView";
+import { DesktopCareerView } from "./DesktopCareerView";
+import { DesktopInterviewView } from "./DesktopInterviewView";
 import { DesktopOnboardingChrome } from "./DesktopOnboardingChrome";
 import { DesktopOnboardingIntroCards } from "./DesktopOnboardingIntroCards";
 import { DT } from "./desktop-tokens";
@@ -38,6 +40,9 @@ type Screen =
   | "callInitiation"
   | "success"
   | "dashboardPreview"
+  | "careerGuidance"
+  | "interviewPrep"
+  | "interviewQuestionAnalysis"
   | "voiceCall"
   | "jobReview"
   | "jobSeekerProfile"
@@ -52,12 +57,25 @@ const slide = {
 };
 const SPRING = { duration: 0.32, ease: [0.16, 1, 0.3, 1] as const };
 
-type DesktopHubScreen = "dashboardPreview" | "jobReview" | "jobSeekerProfile";
+type DesktopHubScreen =
+  | "dashboardPreview"
+  | "jobReview"
+  | "careerGuidance"
+  | "interviewPrep"
+  | "jobSeekerProfile";
 const DESKTOP_HUB_ORDER: Record<DesktopHubScreen, number> = {
   dashboardPreview: 0,
   jobReview: 1,
-  jobSeekerProfile: 2,
+  careerGuidance: 2,
+  interviewPrep: 3,
+  jobSeekerProfile: 4,
 };
+const isHubScreen = (s: Screen): s is DesktopHubScreen =>
+  s === "dashboardPreview" ||
+  s === "jobReview" ||
+  s === "careerGuidance" ||
+  s === "interviewPrep" ||
+  s === "jobSeekerProfile";
 const DESKTOP_HUB_CROSSFADE = {
   duration: 0.26,
   ease: [0.16, 1, 0.3, 1] as const,
@@ -172,7 +190,7 @@ export function DesktopAppRoot({
 
   const prevDesktopHubScreen = useRef<DesktopHubScreen | null>(null);
   useEffect(() => {
-    if (screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") {
+    if (isHubScreen(screen)) {
       prevDesktopHubScreen.current = screen;
     } else {
       prevDesktopHubScreen.current = null;
@@ -205,18 +223,22 @@ export function DesktopAppRoot({
       setJobReviewInitialTab("recommended");
       goTo("jobReview", "forward");
     }
+    if (id === "career") goTo("careerGuidance", "forward");
+    if (id === "interview") goTo("interviewPrep", "forward");
     if (id === "profile") goTo("jobSeekerProfile", "forward");
   };
 
   const activeNav = (): DesktopNavId => {
     if (screen === "jobReview") return "jobs";
+    if (screen === "careerGuidance") return "career";
+    if (screen === "interviewPrep") return "interview";
     if (screen === "jobSeekerProfile") return "profile";
     return "home";
   };
 
   let hubEnter = { x: 0, y: 10 };
   let hubExitX = 0;
-  if (screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") {
+  if (isHubScreen(screen)) {
     const prevHub = prevDesktopHubScreen.current;
     if (prevHub && prevHub !== screen) {
       const delta = DESKTOP_HUB_ORDER[screen] - DESKTOP_HUB_ORDER[prevHub];
@@ -630,7 +652,7 @@ export function DesktopAppRoot({
           </motion.div>
         )}
 
-        {(screen === "dashboardPreview" || screen === "jobReview" || screen === "jobSeekerProfile") && (
+        {isHubScreen(screen) && (
           <motion.div
             key="desktop-app"
             initial={enterFrom(direction)}
@@ -665,6 +687,38 @@ export function DesktopAppRoot({
                           setJobReviewInitialTab("saved");
                           goTo("jobReview", "forward");
                         }}
+                        onOpenCareerGuidance={() => goTo("careerGuidance", "forward")}
+                        onOpenInterviewPrep={() => goTo("interviewPrep", "forward")}
+                      />
+                    </motion.div>
+                  )}
+                  {screen === "careerGuidance" && (
+                    <motion.div
+                      key="careerGuidance"
+                      className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-auto"
+                      initial={{ opacity: 0, x: hubEnter.x, y: hubEnter.y }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, x: hubExitX, y: -6 }}
+                      transition={DESKTOP_HUB_CROSSFADE}
+                    >
+                      <DesktopCareerView
+                        firstName={firstName}
+                        onStartInterview={() => goTo("voiceCall", "forward")}
+                      />
+                    </motion.div>
+                  )}
+                  {screen === "interviewPrep" && (
+                    <motion.div
+                      key="interviewPrep"
+                      className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-auto"
+                      initial={{ opacity: 0, x: hubEnter.x, y: hubEnter.y }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, x: hubExitX, y: -6 }}
+                      transition={DESKTOP_HUB_CROSSFADE}
+                    >
+                      <DesktopInterviewView
+                        firstName={firstName}
+                        onPractice={() => goTo("voiceCall", "forward")}
                       />
                     </motion.div>
                   )}
