@@ -13,7 +13,9 @@ import {
   Flame,
   Globe2,
   Layers,
+  Lightbulb,
   Loader2,
+  ListChecks,
   Lock,
   MapPin,
   MessageCircle,
@@ -21,6 +23,7 @@ import {
   Sparkles,
   Star,
   Target,
+  TrendingDown,
   TrendingUp,
   Trophy,
   Users,
@@ -31,6 +34,7 @@ import type { FullProfile } from "../components/WelcomeScreen";
 import { JOB_DEPARTMENT_LABEL_BY_ID } from "../components/jobPrefDepartmentsData";
 import { cn } from "../components/ui/utils";
 import { InterviewRecordingCompactCard } from "../components/InterviewTranscriptScroll";
+import { InterviewQuestionRadar } from "../components/InterviewQuestionRadar";
 import { CareerTrajectoryCard, InterviewPrepCard } from "../components/DashboardPreviewScreen";
 import {
   ANALYSIS_TRAITS,
@@ -39,6 +43,7 @@ import {
   traitAccent,
 } from "../interviewRecapCopy";
 import {
+  aggregateCompetencyAxesForInterview,
   formatCompetencyScore,
   getPrimaryCompetencyForQuestion,
   INTERVIEW_QUESTION_ANALYSIS,
@@ -2347,6 +2352,14 @@ function InterviewRecapReadyDeck({
   activeQuestionId: string | null;
   setActiveQuestionId: (id: string | null) => void;
 }) {
+  const sessionRadarAxes = aggregateCompetencyAxesForInterview(INTERVIEW_QUESTION_ANALYSIS);
+  const strongestAxis = sessionRadarAxes.reduce((best, axis) =>
+    axis.score > best.score ? axis : best,
+  );
+  const focusAxis = sessionRadarAxes.reduce((lowest, axis) =>
+    axis.score < lowest.score ? axis : lowest,
+  );
+
   return (
     <>
       {/* ── 1. Interview intelligence deck (secondary to warm hero) ───── */}
@@ -2514,8 +2527,8 @@ function InterviewRecapReadyDeck({
                 className="overflow-hidden"
               >
                 <div className="flex flex-col gap-4 pb-1">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
+                  <div className="flex items-start justify-start gap-4">
+                    <div className="flex items-center gap-3">
                       <div
                         className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[9px]"
                         style={{
@@ -2533,11 +2546,144 @@ function InterviewRecapReadyDeck({
                         >
                           Performance breakdown
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="relative overflow-hidden rounded-[20px] border p-4 sm:p-5"
+                    style={{
+                      borderColor: "rgba(120,72,34,0.12)",
+                      background:
+                        "linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,248,240,0.86) 100%)",
+                      boxShadow:
+                        "inset 0 1px 0 rgba(255,255,255,0.78), 0 1px 2px rgba(28,25,23,0.05), 0 14px 34px rgba(124,58,10,0.08)",
+                    }}
+                  >
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute -right-16 -top-14 h-44 w-44 rounded-full"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(234,88,12,0.15) 0%, rgba(234,88,12,0) 70%)",
+                      }}
+                    />
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(59,130,246,0.11) 0%, rgba(59,130,246,0) 72%)",
+                      }}
+                    />
+
+                    <div className="relative mb-3 flex items-center gap-3">
+                      <div
+                        className="text-[10.5px] font-bold uppercase"
+                        style={{ color: "rgba(120,72,34,0.78)", letterSpacing: "0.12em" }}
+                      >
+                        Competency overview
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-6">
+                      {/* Left — radar visualization */}
+                      <div
+                        className="rounded-[16px] border p-3"
+                        style={{
+                          borderColor: "rgba(28,25,23,0.08)",
+                          background: "rgba(255,255,255,0.78)",
+                          backdropFilter: "blur(8px)",
+                        }}
+                      >
+                        <div className="flex justify-center">
+                          <InterviewQuestionRadar
+                            axes={sessionRadarAxes}
+                            size={212}
+                            showAxisLabels
+                            ariaLabel="Your performance across evaluated competencies"
+                          />
+                        </div>
                         <div
-                          className="mt-1 text-[12px] leading-snug"
-                          style={{ color: "rgba(87,83,78,0.9)", letterSpacing: "-0.005em" }}
+                          className="mt-2 text-center text-[12px] font-semibold"
+                          style={{ color: "rgba(68,64,60,0.85)", letterSpacing: "-0.01em" }}
                         >
-                          One competency was scored per question — open any to see the full transcript and ideal answer.
+                          Your performance across {sessionRadarAxes.length} competencies
+                        </div>
+                      </div>
+
+                      {/* Right — strongest/focus summary cards */}
+                      <div className="flex flex-col gap-3">
+                        <div
+                          className="rounded-[16px] border p-3.5"
+                          style={{
+                            borderColor: "rgba(16,185,129,0.2)",
+                            background:
+                              "linear-gradient(140deg, rgba(236,253,245,0.9) 0%, rgba(209,250,229,0.58) 100%)",
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div
+                                className="text-[10px] font-bold uppercase"
+                                style={{ color: "rgba(5,150,105,0.86)", letterSpacing: "0.12em" }}
+                              >
+                                Strongest
+                              </div>
+                              <div
+                                className="mt-1 text-[15px] font-semibold"
+                                style={{ color: "#065F46", letterSpacing: "-0.01em" }}
+                              >
+                                {strongestAxis.label}
+                              </div>
+                            </div>
+                            <span
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px]"
+                              style={{
+                                background: "rgba(16,185,129,0.16)",
+                                border: "1px solid rgba(16,185,129,0.24)",
+                              }}
+                            >
+                              <Star size={14} color="#059669" strokeWidth={2.4} aria-hidden />
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          className="rounded-[16px] border p-3.5"
+                          style={{
+                            borderColor: "rgba(234,88,12,0.2)",
+                            background:
+                              "linear-gradient(140deg, rgba(255,247,237,0.92) 0%, rgba(255,237,213,0.64) 100%)",
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div
+                                className="text-[10px] font-bold uppercase"
+                                style={{ color: "rgba(194,65,12,0.86)", letterSpacing: "0.12em" }}
+                              >
+                                Focus area
+                              </div>
+                              <div
+                                className="mt-1 text-[15px] font-semibold"
+                                style={{ color: "#9A3412", letterSpacing: "-0.01em" }}
+                              >
+                                {focusAxis.label}
+                              </div>
+                            </div>
+                            <span
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px]"
+                              style={{
+                                background: "rgba(234,88,12,0.14)",
+                                border: "1px solid rgba(234,88,12,0.24)",
+                              }}
+                            >
+                              <Target size={14} color="#EA580C" strokeWidth={2.4} aria-hidden />
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2874,16 +3020,29 @@ function InterviewRecapPendingDeck() {
   );
 }
 
-function TranscriptBubbleList({ lines }: { lines: Array<{ role: "ai" | "you"; at: string; text: string }> }) {
+function TranscriptBubbleList({
+  lines,
+  candidateMode = false,
+}: {
+  lines: Array<{ role: "ai" | "you"; at: string; text: string }>;
+  candidateMode?: boolean;
+}) {
   return (
     <div
       role="region"
       aria-label="Question transcript"
-      className="flex flex-col gap-3 rounded-[16px] border p-4"
-      style={{
-        borderColor: "rgba(28,25,23,0.08)",
-        background: "rgba(255,255,255,0.78)",
-      }}
+      className={cn(
+        "flex flex-col gap-3",
+        candidateMode ? "" : "rounded-[16px] border p-4",
+      )}
+      style={
+        candidateMode
+          ? undefined
+          : {
+              borderColor: "rgba(28,25,23,0.08)",
+              background: "rgba(255,255,255,0.78)",
+            }
+      }
     >
       {lines.map((line, i) => {
         const isYou = line.role === "you";
@@ -2893,36 +3052,197 @@ function TranscriptBubbleList({ lines }: { lines: Array<{ role: "ai" | "you"; at
               className="max-w-[min(100%,62ch)] rounded-[14px] border px-3.5 py-2.5"
               style={{
                 borderColor: isYou ? "rgba(234,88,12,0.16)" : "rgba(234,88,12,0.22)",
-                background: isYou
-                  ? "rgba(255,255,255,0.95)"
-                  : "linear-gradient(160deg, rgba(255,252,247,0.98) 0%, rgba(255,243,230,0.92) 100%)",
-                boxShadow: isYou ? "0 1px 2px rgba(234,88,12,0.04)" : "0 1px 3px rgba(234,88,12,0.06)",
+                background:
+                  candidateMode || isYou
+                    ? "rgba(255,255,255,0.95)"
+                    : "linear-gradient(160deg, rgba(255,252,247,0.98) 0%, rgba(255,243,230,0.92) 100%)",
+                boxShadow:
+                  candidateMode || isYou
+                    ? "0 1px 2px rgba(234,88,12,0.04)"
+                    : "0 1px 3px rgba(234,88,12,0.06)",
               }}
             >
-              <div className="mb-1 flex items-center gap-2">
-                <span
-                  className="text-[10px] font-bold uppercase"
-                  style={{
-                    color: isYou ? DT.accent : "#C2410C",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  {isYou ? "You" : "ZappyFind"}
-                </span>
-                <span
-                  className="font-mono text-[10px] font-semibold tabular-nums"
-                  style={{ color: DT.textMuted, letterSpacing: "-0.02em" }}
-                >
-                  {line.at}
-                </span>
-              </div>
-              <div className="text-[13px] leading-[1.5]" style={{ color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              {candidateMode ? (
+                i === 0 ? (
+                  <div className="mb-1 flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px]"
+                      style={{
+                        background: "rgba(234,88,12,0.1)",
+                        border: "1px solid rgba(234,88,12,0.16)",
+                      }}
+                    >
+                      <FileText size={14} strokeWidth={2.2} color={DT.accent} aria-hidden />
+                    </span>
+                    <span
+                      className="text-[10px] font-bold uppercase"
+                      style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.08em" }}
+                    >
+                      Your answer
+                    </span>
+                  </div>
+                ) : null
+              ) : (
+                <div className="mb-1 flex items-center gap-2">
+                  <span
+                    className="text-[10px] font-bold uppercase"
+                    style={{
+                      color: isYou ? DT.accent : "#C2410C",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    {isYou ? "You" : "ZappyFind"}
+                  </span>
+                  <span
+                    className="font-mono text-[10px] font-semibold tabular-nums"
+                    style={{ color: DT.textMuted, letterSpacing: "-0.02em" }}
+                  >
+                    {line.at}
+                  </span>
+                </div>
+              )}
+              <div
+                className="text-[13px] leading-[1.5]"
+                style={{
+                  color: "rgba(28,25,23,0.88)",
+                  letterSpacing: "-0.01em",
+                  fontStyle: candidateMode ? "italic" : "normal",
+                }}
+              >
                 {line.text}
               </div>
             </div>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function getDesktopCompetencyCoaching(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes("structure")) return "Use context -> decision -> outcome in this order.";
+  if (l.includes("clarity")) return "Replace generic phrasing with one concrete example.";
+  if (l.includes("ownership")) return "State your decision and why you made that call.";
+  if (l.includes("judgment")) return "Call out trade-offs explicitly before the final choice.";
+  if (l.includes("metrics")) return "Anchor impact with one before/after metric.";
+  if (l.includes("stakeholder")) return "Name the pushback and how alignment was reached.";
+  if (l.includes("scope")) return "Show what you cut, what stayed, and why.";
+  return "Add one concrete example, one rationale, and one measurable outcome.";
+}
+
+function DesktopQuickTakeawaysCard({
+  competency,
+  yourLines,
+}: {
+  competency: NonNullable<ReturnType<typeof getPrimaryCompetencyForQuestion>>;
+  yourLines: Array<{ role: "ai" | "you"; at: string; text: string }>;
+}) {
+  const tier = classifyDesktopScore(competency.you);
+  const score = competency.you;
+  const words = yourLines
+    .map((l) => l.text.trim())
+    .join(" ")
+    .split(/\s+/)
+    .filter(Boolean).length;
+
+  const performanceSignal =
+    tier === "strong"
+      ? "This competency is a clear strength in your answer."
+      : tier === "solid"
+        ? "This competency is solid, but can be sharper."
+        : "This competency needs stronger evidence in your answer.";
+
+  const lengthSignal =
+    words < 20
+      ? "Your response is very short; add one concrete result."
+      : words > 70
+        ? "Your response may be too long; tighten to key points."
+        : "Response length is in a workable range.";
+
+  return (
+    <div
+      className="rounded-[16px] border p-4"
+      style={{
+        borderColor: "rgba(28,25,23,0.08)",
+        background: "rgba(255,255,255,0.82)",
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <ListChecks size={14} strokeWidth={2.4} color="rgba(120,72,34,0.8)" aria-hidden />
+        <div
+          className="text-[11px] font-extrabold uppercase"
+          style={{ letterSpacing: "0.09em", color: "rgba(120,72,34,0.78)" }}
+        >
+          Quick takeaways
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-2.5">
+        <div className="flex items-start gap-2">
+          <span
+            aria-hidden
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px]"
+            style={{
+              background: "rgba(99,102,241,0.12)",
+              border: "1px solid rgba(99,102,241,0.18)",
+            }}
+          >
+            <TrendingUp size={13} strokeWidth={2.4} color="rgba(67,56,202,0.95)" />
+          </span>
+          <div>
+            <div className="text-[12px] font-bold" style={{ color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              Performance signal ({formatCompetencyScore(score)})
+            </div>
+            <div className="text-[11.5px] font-medium" style={{ color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
+              {performanceSignal}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <span
+            aria-hidden
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px]"
+            style={{
+              background: "rgba(13,148,136,0.10)",
+              border: "1px solid rgba(13,148,136,0.18)",
+            }}
+          >
+            <TrendingDown size={13} strokeWidth={2.4} color="rgba(13,148,136,0.95)" />
+          </span>
+          <div>
+            <div className="text-[12px] font-bold" style={{ color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              Response length ({words} words)
+            </div>
+            <div className="text-[11.5px] font-medium" style={{ color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
+              {lengthSignal}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <span
+            aria-hidden
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[9px]"
+            style={{
+              background: "rgba(234,88,12,0.10)",
+              border: "1px solid rgba(234,88,12,0.16)",
+            }}
+          >
+            <Lightbulb size={13} strokeWidth={2.4} color="rgba(234,88,12,0.95)" />
+          </span>
+          <div>
+            <div className="text-[12px] font-bold" style={{ color: "rgba(28,25,23,0.88)", letterSpacing: "-0.01em" }}>
+              Coaching cue
+            </div>
+            <div className="text-[11.5px] font-medium" style={{ color: "rgba(87,83,78,0.82)", letterSpacing: "-0.01em" }}>
+              {getDesktopCompetencyCoaching(competency.label)}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -3099,6 +3419,28 @@ function DesktopQuestionCard({
           </div>
         </div>
       ) : null}
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          paddingTop: 2,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 12.5,
+            fontWeight: 700,
+            color: "rgba(234,88,12,0.92)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          See breakdown
+        </span>
+        <ArrowRight size={14} strokeWidth={2.4} color="rgba(234,88,12,0.92)" aria-hidden />
+      </div>
     </button>
   );
 }
@@ -3184,6 +3526,7 @@ function QuestionDetailPanel({
   onClose: () => void;
 }) {
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const yourLines = question?.transcript.filter((line) => line.role === "you") ?? [];
 
   useEffect(() => {
     if (open) closeBtnRef.current?.focus();
@@ -3265,13 +3608,16 @@ function QuestionDetailPanel({
 
             <div className="flex flex-col gap-5 px-6 py-5">
               <DesktopCompetencyScoreHero question={question} />
+              {(() => {
+                const competency = getPrimaryCompetencyForQuestion(question);
+                return competency ? (
+                  <DesktopQuickTakeawaysCard competency={competency} yourLines={yourLines} />
+                ) : null;
+              })()}
 
               <div>
-                <div className="text-[10.5px] font-bold uppercase" style={{ color: "rgba(120,72,34,0.72)", letterSpacing: "0.1em" }}>
-                  Transcript
-                </div>
                 <div className="mt-2">
-                  <TranscriptBubbleList lines={question.transcript} />
+                  <TranscriptBubbleList lines={yourLines} candidateMode />
                 </div>
               </div>
 
