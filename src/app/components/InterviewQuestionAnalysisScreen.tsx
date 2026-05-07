@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
-import { ChevronLeft, ChevronRight, FileText, Lightbulb, ListChecks, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Lightbulb, ListChecks, Sparkles, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { DT } from "../desktop/desktop-tokens";
 import { InterviewQuestionRadar } from "./InterviewQuestionRadar";
 import {

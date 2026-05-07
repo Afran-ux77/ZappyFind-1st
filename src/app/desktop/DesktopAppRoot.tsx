@@ -731,7 +731,10 @@ export function DesktopAppRoot({
                       exit={{ opacity: 0, x: hubExitX, y: -6 }}
                       transition={DESKTOP_HUB_CROSSFADE}
                     >
-                      <DesktopJobReviewView initialTab={jobReviewInitialTab} />
+                      <DesktopJobReviewView
+                        initialTab={jobReviewInitialTab}
+                        profileSkills={parsedProfile?.skills}
+                      />
                     </motion.div>
                   )}
                   {screen === "jobSeekerProfile" && (

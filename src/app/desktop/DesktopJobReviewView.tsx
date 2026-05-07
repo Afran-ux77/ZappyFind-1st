@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
+  Check,
   ArrowRight,
   Bookmark,
   Briefcase,
@@ -11,10 +12,12 @@ import {
   Clock,
   ExternalLink,
   IndianRupee,
+  ListChecks,
   MapPin,
   Send,
   Sparkles,
   Target,
+  X,
 } from "lucide-react";
 import type { Job } from "../components/JobReviewScreen";
 import {
@@ -137,6 +140,7 @@ export type JobWorkspaceTab = "recommended" | "applied" | "saved";
 
 type DesktopJobReviewViewProps = {
   initialTab?: JobWorkspaceTab;
+  profileSkills?: string[];
 };
 
 const TAB_CONFIG: {
@@ -149,7 +153,7 @@ const TAB_CONFIG: {
   { id: "saved", label: "Saved", icon: Bookmark },
 ];
 
-export function DesktopJobReviewView({ initialTab = "recommended" }: DesktopJobReviewViewProps) {
+export function DesktopJobReviewView({ initialTab = "recommended", profileSkills }: DesktopJobReviewViewProps) {
   const [selectedId, setSelectedId] = useState(JOBS[0]?.id ?? "");
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [applied, setApplied] = useState<Set<string>>(new Set());
@@ -555,12 +559,17 @@ function JobDetailPane({
 }) {
   const requiredSkills =
     REQUIRED_SKILLS_BY_JOB[job.id] ?? ["Product Design", "User Research", "Visual Design", "Prototyping"];
+  const normalizedProfileSkills = useMemo(() => {
+    const norm = (s: string) => s.trim().toLowerCase();
+    return new Set((profileSkills ?? []).map(norm).filter(Boolean));
+  }, [profileSkills]);
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const [applyDelight, setApplyDelight] = useState(false);
   const visibleSkills = showAllSkills ? requiredSkills : requiredSkills.slice(0, 6);
   const hiddenSkillsCount = Math.max(requiredSkills.length - visibleSkills.length, 0);
   const department = inferDepartmentFromTitle(job.title);
+  const experienceMatches = (job.matchScore ?? 0) >= 85;
   const experienceRange =
     job.experienceYearsMax <= job.experienceYearsMin
       ? `${job.experienceYearsMin}+ yrs`
@@ -768,83 +777,97 @@ function JobDetailPane({
           ) : null}
         </AnimatePresence>
 
-        {/* Meta strip */}
-        <div
-          className="relative grid grid-cols-2 gap-px border-t md:grid-cols-4"
-          style={{
-            borderColor: DT.border,
-            background: "rgba(28,25,23,0.04)",
-          }}
-        >
-          <MetaTile
-            icon={MapPin}
-            label="Location"
-            value={`${job.location}`}
-            hint={job.locationType}
-          />
-          <MetaTile icon={Clock} label="Experience" value={experienceRange} />
-          <MetaTile icon={Briefcase} label="Department" value={department} />
-          <MetaTile icon={IndianRupee} label="Compensation" value={compensationRange} />
-        </div>
       </div>
 
-      {/* Content grid */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-5">
-        <section
-          className="rounded-2xl border p-5 lg:col-span-3"
-          style={{ borderColor: DT.border, background: DT.surface }}
-        >
-          <SectionHeader icon={Sparkles} label="The Headlines" />
-          <p className="mt-2 text-[13.5px] leading-[1.65]" style={{ color: DT.text }}>
-            {job.headlines}
-          </p>
-        </section>
-        <section
-          className="rounded-2xl border p-5 lg:col-span-2"
-          style={{
-            borderColor: "rgba(5,150,105,0.2)",
-            background:
-              "linear-gradient(145deg, rgba(16,185,129,0.06) 0%, rgba(255,255,255,0.6) 100%)",
-          }}
-        >
-          <SectionHeader icon={Target} label="Why this is a fit" accent="#059669" />
-          <p className="mt-2 text-[13px] leading-[1.65]" style={{ color: DT.textMuted }}>
-            {job.whyFit}
-          </p>
-        </section>
-      </div>
+      {/* Why this fits */}
+      <section
+        className="mt-5 rounded-2xl border p-5"
+        style={{
+          borderColor: "rgba(5,150,105,0.2)",
+          background: "linear-gradient(145deg, rgba(16,185,129,0.06) 0%, rgba(255,255,255,0.75) 100%)",
+        }}
+      >
+        <SectionHeader icon={Check} label="WHY THIS FITS" accent="#059669" />
+        <ul className="mt-3 space-y-2.5">
+          {deriveFitBullets(job, experienceMatches).map((item, idx) => (
+            <li key={`${job.id}-fit-${idx}`} className="flex items-start gap-2.5">
+              <span
+                className="mt-[3px] inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+                style={{ background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.2)", color: "#15803d" }}
+              >
+                <Check className="h-2.5 w-2.5" strokeWidth={2.8} />
+              </span>
+              <span className="text-[13px] leading-[1.65]" style={{ color: DT.textMuted }}>
+                {item}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {/* Required skills */}
       <section
         className="mt-4 rounded-2xl border p-5"
         style={{ borderColor: DT.border, background: DT.surface }}
       >
-        <div className="flex items-center justify-between">
-          <SectionHeader icon={Sparkles} label="Required skills" />
-          <span className="text-[11.5px] font-medium" style={{ color: DT.textSubtle }}>
-            {requiredSkills.length} skills
-          </span>
+        <div className="flex items-center justify-between gap-3">
+          <SectionHeader icon={ListChecks} label="REQUIRED SKILLS" />
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-semibold" style={{ color: DT.textSubtle }}>
+              {requiredSkills.length} skills
+            </span>
+            <span className="text-[11px] font-semibold" style={{ color: "rgba(87,83,78,0.74)" }}>
+              Matched/Missing
+            </span>
+          </div>
         </div>
         <motion.div layout className="mt-3 flex flex-wrap gap-2">
           <AnimatePresence initial={false}>
-            {visibleSkills.map((skill) => (
-              <motion.span
-                key={skill}
-                layout="position"
-                initial={{ opacity: 0, y: 4, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.94 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-flex items-center rounded-full border px-3 py-[6px] text-[12px] font-medium"
-                style={{
-                  borderColor: "rgba(234,88,12,0.18)",
-                  background: "rgba(234,88,12,0.06)",
-                  color: DT.text,
-                }}
-              >
-                {skill}
-              </motion.span>
-            ))}
+            {visibleSkills.map((skill) => {
+              const matched = normalizedProfileSkills.has(skill.trim().toLowerCase());
+              return (
+                <motion.span
+                  key={skill}
+                  layout="position"
+                  initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.94 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-[6px] text-[12px] font-medium"
+                  style={
+                    matched
+                      ? {
+                          borderColor: "rgba(22,163,74,0.18)",
+                          background: "rgba(236,253,245,0.85)",
+                          color: "#166534",
+                        }
+                      : {
+                          borderColor: "rgba(148,163,184,0.5)",
+                          borderStyle: "dashed",
+                          background: "#f8fafc",
+                          color: "#4b5563",
+                        }
+                  }
+                >
+                  {matched ? (
+                    <span
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-[6px]"
+                      style={{ background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.18)", color: "#15803d" }}
+                    >
+                      <Check className="h-2.5 w-2.5" strokeWidth={2.8} />
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-[6px]"
+                      style={{ background: "rgba(148,163,184,0.1)", border: "1px dashed rgba(148,163,184,0.45)" }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(148,163,184,0.85)" }} />
+                    </span>
+                  )}
+                  {skill}
+                </motion.span>
+              );
+            })}
           </AnimatePresence>
           {hiddenSkillsCount > 0 ? (
             <button
@@ -867,6 +890,43 @@ function JobDetailPane({
             </button>
           ) : null}
         </motion.div>
+      </section>
+
+      {/* What's missing */}
+      <section
+        className="mt-4 rounded-2xl border p-5"
+        style={{
+          borderColor: "rgba(217,119,6,0.22)",
+          background: "linear-gradient(145deg, rgba(255,247,237,0.72) 0%, rgba(255,255,255,0.82) 100%)",
+        }}
+      >
+        <SectionHeader icon={X} label="WHAT'S MISSING" accent="#b45309" />
+        <ul className="mt-3 space-y-2.5">
+          {deriveMissingSignals(job, experienceMatches, requiredSkills).map((signal, idx) => (
+            <li key={`${job.id}-missing-${idx}`} className="flex items-start gap-2.5">
+              <span
+                className="mt-[3px] inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+                style={{
+                  background: signal.tone === "warn" ? "rgba(217,119,6,0.12)" : "rgba(148,163,184,0.12)",
+                  border:
+                    signal.tone === "warn"
+                      ? "1px solid rgba(217,119,6,0.22)"
+                      : "1px solid rgba(148,163,184,0.3)",
+                  color: signal.tone === "warn" ? "#b45309" : "#64748b",
+                }}
+              >
+                {signal.tone === "warn" ? (
+                  <X className="h-2.5 w-2.5" strokeWidth={2.6} />
+                ) : (
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
+                )}
+              </span>
+              <span className="text-[13px] leading-[1.65]" style={{ color: DT.textMuted }}>
+                {signal.detail}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Watch outs */}
@@ -894,6 +954,25 @@ function JobDetailPane({
           </div>
         </section>
       ) : null}
+
+      {/* Meta strip */}
+      <div
+        className="mt-4 relative grid grid-cols-2 gap-px rounded-2xl border md:grid-cols-4"
+        style={{
+          borderColor: DT.border,
+          background: "rgba(28,25,23,0.04)",
+        }}
+      >
+        <MetaTile
+          icon={MapPin}
+          label="Location"
+          value={`${job.location}`}
+          hint={job.locationType}
+        />
+        <MetaTile icon={Clock} label="Experience" value={experienceRange} />
+        <MetaTile icon={Briefcase} label="Department" value={department} />
+        <MetaTile icon={IndianRupee} label="Compensation" value={compensationRange} />
+      </div>
 
       {/* Job description with progressive disclosure */}
       <section
@@ -956,6 +1035,106 @@ function JobDetailPane({
 
     </motion.div>
   );
+}
+
+function trimFitCopy(text: string, maxChars: number): string {
+  const t = text.trim().replace(/\s+/g, " ");
+  if (t.length <= maxChars) return t;
+  const cut = t.slice(0, maxChars);
+  const sp = cut.lastIndexOf(" ");
+  const base = (sp > Math.min(24, maxChars * 0.45) ? cut.slice(0, sp) : cut).trim();
+  return `${base}...`;
+}
+
+function summarizeWhyFitForCandidate(whyFit: string): string {
+  const parts = whyFit.split(/\.\s+/).map((p) => p.trim()).filter(Boolean);
+  const first = parts[0] ?? whyFit.trim();
+  const withStop = /[.!?]$/.test(first) ? first : `${first}.`;
+  return trimFitCopy(withStop, 220);
+}
+
+function deriveFitBullets(job: Job, experienceMatches: boolean): string[] {
+  const score = job.matchScore ?? 0;
+  const remote = /remote/i.test(job.locationType) || /remote/i.test(job.location);
+  const yrsBand =
+    job.experienceYearsMax <= job.experienceYearsMin
+      ? `${job.experienceYearsMin}+ years`
+      : `${job.experienceYearsMin}-${job.experienceYearsMax} years`;
+
+  const whyYou = (() => {
+    const cardFit = job.whyFitCard?.trim();
+    if (cardFit) return /[.!?]$/.test(cardFit) ? cardFit : `${cardFit}.`;
+    return summarizeWhyFitForCandidate(job.whyFit);
+  })();
+
+  const whyScore = `${score}% fit: your skills and level match this posting.`;
+  const workSetup = remote
+    ? experienceMatches
+      ? `Remote (${job.locationType}). You're in their ${yrsBand} range.`
+      : `Remote (${job.locationType}). They want ${yrsBand}; show depth at that level.`
+    : experienceMatches
+      ? `${job.location} (${job.locationType}). Your background fits their ${yrsBand} ask.`
+      : `${job.location} (${job.locationType}). They want ${yrsBand}; show depth in this role.`;
+
+  return [whyYou, whyScore, workSetup];
+}
+
+type MissingSignal = { title: string; detail: string; tone: "warn" | "neutral" };
+
+function missingProofLine(topSkill: string, secondSkill?: string): string {
+  const line = secondSkill
+    ? `CV: show ${topSkill} and ${secondSkill}, each with one clear win.`
+    : `CV: show ${topSkill} with one clear win.`;
+  if (line.length <= 130) return line;
+  return secondSkill
+    ? "CV: add one bullet per required skill-what you did and the win."
+    : "CV: add one bullet for the skill above-what you did and the win.";
+}
+
+function deriveMissingSignals(job: Job, experienceMatches: boolean, requiredSkills: string[]): MissingSignal[] {
+  const score = job.matchScore ?? 0;
+  const yrsBand =
+    job.experienceYearsMax <= job.experienceYearsMin
+      ? `${job.experienceYearsMin}+ yrs`
+      : `${job.experienceYearsMin}-${job.experienceYearsMax} yrs`;
+
+  const topSkill = requiredSkills[0];
+  const secondSkill = requiredSkills[1];
+  const signals: MissingSignal[] = [];
+
+  if (!experienceMatches) {
+    signals.push({
+      tone: "warn",
+      title: "Tenure",
+      detail: `They want ${yrsBand}. Start with your strongest, relevant project.`,
+    });
+  }
+
+  if (topSkill) {
+    signals.push({
+      tone: score >= 86 ? "neutral" : "warn",
+      title: "Proof",
+      detail: missingProofLine(topSkill, secondSkill),
+    });
+  }
+
+  if (signals.length < 2) {
+    signals.push({
+      tone: score >= 88 ? "neutral" : "warn",
+      title: "Impact",
+      detail: "Add one number from past work-time saved, revenue, or adoption.",
+    });
+  }
+
+  if (signals.length < 3) {
+    signals.push({
+      tone: "warn",
+      title: "Language",
+      detail: "Reuse key phrases from this job post in your summary.",
+    });
+  }
+
+  return signals.slice(0, 3);
 }
 
 function SectionHeader({
